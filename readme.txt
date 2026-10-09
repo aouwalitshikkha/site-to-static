@@ -2,7 +2,7 @@
 Contributors: aouwal
 Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.0.0
 License: GPLv2 or later
@@ -10,13 +10,13 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Export your WordPress site to static HTML with localized assets, ready to host on GitHub + Cloudflare Pages.
 
-By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant.
-
 == Description ==
 
 WP Static Export crawls your site, captures the fully rendered HTML of every page, downloads and localizes all assets (CSS, JS, images, fonts), and packages the result into a portable ZIP.
 
 The output is a plain static site you can commit to GitHub and deploy on Cloudflare Pages (or any static host).
+
+By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant.
 
 **Features**
 

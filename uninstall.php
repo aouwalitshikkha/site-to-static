@@ -21,26 +21,11 @@ if ( empty( $uploads['error'] ) ) {
 		if ( ! function_exists( 'WP_Filesystem' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
-		$removed = false;
 		if ( function_exists( 'WP_Filesystem' ) && WP_Filesystem() ) {
 			global $wp_filesystem;
 			if ( $wp_filesystem instanceof WP_Filesystem_Base ) {
-				$removed = (bool) $wp_filesystem->rmdir( $dir, true );
+				$wp_filesystem->rmdir( $dir, true );
 			}
-		}
-		if ( ! $removed ) {
-			$iterator = new RecursiveIteratorIterator(
-				new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
-				RecursiveIteratorIterator::CHILD_FIRST
-			);
-			foreach ( $iterator as $item ) {
-				if ( $item->isDir() ) {
-					@rmdir( $item->getPathname() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- fallback when WP_Filesystem is unavailable.
-				} else {
-					@unlink( $item->getPathname() ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.unlink_unlink -- fallback when WP_Filesystem is unavailable.
-				}
-			}
-			@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- fallback when WP_Filesystem is unavailable.
 		}
 	}
 }

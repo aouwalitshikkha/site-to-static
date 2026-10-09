@@ -30,7 +30,6 @@ define( 'WSE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 // (default off) instead.
 
 require_once WSE_PLUGIN_DIR . 'includes/class-brand.php';
-require_once WSE_PLUGIN_DIR . 'includes/class-plugin.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-settings.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-writer.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-url-discovery.php';
@@ -96,5 +95,3 @@ function wse_deactivate() {
 	}
 }
 register_deactivation_hook( __FILE__, 'wse_deactivate' );
-
-WSE_Plugin::instance();

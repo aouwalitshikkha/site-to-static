@@ -169,24 +169,15 @@ class WSE_Admin {
 	}
 
 	/**
-	 * Verify AJAX request.
-	 *
-	 * @return void
-	 */
-	protected function verify() {
-		check_ajax_referer( 'wse_ajax', 'nonce' );
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-static-export' ) ), 403 );
-		}
-	}
-
-	/**
 	 * AJAX: start export.
 	 *
 	 * @return void
 	 */
 	public function ajax_start() {
-		$this->verify();
+		check_ajax_referer( 'wse_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-static-export' ) ), 403 );
+		}
 		$exporter = new WSE_Exporter();
 		$result   = $exporter->start();
 		if ( is_wp_error( $result ) ) {
@@ -201,7 +192,10 @@ class WSE_Admin {
 	 * @return void
 	 */
 	public function ajax_batch() {
-		$this->verify();
+		check_ajax_referer( 'wse_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-static-export' ) ), 403 );
+		}
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
 		$batch  = (int) WSE_Settings::get( 'batch_size', 5 );
 
@@ -219,7 +213,10 @@ class WSE_Admin {
 	 * @return void
 	 */
 	public function ajax_finalize() {
-		$this->verify();
+		check_ajax_referer( 'wse_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-static-export' ) ), 403 );
+		}
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
 
 		$exporter = new WSE_Exporter();

@@ -53,7 +53,7 @@ class WSE_Exporter {
 	 * @return array|WP_Error Job data or error.
 	 */
 	public function start() {
-		$job_id = substr( md5( uniqid( (string) mt_rand(), true ) ), 0, 20 );
+		$job_id = substr( md5( uniqid( (string) wp_rand(), true ) ), 0, 20 );
 
 		$uploads = wp_upload_dir();
 		if ( ! empty( $uploads['error'] ) ) {
