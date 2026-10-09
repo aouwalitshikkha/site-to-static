@@ -1,11 +1,13 @@
 <?php
 /**
  * Plugin Name:       WP Static Export
+ * Plugin URI:        https://github.com/aouwalitshikkha/wp-static-export
  * Description:       Export your WordPress site to a fully static HTML bundle (with localized assets) ready to push to GitHub and deploy on Cloudflare Pages.
  * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Author:            WP Static Export
+ * Author:            Abdul Aouwal
+ * Author URI:        https://abdulaouwal.com
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       wp-static-export

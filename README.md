@@ -1,5 +1,7 @@
 # WP Static Export
 
+**By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant**
+
 Export a WordPress site to a fully static HTML bundle with localized assets — ready to push to GitHub and deploy on Cloudflare Pages (or any static host).
 
 The plugin crawls your site over loopback HTTP, captures the fully rendered HTML of every page (theme, plugins and all), downloads and localizes assets, rewrites links to be portable, strips server-side features, and packages everything into a downloadable ZIP.
@@ -131,3 +133,14 @@ wp-static-export/
 ## License
 
 [GPL-2.0-or-later](LICENSE).
+
+## Author
+
+**Abdul Aouwal** — Technical SEO Consultant & Specialist for indexing, crawl & AI visibility.
+
+- Website: [abdulaouwal.com](https://abdulaouwal.com)
+- GitHub: [@aouwalitshikkha](https://github.com/aouwalitshikkha)
+- LinkedIn: [aouwalitshikkha](https://www.linkedin.com/in/aouwalitshikkha/)
+- Instagram: [@aouwalcmc](https://www.instagram.com/aouwalcmc)
+- Facebook: [itshikkha](https://www.facebook.com/itshikkha/)
+- Pinterest: [aouwalitshikkha](https://www.pinterest.com/aouwalitshikkha/)

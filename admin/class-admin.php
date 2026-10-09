@@ -119,7 +119,18 @@ class WSE_Admin {
 		}
 
 		echo '<div class="wrap wse-wrap">';
-		echo '<h1>' . esc_html__( 'WP Static Export', 'wp-static-export' ) . '</h1>';
+		echo '<div class="wse-brand">';
+		echo '<span class="wse-brand-mark" aria-hidden="true">&lt;/&gt;</span>';
+		echo '<span class="wse-brand-text">';
+		echo '<span class="wse-brand-title">' . esc_html__( 'WP Static Export', 'wp-static-export' ) . '</span>';
+		printf(
+			'<span class="wse-brand-sub">%1$s <a href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">%2$s</a></span>',
+			esc_html__( 'by', 'wp-static-export' ),
+			esc_html__( 'Abdul Aouwal', 'wp-static-export' )
+		);
+		echo '</span>';
+		echo '<a class="wse-brand-site" href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">abdulaouwal.com</a>';
+		echo '</div>';
 
 		if ( isset( $_GET['settings-updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'wp-static-export' ) . '</p></div>';
