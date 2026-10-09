@@ -73,13 +73,52 @@ class WSE_HTML_Processor {
 
 		$this->remove_dynamic( $xpath );
 		$this->rewrite_urls( $doc, $xpath, $source_url, $local_path, $assets );
+		$branded = $this->add_brand_comment( $doc );
 
 		$out = $doc->saveHTML();
+
+		if ( ! $branded ) {
+			$out = WSE_Brand::html_comment() . "\n" . $out;
+		}
 
 		return array(
 			'html'   => $out,
 			'assets' => array_values( array_unique( $assets ) ),
 		);
+	}
+
+	/**
+	 * Insert the invisible export credit as the first node of <head>.
+	 *
+	 * @param DOMDocument $doc Document.
+	 * @return bool True when the comment was placed in the DOM.
+	 */
+	protected function add_brand_comment( DOMDocument $doc ) {
+		$comment = $doc->createComment( "\n  " . implode( "\n  ", WSE_Brand::lines() ) . "\n" );
+
+		$heads = $doc->getElementsByTagName( 'head' );
+		if ( $heads->length ) {
+			$head = $heads->item( 0 );
+			if ( $head->firstChild ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+				$head->insertBefore( $comment, $head->firstChild ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			} else {
+				$head->appendChild( $comment );
+			}
+			return true;
+		}
+
+		$htmls = $doc->getElementsByTagName( 'html' );
+		if ( $htmls->length ) {
+			$html = $htmls->item( 0 );
+			if ( $html->firstChild ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+				$html->insertBefore( $comment, $html->firstChild ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			} else {
+				$html->appendChild( $comment );
+			}
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

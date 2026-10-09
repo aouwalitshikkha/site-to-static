@@ -24,6 +24,7 @@ define( 'WSE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WSE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WSE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+require_once WSE_PLUGIN_DIR . 'includes/class-brand.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-plugin.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-settings.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-writer.php';
