@@ -262,7 +262,9 @@ class WSE_Exporter {
 
 		if ( $this->is_non_html( $item->local_path, $result['headers'] ) ) {
 			$body = $this->rewrite_absolute_urls( $result['body'] );
-			$body = $this->inject_xml_comment( $body );
+			if ( WSE_Brand::should_include() ) {
+				$body = $this->inject_xml_comment( $body );
+			}
 			$this->writer->write( $item->local_path, $body );
 			$this->mark( $item->id, 'done', $result['status'], '' );
 			return sprintf( '[feed] %s -> %s', $item->source_url, $item->local_path );
@@ -500,7 +502,11 @@ class WSE_Exporter {
 		$result  = $crawler->fetch( $url, false );
 
 		if ( '' === $result['body'] ) {
-			return WSE_Brand::html_comment() . "\n" . '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
+			$fallback = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
+			if ( WSE_Brand::should_include() ) {
+				$fallback = WSE_Brand::html_comment() . "\n" . $fallback;
+			}
+			return $fallback;
 		}
 
 		$processor = new WSE_HTML_Processor( $this->writer );
@@ -583,8 +589,10 @@ class WSE_Exporter {
 		$urls = array_values( array_unique( $urls ) );
 
 		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-		$xml .= WSE_Brand::xml_comment() . "\n";
-		$xml .= WSE_Brand::encoded_comment() . "\n";
+		if ( WSE_Brand::should_include() ) {
+			$xml .= WSE_Brand::xml_comment() . "\n";
+			$xml .= WSE_Brand::encoded_comment() . "\n";
+		}
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 		foreach ( $urls as $u ) {
 			$xml .= "\t<url><loc>" . esc_url( $u ) . "</loc></url>\n";
@@ -603,7 +611,10 @@ class WSE_Exporter {
 		$public = WSE_Settings::get( 'public_url' );
 		$public = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
 
-		$out  = WSE_Brand::text_comment() . "\n";
+		$out = '';
+		if ( WSE_Brand::should_include() ) {
+			$out .= WSE_Brand::text_comment() . "\n";
+		}
 		$out .= "User-agent: *\n";
 		$out .= "Allow: /\n\n";
 		if ( WSE_Settings::get( 'generate_sitemap' ) ) {
@@ -618,16 +629,17 @@ class WSE_Exporter {
 	 * @return string
 	 */
 	protected function build_redirects() {
-		$lines = array(
-			WSE_Brand::text_comment(),
-			'/index.php / 301',
-			'/wp-login.php / 301',
-			'/wp-admin/* / 301',
-			'/xmlrpc.php / 301',
-			'/feed/ /feed/index.xml 200',
-			'/feed /feed/index.xml 200',
-			'/:path*/feed/ /:path*/feed/index.xml 200',
-		);
+		$lines   = array();
+		if ( WSE_Brand::should_include() ) {
+			$lines[] = WSE_Brand::text_comment();
+		}
+		$lines[] = '/index.php / 301';
+		$lines[] = '/wp-login.php / 301';
+		$lines[] = '/wp-admin/* / 301';
+		$lines[] = '/xmlrpc.php / 301';
+		$lines[] = '/feed/ /feed/index.xml 200';
+		$lines[] = '/feed /feed/index.xml 200';
+		$lines[] = '/:path*/feed/ /:path*/feed/index.xml 200';
 
 		if ( WSE_Settings::get( 'preserve_redirects' ) ) {
 			$lines[] = '# Add legacy path redirects below as needed.';
@@ -642,19 +654,20 @@ class WSE_Exporter {
 	 * @return string
 	 */
 	protected function build_headers() {
-		$lines = array(
-			WSE_Brand::text_comment(),
-			'/*.css',
-			'  Cache-Control: public, max-age=2592000',
-			'/*.js',
-			'  Cache-Control: public, max-age=2592000',
-			'/wp-content/uploads/*',
-			'  Cache-Control: public, max-age=31536000, immutable',
-			'/assets/*',
-			'  Cache-Control: public, max-age=31536000, immutable',
-			'/index.html',
-			'  Cache-Control: public, max-age=0, must-revalidate',
-		);
+		$lines = array();
+		if ( WSE_Brand::should_include() ) {
+			$lines[] = WSE_Brand::text_comment();
+		}
+		$lines[] = '/*.css';
+		$lines[] = '  Cache-Control: public, max-age=2592000';
+		$lines[] = '/*.js';
+		$lines[] = '  Cache-Control: public, max-age=2592000';
+		$lines[] = '/wp-content/uploads/*';
+		$lines[] = '  Cache-Control: public, max-age=31536000, immutable';
+		$lines[] = '/assets/*';
+		$lines[] = '  Cache-Control: public, max-age=31536000, immutable';
+		$lines[] = '/index.html';
+		$lines[] = '  Cache-Control: public, max-age=0, must-revalidate';
 		return implode( "\n", $lines ) . "\n";
 	}
 }

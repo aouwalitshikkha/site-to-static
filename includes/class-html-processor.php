@@ -74,13 +74,18 @@ class WSE_HTML_Processor {
 
 		$this->remove_dynamic( $xpath );
 		$this->rewrite_urls( $doc, $xpath, $source_url, $local_path, $assets );
-		$branded = $this->add_brand_comment( $doc );
-		$this->add_encoded_marker( $doc );
-		$this->add_footer_comment( $doc, $job_id );
+
+		$include_credit = WSE_Brand::should_include();
+		$branded        = false;
+		if ( $include_credit ) {
+			$branded = $this->add_brand_comment( $doc );
+			$this->add_encoded_marker( $doc );
+			$this->add_footer_comment( $doc, $job_id );
+		}
 
 		$out = $doc->saveHTML();
 
-		if ( ! $branded ) {
+		if ( $include_credit && ! $branded ) {
 			$out = WSE_Brand::html_comment() . "\n" . $out;
 		}
 

@@ -44,6 +44,7 @@ class WSE_Settings {
 			'preserve_redirects'  => 1,
 			'generate_sitemap'    => 1,
 			'generate_robots'     => 1,
+			'show_credit'         => 0,
 		);
 	}
 
@@ -109,6 +110,7 @@ class WSE_Settings {
 			'preserve_redirects',
 			'generate_sitemap',
 			'generate_robots',
+			'show_credit',
 		);
 		foreach ( $booleans as $key ) {
 			$out[ $key ] = ! empty( $input[ $key ] ) ? 1 : 0;

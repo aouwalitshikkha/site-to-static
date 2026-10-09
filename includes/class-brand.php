@@ -37,6 +37,22 @@ class WSE_Brand {
 	const REPO = 'https://github.com/aouwalitshikkha/wp-static-export';
 
 	/**
+	 * Whether the export credit should be included.
+	 *
+	 * Forced on when the WSE_FORCE_CREDIT constant is defined and true
+	 * (GitHub distribution). Otherwise it follows the opt-in "show_credit"
+	 * setting, which defaults to off.
+	 *
+	 * @return bool
+	 */
+	public static function should_include() {
+		if ( defined( 'WSE_FORCE_CREDIT' ) && WSE_FORCE_CREDIT ) {
+			return true;
+		}
+		return (bool) WSE_Settings::get( 'show_credit', 0 );
+	}
+
+	/**
 	 * Credit lines used in exported source comments.
 	 *
 	 * @return string[]

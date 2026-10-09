@@ -24,6 +24,11 @@ define( 'WSE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WSE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WSE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+// GitHub distribution: the export credit is always included.
+// The WordPress.org build omits this line, so the credit follows
+// the opt-in "show_credit" setting (default off) instead.
+define( 'WSE_FORCE_CREDIT', true );
+
 require_once WSE_PLUGIN_DIR . 'includes/class-brand.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-plugin.php';
 require_once WSE_PLUGIN_DIR . 'includes/class-settings.php';

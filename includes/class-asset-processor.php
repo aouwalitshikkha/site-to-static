@@ -61,11 +61,14 @@ class WSE_Asset_Processor {
 
 		if ( 'css' === $ext ) {
 			$processed  = $this->process_css( $result['body'], $url, $local_path );
-			$body       = $this->prepend_css_credit( $processed['css'] );
+			$body       = $processed['css'];
+			if ( WSE_Brand::should_include() ) {
+				$body = $this->prepend_css_credit( $body );
+			}
 			$discovered = $processed['assets'];
 		} else {
 			$body = $result['body'];
-			if ( in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
+			if ( WSE_Brand::should_include() && in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
 				$body = WSE_Brand::js_comment() . "\n" . $body;
 			}
 		}
