@@ -8,9 +8,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_Writer
+ * Class STS_Writer
  */
-class WSE_Writer {
+class STS_Writer {
 
 	/**
 	 * Absolute output directory for a job.
@@ -306,7 +306,7 @@ class WSE_Writer {
 	 * @return string
 	 */
 	public function href( $from_local, $to_local, $to_dir = false ) {
-		if ( 'root' === WSE_Settings::get( 'url_style', 'relative' ) ) {
+		if ( 'root' === STS_Settings::get( 'url_style', 'relative' ) ) {
 			$target = $to_local;
 			if ( $to_dir && 'index.html' === basename( $target ) ) {
 				$target = dirname( $target );

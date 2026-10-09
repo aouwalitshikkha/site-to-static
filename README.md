@@ -1,4 +1,4 @@
-# WP Static Export
+# Site to Static
 
 **By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant**
 
@@ -39,13 +39,13 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 
 **From a ZIP:**
 1. Download/clone this repository.
-2. Copy the `wp-static-export` folder into `wp-content/plugins/`.
-3. Activate **WP Static Export** under *Plugins*.
+2. Copy the `site-to-static` folder into `wp-content/plugins/`.
+3. Activate **Site to Static** under *Plugins*.
 
 **With git:**
 ```bash
 cd wp-content/plugins
-git clone https://github.com/aouwalitshikkha/wp-static-export.git
+git clone https://github.com/aouwalitshikkha/site-to-static.git
 ```
 Then activate the plugin in the WordPress admin.
 
@@ -86,7 +86,7 @@ Runs a full export and prints the resulting ZIP URL.
 1. Download and unzip the export.
 2. Push the files to a GitHub repository:
    ```bash
-   cd wp-static-export-site
+   cd site-to-static-site
    git init
    git add .
    git commit -m "Initial static export"
@@ -110,8 +110,8 @@ The export includes a `_redirects` file (feed rewrites, `/index.php` cleanup) an
 ## Project structure
 
 ```
-wp-static-export/
-├── wp-static-export.php          # bootstrap + activation
+site-to-static/
+├── site-to-static.php          # bootstrap + activation
 ├── uninstall.php                 # cleanup on uninstall
 ├── readme.txt                    # WordPress.org-style readme
 ├── includes/

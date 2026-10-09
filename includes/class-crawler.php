@@ -8,9 +8,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_Crawler
+ * Class STS_Crawler
  */
-class WSE_Crawler {
+class STS_Crawler {
 
 	/**
 	 * Fetch a URL.
@@ -24,7 +24,7 @@ class WSE_Crawler {
 			'timeout'     => 60,
 			'redirection' => 5,
 			'sslverify'   => ! $this->is_local_host( $url ),
-			'user-agent'  => 'WP-Static-Export/' . WSE_VERSION . '; ' . home_url(),
+			'user-agent'  => 'site-to-static/' . STS_VERSION . '; ' . home_url(),
 			'headers'     => array(
 				'Accept'          => $is_asset ? '*/*' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 				'Accept-Encoding' => 'identity',

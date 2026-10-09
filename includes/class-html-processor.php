@@ -8,14 +8,14 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_HTML_Processor
+ * Class STS_HTML_Processor
  */
-class WSE_HTML_Processor {
+class STS_HTML_Processor {
 
 	/**
 	 * Writer.
 	 *
-	 * @var WSE_Writer
+	 * @var STS_Writer
 	 */
 	protected $writer;
 
@@ -37,9 +37,9 @@ class WSE_HTML_Processor {
 	/**
 	 * Constructor.
 	 *
-	 * @param WSE_Writer $writer Writer instance.
+	 * @param STS_Writer $writer Writer instance.
 	 */
-	public function __construct( WSE_Writer $writer ) {
+	public function __construct( STS_Writer $writer ) {
 		$this->writer = $writer;
 	}
 
@@ -75,7 +75,7 @@ class WSE_HTML_Processor {
 		$this->remove_dynamic( $xpath );
 		$this->rewrite_urls( $doc, $xpath, $source_url, $local_path, $assets );
 
-		$include_credit = WSE_Brand::should_include();
+		$include_credit = STS_Brand::should_include();
 		$branded        = false;
 		if ( $include_credit ) {
 			$branded = $this->add_brand_comment( $doc );
@@ -85,7 +85,7 @@ class WSE_HTML_Processor {
 		$out = $doc->saveHTML();
 
 		if ( $include_credit && ! $branded ) {
-			$out = WSE_Brand::html_comment() . "\n" . $out;
+			$out = STS_Brand::html_comment() . "\n" . $out;
 		}
 
 		return array(
@@ -101,7 +101,7 @@ class WSE_HTML_Processor {
 	 * @return bool True when the comment was placed in the DOM.
 	 */
 	protected function add_brand_comment( DOMDocument $doc ) {
-		$comment = $doc->createComment( "\n  " . implode( "\n  ", WSE_Brand::lines() ) . "\n" );
+		$comment = $doc->createComment( "\n  " . implode( "\n  ", STS_Brand::lines() ) . "\n" );
 
 		$heads = $doc->getElementsByTagName( 'head' );
 		if ( $heads->length ) {
@@ -136,7 +136,7 @@ class WSE_HTML_Processor {
 	 * @return void
 	 */
 	protected function add_footer_comment( DOMDocument $doc, $job_id ) {
-		$comment = $doc->createComment( "\n  " . implode( "\n  ", WSE_Brand::footer_lines( $job_id ) ) . "\n" );
+		$comment = $doc->createComment( "\n  " . implode( "\n  ", STS_Brand::footer_lines( $job_id ) ) . "\n" );
 
 		$bodies = $doc->getElementsByTagName( 'body' );
 		if ( $bodies->length ) {
@@ -211,7 +211,7 @@ class WSE_HTML_Processor {
 			'//form[@id="commentform"]',
 		);
 
-		if ( WSE_Settings::get( 'strip_search' ) ) {
+		if ( STS_Settings::get( 'strip_search' ) ) {
 			$queries[] = '//form[@role="search"]';
 			$queries[] = '//*[contains(@class,"search-form")]';
 			$queries[] = '//*[@id="searchform"]';
@@ -347,7 +347,7 @@ class WSE_HTML_Processor {
 		$kind = $this->classify( $tag, $attr, $resolved, $rel );
 
 		if ( 'asset' === $kind ) {
-			if ( ! WSE_Settings::get( 'download_assets' ) ) {
+			if ( ! STS_Settings::get( 'download_assets' ) ) {
 				return null;
 			}
 			$asset_key = $this->strip_query( $resolved );
@@ -432,7 +432,7 @@ class WSE_HTML_Processor {
 			$url  = $bits[0];
 			$desc = isset( $bits[1] ) ? $bits[1] : '';
 
-			if ( WSE_Settings::get( 'download_assets' ) && ! preg_match( '~^(?:data:|#)~i', $url ) ) {
+			if ( STS_Settings::get( 'download_assets' ) && ! preg_match( '~^(?:data:|#)~i', $url ) ) {
 				$resolved  = $this->resolve_url( $source_url, $url );
 				$resolved  = $this->strip_query( $resolved );
 				$assets[]  = $resolved;
@@ -462,7 +462,7 @@ class WSE_HTML_Processor {
 				if ( '' === $url || preg_match( '~^(?:data:|#)~i', $url ) ) {
 					return $m[0];
 				}
-				if ( ! WSE_Settings::get( 'download_assets' ) ) {
+				if ( ! STS_Settings::get( 'download_assets' ) ) {
 					return $m[0];
 				}
 				$resolved = $this->strip_query( $this->resolve_url( $source_url, $url ) );
@@ -481,7 +481,7 @@ class WSE_HTML_Processor {
 	 * @return string
 	 */
 	protected function strip_query( $url ) {
-		if ( ! WSE_Settings::get( 'strip_query' ) ) {
+		if ( ! STS_Settings::get( 'strip_query' ) ) {
 			return $url;
 		}
 		$pos = strpos( $url, '?' );

@@ -8,9 +8,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_Admin
+ * Class STS_Admin
  */
-class WSE_Admin {
+class STS_Admin {
 
 	/**
 	 * Page hook suffix.
@@ -27,9 +27,9 @@ class WSE_Admin {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 
-		add_action( 'wp_ajax_wse_start', array( $this, 'ajax_start' ) );
-		add_action( 'wp_ajax_wse_batch', array( $this, 'ajax_batch' ) );
-		add_action( 'wp_ajax_wse_finalize', array( $this, 'ajax_finalize' ) );
+		add_action( 'wp_ajax_sts_start', array( $this, 'ajax_start' ) );
+		add_action( 'wp_ajax_sts_batch', array( $this, 'ajax_batch' ) );
+		add_action( 'wp_ajax_sts_finalize', array( $this, 'ajax_finalize' ) );
 	}
 
 	/**
@@ -39,10 +39,10 @@ class WSE_Admin {
 	 */
 	public function menu() {
 		$this->hook = add_menu_page(
-			__( 'Static Export', 'wp-static-export' ),
-			__( 'Static Export', 'wp-static-export' ),
+			__( 'Static Export', 'site-to-static' ),
+			__( 'Static Export', 'site-to-static' ),
 			'manage_options',
-			'wp-static-export',
+			'site-to-static',
 			array( $this, 'render' ),
 			'dashicons-download',
 			81
@@ -56,12 +56,12 @@ class WSE_Admin {
 	 */
 	public function register_settings() {
 		register_setting(
-			'wse_settings_group',
-			WSE_Settings::OPTION,
+			'sts_settings_group',
+			STS_Settings::OPTION,
 			array(
 				'type'              => 'array',
-				'sanitize_callback' => array( 'WSE_Settings', 'sanitize' ),
-				'default'           => WSE_Settings::defaults(),
+				'sanitize_callback' => array( 'STS_Settings', 'sanitize' ),
+				'default'           => STS_Settings::defaults(),
 			)
 		);
 	}
@@ -77,25 +77,25 @@ class WSE_Admin {
 			return;
 		}
 
-		wp_enqueue_style( 'wse-admin', WSE_PLUGIN_URL . 'admin/assets/admin.css', array(), WSE_VERSION );
-		wp_enqueue_script( 'wse-admin', WSE_PLUGIN_URL . 'admin/assets/export.js', array( 'jquery' ), WSE_VERSION, true );
+		wp_enqueue_style( 'sts-admin', STS_PLUGIN_URL . 'admin/assets/admin.css', array(), STS_VERSION );
+		wp_enqueue_script( 'sts-admin', STS_PLUGIN_URL . 'admin/assets/export.js', array( 'jquery' ), STS_VERSION, true );
 		wp_localize_script(
-			'wse-admin',
-			'WSE',
+			'sts-admin',
+			'STS',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'wse_ajax' ),
-				'batch'   => (int) WSE_Settings::get( 'batch_size', 5 ),
+				'nonce'   => wp_create_nonce( 'sts_ajax' ),
+				'batch'   => (int) STS_Settings::get( 'batch_size', 5 ),
 				'i18n'    => array(
-					'starting'   => __( 'Discovering URLs…', 'wp-static-export' ),
-					'crawling'   => __( 'Processing', 'wp-static-export' ),
-					'finalizing' => __( 'Packaging export…', 'wp-static-export' ),
-					'done'       => __( 'Export complete.', 'wp-static-export' ),
-					'error'      => __( 'An error occurred.', 'wp-static-export' ),
-					'confirm'    => __( 'Start a new static export?', 'wp-static-export' ),
-					'download'   => __( 'Download export ZIP', 'wp-static-export' ),
+					'starting'   => __( 'Discovering URLs…', 'site-to-static' ),
+					'crawling'   => __( 'Processing', 'site-to-static' ),
+					'finalizing' => __( 'Packaging export…', 'site-to-static' ),
+					'done'       => __( 'Export complete.', 'site-to-static' ),
+					'error'      => __( 'An error occurred.', 'site-to-static' ),
+					'confirm'    => __( 'Start a new static export?', 'site-to-static' ),
+					'download'   => __( 'Download export ZIP', 'site-to-static' ),
 					/* translators: %s: number of discovered URLs. */
-					'discovered' => __( 'Discovered %s URLs.', 'wp-static-export' ),
+					'discovered' => __( 'Discovered %s URLs.', 'site-to-static' ),
 				),
 			)
 		);
@@ -108,42 +108,42 @@ class WSE_Admin {
 	 */
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-static-export' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'site-to-static' ) );
 		}
 
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'settings'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$tabs = array(
-			'settings' => __( 'Settings', 'wp-static-export' ),
-			'export'   => __( 'Export', 'wp-static-export' ),
-			'deploy'   => __( 'Deploy', 'wp-static-export' ),
+			'settings' => __( 'Settings', 'site-to-static' ),
+			'export'   => __( 'Export', 'site-to-static' ),
+			'deploy'   => __( 'Deploy', 'site-to-static' ),
 		);
 		if ( ! isset( $tabs[ $tab ] ) ) {
 			$tab = 'settings';
 		}
 
-		echo '<div class="wrap wse-wrap">';
-		echo '<div class="wse-brand">';
-		echo '<span class="wse-brand-mark" aria-hidden="true">&lt;/&gt;</span>';
-		echo '<span class="wse-brand-text">';
-		echo '<span class="wse-brand-title">' . esc_html__( 'WP Static Export', 'wp-static-export' ) . '</span>';
+		echo '<div class="wrap sts-wrap">';
+		echo '<div class="sts-brand">';
+		echo '<span class="sts-brand-mark" aria-hidden="true">&lt;/&gt;</span>';
+		echo '<span class="sts-brand-text">';
+		echo '<span class="sts-brand-title">' . esc_html__( 'Site to Static', 'site-to-static' ) . '</span>';
 		printf(
-			'<span class="wse-brand-sub">%1$s <a href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">%2$s</a></span>',
-			esc_html__( 'by', 'wp-static-export' ),
-			esc_html__( 'Abdul Aouwal', 'wp-static-export' )
+			'<span class="sts-brand-sub">%1$s <a href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">%2$s</a></span>',
+			esc_html__( 'by', 'site-to-static' ),
+			esc_html__( 'Abdul Aouwal', 'site-to-static' )
 		);
 		echo '</span>';
-		echo '<a class="wse-brand-site" href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">abdulaouwal.com</a>';
+		echo '<a class="sts-brand-site" href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">abdulaouwal.com</a>';
 		echo '</div>';
 
 		if ( isset( $_GET['settings-updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'wp-static-export' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'site-to-static' ) . '</p></div>';
 		}
 
-		echo '<h2 class="nav-tab-wrapper wse-tabs">';
+		echo '<h2 class="nav-tab-wrapper sts-tabs">';
 		foreach ( $tabs as $key => $label ) {
 			$url   = add_query_arg(
 				array(
-					'page' => 'wp-static-export',
+					'page' => 'site-to-static',
 					'tab'  => $key,
 				),
 				admin_url( 'admin.php' )
@@ -155,13 +155,13 @@ class WSE_Admin {
 
 		switch ( $tab ) {
 			case 'export':
-				require WSE_PLUGIN_DIR . 'admin/views/export.php';
+				require STS_PLUGIN_DIR . 'admin/views/export.php';
 				break;
 			case 'deploy':
-				require WSE_PLUGIN_DIR . 'admin/views/deploy.php';
+				require STS_PLUGIN_DIR . 'admin/views/deploy.php';
 				break;
 			default:
-				require WSE_PLUGIN_DIR . 'admin/views/settings.php';
+				require STS_PLUGIN_DIR . 'admin/views/settings.php';
 				break;
 		}
 
@@ -174,11 +174,11 @@ class WSE_Admin {
 	 * @return void
 	 */
 	public function ajax_start() {
-		check_ajax_referer( 'wse_ajax', 'nonce' );
+		check_ajax_referer( 'sts_ajax', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-static-export' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'site-to-static' ) ), 403 );
 		}
-		$exporter = new WSE_Exporter();
+		$exporter = new STS_Exporter();
 		$result   = $exporter->start();
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -192,14 +192,14 @@ class WSE_Admin {
 	 * @return void
 	 */
 	public function ajax_batch() {
-		check_ajax_referer( 'wse_ajax', 'nonce' );
+		check_ajax_referer( 'sts_ajax', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-static-export' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'site-to-static' ) ), 403 );
 		}
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
-		$batch  = (int) WSE_Settings::get( 'batch_size', 5 );
+		$batch  = (int) STS_Settings::get( 'batch_size', 5 );
 
-		$exporter = new WSE_Exporter();
+		$exporter = new STS_Exporter();
 		$result   = $exporter->process_batch( $job_id, max( 1, $batch ) );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -213,13 +213,13 @@ class WSE_Admin {
 	 * @return void
 	 */
 	public function ajax_finalize() {
-		check_ajax_referer( 'wse_ajax', 'nonce' );
+		check_ajax_referer( 'sts_ajax', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'wp-static-export' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'site-to-static' ) ), 403 );
 		}
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
 
-		$exporter = new WSE_Exporter();
+		$exporter = new STS_Exporter();
 		$result   = $exporter->finalize( $job_id );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -228,4 +228,4 @@ class WSE_Admin {
 	}
 }
 
-new WSE_Admin();
+new STS_Admin();

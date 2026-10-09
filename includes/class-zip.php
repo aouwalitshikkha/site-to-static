@@ -8,9 +8,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_Zip
+ * Class STS_Zip
  */
-class WSE_Zip {
+class STS_Zip {
 
 	/**
 	 * Whether ZipArchive is available.
@@ -30,12 +30,12 @@ class WSE_Zip {
 	 */
 	public function zip_dir( $source_dir, $zip_path ) {
 		if ( ! self::available() ) {
-			return new WP_Error( 'wse_zip_missing', __( 'The PHP zip extension is not available.', 'wp-static-export' ) );
+			return new WP_Error( 'sts_zip_missing', __( 'The PHP zip extension is not available.', 'site-to-static' ) );
 		}
 
 		$source_dir = rtrim( $source_dir, "/\\" );
 		if ( ! is_dir( $source_dir ) ) {
-			return new WP_Error( 'wse_zip_nodir', __( 'Output directory not found.', 'wp-static-export' ) );
+			return new WP_Error( 'sts_zip_nodir', __( 'Output directory not found.', 'site-to-static' ) );
 		}
 
 		if ( file_exists( $zip_path ) ) {
@@ -44,7 +44,7 @@ class WSE_Zip {
 
 		$zip = new ZipArchive();
 		if ( true !== $zip->open( $zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE ) ) {
-			return new WP_Error( 'wse_zip_open', __( 'Could not create the ZIP archive.', 'wp-static-export' ) );
+			return new WP_Error( 'sts_zip_open', __( 'Could not create the ZIP archive.', 'site-to-static' ) );
 		}
 
 		$count = 0;

@@ -8,16 +8,16 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_Settings
+ * Class STS_Settings
  */
-class WSE_Settings {
+class STS_Settings {
 
 	/**
 	 * Option name.
 	 *
 	 * @var string
 	 */
-	const OPTION = 'wse_settings';
+	const OPTION = 'sts_settings';
 
 	/**
 	 * Default settings.

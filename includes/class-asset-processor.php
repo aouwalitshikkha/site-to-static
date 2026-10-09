@@ -8,31 +8,31 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_Asset_Processor
+ * Class STS_Asset_Processor
  */
-class WSE_Asset_Processor {
+class STS_Asset_Processor {
 
 	/**
 	 * Writer.
 	 *
-	 * @var WSE_Writer
+	 * @var STS_Writer
 	 */
 	protected $writer;
 
 	/**
 	 * Crawler.
 	 *
-	 * @var WSE_Crawler
+	 * @var STS_Crawler
 	 */
 	protected $crawler;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param WSE_Writer  $writer  Writer.
-	 * @param WSE_Crawler $crawler Crawler.
+	 * @param STS_Writer  $writer  Writer.
+	 * @param STS_Crawler $crawler Crawler.
 	 */
-	public function __construct( WSE_Writer $writer, WSE_Crawler $crawler ) {
+	public function __construct( STS_Writer $writer, STS_Crawler $crawler ) {
 		$this->writer  = $writer;
 		$this->crawler = $crawler;
 	}
@@ -62,14 +62,14 @@ class WSE_Asset_Processor {
 		if ( 'css' === $ext ) {
 			$processed  = $this->process_css( $result['body'], $url, $local_path );
 			$body       = $processed['css'];
-			if ( WSE_Brand::should_include() ) {
+			if ( STS_Brand::should_include() ) {
 				$body = $this->prepend_css_credit( $body );
 			}
 			$discovered = $processed['assets'];
 		} else {
 			$body = $result['body'];
-			if ( WSE_Brand::should_include() && in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
-				$body = WSE_Brand::js_comment() . "\n" . $body;
+			if ( STS_Brand::should_include() && in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
+				$body = STS_Brand::js_comment() . "\n" . $body;
 			}
 		}
 
@@ -134,7 +134,7 @@ class WSE_Asset_Processor {
 	 * @return string
 	 */
 	protected function prepend_css_credit( $css ) {
-		$credit = WSE_Brand::css_comment();
+		$credit = STS_Brand::css_comment();
 		$trimmed = ltrim( $css, "\xEF\xBB\xBF \t\r\n" );
 		if ( 0 === stripos( $trimmed, '@charset' ) ) {
 			$semi = strpos( $trimmed, ';' );
@@ -152,7 +152,7 @@ class WSE_Asset_Processor {
 	 * @return string
 	 */
 	protected function strip_query( $url ) {
-		if ( ! WSE_Settings::get( 'strip_query' ) ) {
+		if ( ! STS_Settings::get( 'strip_query' ) ) {
 			return $url;
 		}
 		$pos = strpos( $url, '?' );

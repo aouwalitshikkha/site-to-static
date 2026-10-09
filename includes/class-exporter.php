@@ -8,21 +8,21 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class WSE_Exporter
+ * Class STS_Exporter
  */
-class WSE_Exporter {
+class STS_Exporter {
 
 	/**
 	 * Jobs option name.
 	 *
 	 * @var string
 	 */
-	const JOBS_OPTION = 'wse_jobs';
+	const JOBS_OPTION = 'sts_jobs';
 
 	/**
 	 * Writer.
 	 *
-	 * @var WSE_Writer
+	 * @var STS_Writer
 	 */
 	protected $writer;
 
@@ -30,7 +30,7 @@ class WSE_Exporter {
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->writer = new WSE_Writer();
+		$this->writer = new STS_Writer();
 	}
 
 	/**
@@ -40,7 +40,7 @@ class WSE_Exporter {
 	 */
 	public function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'wpstatic_job_items';
+		return $wpdb->prefix . 'sts_job_items';
 	}
 
 	/* ---------------------------------------------------------------------
@@ -57,15 +57,15 @@ class WSE_Exporter {
 
 		$uploads = wp_upload_dir();
 		if ( ! empty( $uploads['error'] ) ) {
-			return new WP_Error( 'wse_uploads', $uploads['error'] );
+			return new WP_Error( 'sts_uploads', $uploads['error'] );
 		}
 
-		$base      = trailingslashit( $uploads['basedir'] ) . 'wp-static-export';
+		$base      = trailingslashit( $uploads['basedir'] ) . 'site-to-static';
 		$output    = $base . '/' . $job_id . '/site';
 		$zip_path  = $base . '/' . $job_id . '.zip';
 
 		if ( ! wp_mkdir_p( $output ) ) {
-			return new WP_Error( 'wse_mkdir', __( 'Could not create the export directory.', 'wp-static-export' ) );
+			return new WP_Error( 'sts_mkdir', __( 'Could not create the export directory.', 'site-to-static' ) );
 		}
 
 		global $wpdb;
@@ -73,7 +73,7 @@ class WSE_Exporter {
 
 		$this->writer->set_output_dir( $output );
 
-		$discovery = new WSE_URL_Discovery();
+		$discovery = new STS_URL_Discovery();
 		$urls      = $discovery->discover();
 
 		$inserted = $this->insert_items( $job_id, $urls, 'page' );
@@ -84,7 +84,7 @@ class WSE_Exporter {
 			'phase'      => 'crawl',
 			'output_dir' => $output,
 			'zip_path'   => $zip_path,
-			'zip_url'    => trailingslashit( $uploads['baseurl'] ) . 'wp-static-export/' . $job_id . '.zip',
+			'zip_url'    => trailingslashit( $uploads['baseurl'] ) . 'site-to-static/' . $job_id . '.zip',
 			'notice'     => array(),
 		);
 		$this->save_job( $job );
@@ -108,7 +108,7 @@ class WSE_Exporter {
 	public function process_batch( $job_id, $limit = 5 ) {
 		$job = $this->get_job( $job_id );
 		if ( ! $job ) {
-			return new WP_Error( 'wse_no_job', __( 'Export job not found.', 'wp-static-export' ) );
+			return new WP_Error( 'sts_no_job', __( 'Export job not found.', 'site-to-static' ) );
 		}
 
 		global $wpdb;
@@ -159,7 +159,7 @@ class WSE_Exporter {
 	public function finalize( $job_id ) {
 		$job = $this->get_job( $job_id );
 		if ( ! $job ) {
-			return new WP_Error( 'wse_no_job', __( 'Export job not found.', 'wp-static-export' ) );
+			return new WP_Error( 'sts_no_job', __( 'Export job not found.', 'site-to-static' ) );
 		}
 
 		$this->writer->set_output_dir( $job['output_dir'] );
@@ -175,24 +175,24 @@ class WSE_Exporter {
 
 		$this->writer->write( '404.html', $this->build_404( $job_id ) );
 
-		if ( WSE_Settings::get( 'generate_sitemap' ) ) {
+		if ( STS_Settings::get( 'generate_sitemap' ) ) {
 			$this->writer->write( 'sitemap.xml', $this->build_sitemap( $job_id ) );
 		}
-		if ( WSE_Settings::get( 'generate_robots' ) ) {
+		if ( STS_Settings::get( 'generate_robots' ) ) {
 			$this->writer->write( 'robots.txt', $this->build_robots() );
 		}
 
 		$this->writer->write( '_redirects', $this->build_redirects() );
 		$this->writer->write( '_headers', $this->build_headers() );
 
-		$zip = new WSE_Zip();
+		$zip = new STS_Zip();
 		$res = $zip->zip_dir( $job['output_dir'], $job['zip_path'] );
 		if ( is_wp_error( $res ) ) {
 			return $res;
 		}
 
 		if ( 0 === $counts['done'] ) {
-			$notices[] = __( 'No pages were exported. Check your post type settings.', 'wp-static-export' );
+			$notices[] = __( 'No pages were exported. Check your post type settings.', 'site-to-static' );
 		}
 
 		$job['phase']  = 'done';
@@ -252,7 +252,7 @@ class WSE_Exporter {
 	 * @return string Log line.
 	 */
 	protected function process_page_item( $job_id, $item ) {
-		$crawler = new WSE_Crawler();
+		$crawler = new STS_Crawler();
 		$result  = $crawler->fetch( $item->source_url, false );
 
 		if ( '' !== $result['error'] || $result['status'] >= 400 || '' === $result['body'] ) {
@@ -260,11 +260,11 @@ class WSE_Exporter {
 			return sprintf( '[error] %s (%s)', $item->source_url, $result['status'] );
 		}
 
-		$processor = new WSE_HTML_Processor( $this->writer );
+		$processor = new STS_HTML_Processor( $this->writer );
 
 		if ( $this->is_non_html( $item->local_path, $result['headers'] ) ) {
 			$body = $this->rewrite_absolute_urls( $result['body'] );
-			if ( WSE_Brand::should_include() ) {
+			if ( STS_Brand::should_include() ) {
 				$body = $this->inject_xml_comment( $body );
 			}
 			$this->writer->write( $item->local_path, $body );
@@ -297,7 +297,7 @@ class WSE_Exporter {
 			return '';
 		}
 
-		$processor = new WSE_Asset_Processor( $this->writer, new WSE_Crawler() );
+		$processor = new STS_Asset_Processor( $this->writer, new STS_Crawler() );
 		$result    = $processor->process( $item->source_url, $item->local_path );
 
 		if ( ! empty( $result['assets'] ) ) {
@@ -465,7 +465,7 @@ class WSE_Exporter {
 	 * @return string
 	 */
 	protected function rewrite_absolute_urls( $body ) {
-		$public = WSE_Settings::get( 'public_url' );
+		$public = STS_Settings::get( 'public_url' );
 		$target = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
 
 		$body = str_replace( untrailingslashit( home_url() ), $target, $body );
@@ -481,7 +481,7 @@ class WSE_Exporter {
 	 * @return string
 	 */
 	protected function inject_xml_comment( $body ) {
-		$comment = WSE_Brand::xml_comment();
+		$comment = STS_Brand::xml_comment();
 		$trimmed = ltrim( $body );
 		if ( 0 === strpos( $trimmed, '<?xml' ) ) {
 			$offset = strpos( $body, '<?xml' );
@@ -500,19 +500,19 @@ class WSE_Exporter {
 	 * @return string
 	 */
 	protected function build_404( $job_id ) {
-		$url     = home_url( '/wse-404-' . wp_generate_password( 10, false ) . '/' );
-		$crawler = new WSE_Crawler();
+		$url     = home_url( '/sts-404-' . wp_generate_password( 10, false ) . '/' );
+		$crawler = new STS_Crawler();
 		$result  = $crawler->fetch( $url, false );
 
 		if ( '' === $result['body'] ) {
 			$fallback = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
-			if ( WSE_Brand::should_include() ) {
-				$fallback = WSE_Brand::html_comment() . "\n" . $fallback;
+			if ( STS_Brand::should_include() ) {
+				$fallback = STS_Brand::html_comment() . "\n" . $fallback;
 			}
 			return $fallback;
 		}
 
-		$processor = new WSE_HTML_Processor( $this->writer );
+		$processor = new STS_HTML_Processor( $this->writer );
 		$processed = $processor->process( $result['body'], $url, '404.html', $job_id );
 
 		$this->download_recursive( $processed['assets'] );
@@ -527,7 +527,7 @@ class WSE_Exporter {
 	 * @return void
 	 */
 	protected function download_recursive( array $urls ) {
-		$processor = new WSE_Asset_Processor( $this->writer, new WSE_Crawler() );
+		$processor = new STS_Asset_Processor( $this->writer, new STS_Crawler() );
 		$queue     = array_values( array_unique( $urls ) );
 		$seen      = array();
 		$guard     = 0;
@@ -570,7 +570,7 @@ class WSE_Exporter {
 			)
 		);
 
-		$public = WSE_Settings::get( 'public_url' );
+		$public = STS_Settings::get( 'public_url' );
 		$public = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
 		$base   = (string) wp_parse_url( home_url(), PHP_URL_PATH );
 		$base   = '/' === $base ? '' : untrailingslashit( $base );
@@ -593,8 +593,8 @@ class WSE_Exporter {
 		$urls = array_values( array_unique( $urls ) );
 
 		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-		if ( WSE_Brand::should_include() ) {
-			$xml .= WSE_Brand::xml_comment() . "\n";
+		if ( STS_Brand::should_include() ) {
+			$xml .= STS_Brand::xml_comment() . "\n";
 		}
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 		foreach ( $urls as $u ) {
@@ -611,16 +611,16 @@ class WSE_Exporter {
 	 * @return string
 	 */
 	protected function build_robots() {
-		$public = WSE_Settings::get( 'public_url' );
+		$public = STS_Settings::get( 'public_url' );
 		$public = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
 
 		$out = '';
-		if ( WSE_Brand::should_include() ) {
-			$out .= WSE_Brand::text_comment() . "\n";
+		if ( STS_Brand::should_include() ) {
+			$out .= STS_Brand::text_comment() . "\n";
 		}
 		$out .= "User-agent: *\n";
 		$out .= "Allow: /\n\n";
-		if ( WSE_Settings::get( 'generate_sitemap' ) ) {
+		if ( STS_Settings::get( 'generate_sitemap' ) ) {
 			$out .= "Sitemap: {$public}/sitemap.xml\n";
 		}
 		return $out;
@@ -633,8 +633,8 @@ class WSE_Exporter {
 	 */
 	protected function build_redirects() {
 		$lines   = array();
-		if ( WSE_Brand::should_include() ) {
-			$lines[] = WSE_Brand::text_comment();
+		if ( STS_Brand::should_include() ) {
+			$lines[] = STS_Brand::text_comment();
 		}
 		$lines[] = '/index.php / 301';
 		$lines[] = '/wp-login.php / 301';
@@ -644,7 +644,7 @@ class WSE_Exporter {
 		$lines[] = '/feed /feed/index.xml 200';
 		$lines[] = '/:path*/feed/ /:path*/feed/index.xml 200';
 
-		if ( WSE_Settings::get( 'preserve_redirects' ) ) {
+		if ( STS_Settings::get( 'preserve_redirects' ) ) {
 			$lines[] = '# Add legacy path redirects below as needed.';
 		}
 
@@ -658,8 +658,8 @@ class WSE_Exporter {
 	 */
 	protected function build_headers() {
 		$lines = array();
-		if ( WSE_Brand::should_include() ) {
-			$lines[] = WSE_Brand::text_comment();
+		if ( STS_Brand::should_include() ) {
+			$lines[] = STS_Brand::text_comment();
 		}
 		$lines[] = '/*.css';
 		$lines[] = '  Cache-Control: public, max-age=2592000';

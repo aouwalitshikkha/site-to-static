@@ -14,7 +14,7 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 /**
  * Export the site to static HTML.
  */
-class WSE_CLI {
+class STS_CLI {
 
 	/**
 	 * Run a full static export.
@@ -37,7 +37,7 @@ class WSE_CLI {
 	public function run( $args, $assoc_args ) {
 		$batch = isset( $assoc_args['batch'] ) ? max( 1, (int) $assoc_args['batch'] ) : 10;
 
-		$exporter = new WSE_Exporter();
+		$exporter = new STS_Exporter();
 		$start    = $exporter->start();
 
 		if ( is_wp_error( $start ) ) {
@@ -82,4 +82,4 @@ class WSE_CLI {
 	}
 }
 
-WP_CLI::add_command( 'static-export', 'WSE_CLI' );
+WP_CLI::add_command( 'static-export', 'STS_CLI' );

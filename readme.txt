@@ -1,4 +1,4 @@
-=== WP Static Export ===
+=== Site to Static ===
 Contributors: aouwal
 Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
@@ -12,7 +12,7 @@ Export your WordPress site to static HTML with localized assets, ready to host o
 
 == Description ==
 
-WP Static Export crawls your site, captures the fully rendered HTML of every page, downloads and localizes all assets (CSS, JS, images, fonts), and packages the result into a portable ZIP.
+Site to Static crawls your site, captures the fully rendered HTML of every page, downloads and localizes all assets (CSS, JS, images, fonts), and packages the result into a portable ZIP.
 
 The output is a plain static site you can commit to GitHub and deploy on Cloudflare Pages (or any static host).
 
@@ -32,7 +32,7 @@ By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant.
 
 == Installation ==
 
-1. Upload the `wp-static-export` folder to `/wp-content/plugins/`.
+1. Upload the `site-to-static` folder to `/wp-content/plugins/`.
 2. Activate the plugin through the Plugins screen.
 3. Open the **Static Export** menu, configure settings, then run an export.
 4. Download the ZIP and follow the Deploy tab instructions.
@@ -49,9 +49,10 @@ They are server-side features and cannot work on a static host, so they are remo
 
 = Does the export include any credit or branding? =
 
-No, not unless you enable it. Under Settings → Attribution you can opt in to an invisible, source-code-only credit for WP Static Export. It is off by default and never appears in the browser.
+No, not unless you enable it. Under Settings → Attribution you can opt in to an invisible, source-code-only credit for Site to Static. It is off by default and never appears in the browser.
 
 == Changelog ==
 
 = 1.0.0 =
 * Initial release.
+* Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.

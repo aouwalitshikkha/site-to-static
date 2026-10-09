@@ -1,4 +1,4 @@
-/* global jQuery, WSE */
+/* global jQuery, STS */
 ( function ( $ ) {
 	'use strict';
 
@@ -11,7 +11,7 @@
 		if ( ! $.isArray( lines ) ) {
 			lines = [ lines ];
 		}
-		var $log = $( '#wse-log' );
+		var $log = $( '#sts-log' );
 		lines.forEach( function ( line ) {
 			if ( line ) {
 				$log.append( $( '<div>' ).text( line ) );
@@ -21,38 +21,38 @@
 	}
 
 	function phase( text ) {
-		$( '#wse-phase' ).text( text );
+		$( '#sts-phase' ).text( text );
 	}
 
 	function setCounts( counts ) {
 		counts = counts || {};
 		var done  = counts.done || 0;
 		var total = counts.total || 0;
-		$( '#wse-processed' ).text( done );
-		$( '#wse-total' ).text( total );
-		$( '#wse-errors' ).text( counts.error || 0 );
+		$( '#sts-processed' ).text( done );
+		$( '#sts-total' ).text( total );
+		$( '#sts-errors' ).text( counts.error || 0 );
 		var pct = total > 0 ? Math.min( 100, Math.round( ( done / total ) * 100 ) ) : 0;
-		$( '#wse-bar-fill' ).css( 'width', pct + '%' );
+		$( '#sts-bar-fill' ).css( 'width', pct + '%' );
 	}
 
 	function fail( res ) {
-		var message = WSE.i18n.error;
+		var message = STS.i18n.error;
 		if ( res && res.data && res.data.message ) {
 			message = res.data.message;
 		} else if ( typeof res === 'string' ) {
 			message = res;
 		}
-		phase( WSE.i18n.error );
-		$( '#wse-spinner' ).removeClass( 'is-active' );
-		$( '#wse-start' ).prop( 'disabled', false );
-		$( '#wse-result' ).removeAttr( 'hidden' ).html(
+		phase( STS.i18n.error );
+		$( '#sts-spinner' ).removeClass( 'is-active' );
+		$( '#sts-start' ).prop( 'disabled', false );
+		$( '#sts-result' ).removeAttr( 'hidden' ).html(
 			$( '<div class="notice notice-error"><p></p></div>' ).find( 'p' ).text( message ).end()
 		);
 	}
 
 	function finalize() {
-		phase( WSE.i18n.finalizing );
-		$.post( WSE.ajaxUrl, { action: 'wse_finalize', nonce: WSE.nonce, job_id: jobId } )
+		phase( STS.i18n.finalizing );
+		$.post( STS.ajaxUrl, { action: 'sts_finalize', nonce: STS.nonce, job_id: jobId } )
 			.done( function ( res ) {
 				if ( ! res || ! res.success ) {
 					fail( res );
@@ -63,17 +63,17 @@
 					return;
 				}
 				setCounts( res.data.counts );
-				$( '#wse-spinner' ).removeClass( 'is-active' );
-				$( '#wse-start' ).prop( 'disabled', false );
-				phase( WSE.i18n.done );
+				$( '#sts-spinner' ).removeClass( 'is-active' );
+				$( '#sts-start' ).prop( 'disabled', false );
+				phase( STS.i18n.done );
 				log( res.data.log );
 				var $notice = $( '<div class="notice notice-success"><p></p></div>' );
 				$notice.find( 'p' )
-					.text( WSE.i18n.done + ' ' )
+					.text( STS.i18n.done + ' ' )
 					.append( $( '<a class="button button-primary" download></a>' )
 						.attr( 'href', res.data.zip )
-						.text( WSE.i18n.download ) );
-				$( '#wse-result' ).removeAttr( 'hidden' ).empty().append( $notice );
+						.text( STS.i18n.download ) );
+				$( '#sts-result' ).removeAttr( 'hidden' ).empty().append( $notice );
 			} )
 			.fail( function () {
 				fail();
@@ -81,8 +81,8 @@
 	}
 
 	function runBatch() {
-		phase( WSE.i18n.crawling );
-		$.post( WSE.ajaxUrl, { action: 'wse_batch', nonce: WSE.nonce, job_id: jobId } )
+		phase( STS.i18n.crawling );
+		$.post( STS.ajaxUrl, { action: 'sts_batch', nonce: STS.nonce, job_id: jobId } )
 			.done( function ( res ) {
 				if ( ! res || ! res.success ) {
 					fail( res );
@@ -102,21 +102,21 @@
 	}
 
 	$( function () {
-		$( '#wse-start' ).on( 'click', function () {
-			if ( ! window.confirm( WSE.i18n.confirm ) ) {
+		$( '#sts-start' ).on( 'click', function () {
+			if ( ! window.confirm( STS.i18n.confirm ) ) {
 				return;
 			}
-			$( '#wse-start' ).prop( 'disabled', true );
-			$( '#wse-spinner' ).addClass( 'is-active' );
-			$( '#wse-progress' ).removeAttr( 'hidden' );
-			$( '#wse-result' ).attr( 'hidden', 'hidden' ).empty();
-			$( '#wse-log' ).empty();
+			$( '#sts-start' ).prop( 'disabled', true );
+			$( '#sts-spinner' ).addClass( 'is-active' );
+			$( '#sts-progress' ).removeAttr( 'hidden' );
+			$( '#sts-result' ).attr( 'hidden', 'hidden' ).empty();
+			$( '#sts-log' ).empty();
 			jobId = null;
 			setCounts( {} );
-			phase( WSE.i18n.starting );
-			log( WSE.i18n.starting );
+			phase( STS.i18n.starting );
+			log( STS.i18n.starting );
 
-			$.post( WSE.ajaxUrl, { action: 'wse_start', nonce: WSE.nonce } )
+			$.post( STS.ajaxUrl, { action: 'sts_start', nonce: STS.nonce } )
 				.done( function ( res ) {
 					if ( ! res || ! res.success ) {
 						fail( res );
@@ -124,7 +124,7 @@
 					}
 					jobId = res.data.job_id;
 					setCounts( res.data.counts );
-					log( WSE.i18n.discovered.replace( '%s', res.data.total || 0 ) );
+					log( STS.i18n.discovered.replace( '%s', res.data.total || 0 ) );
 					runBatch();
 				} )
 				.fail( function () {
