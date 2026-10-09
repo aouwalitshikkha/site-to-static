@@ -591,7 +591,6 @@ class WSE_Exporter {
 		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		if ( WSE_Brand::should_include() ) {
 			$xml .= WSE_Brand::xml_comment() . "\n";
-			$xml .= WSE_Brand::encoded_comment() . "\n";
 		}
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 		foreach ( $urls as $u ) {

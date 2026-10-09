@@ -104,6 +104,13 @@ unset( $wse_post_types['attachment'] );
 			</td>
 		</tr>
 		<tr>
+			<th scope="row"><?php esc_html_e( 'Attribution', 'wp-static-export' ); ?></th>
+			<td>
+				<label class="wse-inline"><input type="checkbox" name="wse_settings[show_credit]" value="1" <?php checked( $wse['show_credit'] ); ?> /> <?php esc_html_e( 'Include an invisible author credit comment in exported files', 'wp-static-export' ); ?></label>
+				<p class="description"><?php esc_html_e( 'Optional and off by default. Adds a source-code-only credit for WP Static Export. It never appears in the browser.', 'wp-static-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
 			<th scope="row"><label for="wse_batch_size"><?php esc_html_e( 'Batch size', 'wp-static-export' ); ?></label></th>
 			<td>
 				<input type="number" min="1" max="50" id="wse_batch_size" name="wse_settings[batch_size]" value="<?php echo esc_attr( $wse['batch_size'] ); ?>" class="small-text" />

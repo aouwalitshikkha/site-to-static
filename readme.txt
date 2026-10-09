@@ -28,6 +28,7 @@ The output is a plain static site you can commit to GitHub and deploy on Cloudfl
 * Generates `404.html`, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
 * Chunked, timeout-safe export with a live progress log.
 * Optional WP-CLI command: `wp static-export run`.
+* Optional, invisible author credit (off by default) that can be enabled in Settings.
 
 == Installation ==
 
@@ -45,6 +46,10 @@ Sites that rely heavily on client-side JavaScript (WooCommerce cart, some page b
 = What happens to search and comments? =
 
 They are server-side features and cannot work on a static host, so they are removed from the export.
+
+= Does the export include any credit or branding? =
+
+No, not unless you enable it. Under Settings → Attribution you can opt in to an invisible, source-code-only credit for WP Static Export. It is off by default and never appears in the browser.
 
 == Changelog ==
 

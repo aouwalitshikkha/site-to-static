@@ -79,7 +79,6 @@ class WSE_HTML_Processor {
 		$branded        = false;
 		if ( $include_credit ) {
 			$branded = $this->add_brand_comment( $doc );
-			$this->add_encoded_marker( $doc );
 			$this->add_footer_comment( $doc, $job_id );
 		}
 
@@ -127,33 +126,6 @@ class WSE_HTML_Processor {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Insert the encoded credit marker as the first node of <body>.
-	 * A plain-text search for the author name or URL will not find it.
-	 *
-	 * @param DOMDocument $doc Document.
-	 * @return void
-	 */
-	protected function add_encoded_marker( DOMDocument $doc ) {
-		$comment = $doc->createComment( base64_encode( implode( ' | ', WSE_Brand::lines() ) ) );
-
-		$bodies = $doc->getElementsByTagName( 'body' );
-		if ( $bodies->length ) {
-			$body = $bodies->item( 0 );
-			if ( $body->firstChild ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-				$body->insertBefore( $comment, $body->firstChild ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-			} else {
-				$body->appendChild( $comment );
-			}
-			return;
-		}
-
-		$htmls = $doc->getElementsByTagName( 'html' );
-		if ( $htmls->length ) {
-			$htmls->item( 0 )->appendChild( $comment );
-		}
 	}
 
 	/**

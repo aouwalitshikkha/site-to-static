@@ -114,16 +114,6 @@ class WSE_Brand {
 	}
 
 	/**
-	 * Encoded credit marker. Decodes (base64) to the plain credit text.
-	 * A plain-text search for the author name or URL will not find it.
-	 *
-	 * @return string Full "<!-- ... -->" block, safe in HTML and XML.
-	 */
-	public static function encoded_comment() {
-		return '<!--' . base64_encode( implode( ' | ', self::lines() ) ) . '-->';
-	}
-
-	/**
 	 * CSS file credit.
 	 *
 	 * @return string
