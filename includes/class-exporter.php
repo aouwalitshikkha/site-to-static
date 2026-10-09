@@ -1,0 +1,635 @@
+<?php
+/**
+ * Export orchestration.
+ *
+ * @package WP_Static_Export
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Class WSE_Exporter
+ */
+class WSE_Exporter {
+
+	/**
+	 * Jobs option name.
+	 *
+	 * @var string
+	 */
+	const JOBS_OPTION = 'wse_jobs';
+
+	/**
+	 * Writer.
+	 *
+	 * @var WSE_Writer
+	 */
+	protected $writer;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		$this->writer = new WSE_Writer();
+	}
+
+	/**
+	 * Job items table name.
+	 *
+	 * @return string
+	 */
+	public function table() {
+		global $wpdb;
+		return $wpdb->prefix . 'wpstatic_job_items';
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Job lifecycle
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Start a new export job.
+	 *
+	 * @return array|WP_Error Job data or error.
+	 */
+	public function start() {
+		$job_id = substr( md5( uniqid( (string) mt_rand(), true ) ), 0, 20 );
+
+		$uploads = wp_upload_dir();
+		if ( ! empty( $uploads['error'] ) ) {
+			return new WP_Error( 'wse_uploads', $uploads['error'] );
+		}
+
+		$base      = trailingslashit( $uploads['basedir'] ) . 'wp-static-export';
+		$output    = $base . '/' . $job_id . '/site';
+		$zip_path  = $base . '/' . $job_id . '.zip';
+
+		if ( ! wp_mkdir_p( $output ) ) {
+			return new WP_Error( 'wse_mkdir', __( 'Could not create the export directory.', 'wp-static-export' ) );
+		}
+
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $this->table() . ' WHERE job_id = %s', $job_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+
+		$this->writer->set_output_dir( $output );
+
+		$discovery = new WSE_URL_Discovery();
+		$urls      = $discovery->discover();
+
+		$inserted = $this->insert_items( $job_id, $urls, 'page' );
+
+		$job = array(
+			'id'         => $job_id,
+			'started'    => current_time( 'mysql' ),
+			'phase'      => 'crawl',
+			'output_dir' => $output,
+			'zip_path'   => $zip_path,
+			'zip_url'    => trailingslashit( $uploads['baseurl'] ) . 'wp-static-export/' . $job_id . '.zip',
+			'notice'     => array(),
+		);
+		$this->save_job( $job );
+
+		$counts = $this->counts( $job_id );
+
+		return array(
+			'job_id' => $job_id,
+			'total'  => $counts['total'],
+			'counts' => $counts,
+		);
+	}
+
+	/**
+	 * Process a batch of pending items.
+	 *
+	 * @param string $job_id Job ID.
+	 * @param int    $limit  Max items.
+	 * @return array|WP_Error
+	 */
+	public function process_batch( $job_id, $limit = 5 ) {
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return new WP_Error( 'wse_no_job', __( 'Export job not found.', 'wp-static-export' ) );
+		}
+
+		global $wpdb;
+		$table = $this->table();
+
+		$this->writer->set_output_dir( $job['output_dir'] );
+
+		$items = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE job_id = %s AND status = 'pending' ORDER BY item_type = 'asset' ASC, id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$job_id,
+				$limit
+			)
+		);
+
+		if ( empty( $items ) ) {
+			return array(
+				'done'   => true,
+				'counts' => $this->counts( $job_id ),
+			);
+		}
+
+		$log = array();
+		foreach ( $items as $item ) {
+			if ( 'page' === $item->item_type ) {
+				$log[] = $this->process_page_item( $job_id, $item );
+			} else {
+				$log[] = $this->process_asset_item( $job_id, $item );
+			}
+		}
+
+		$counts = $this->counts( $job_id );
+
+		return array(
+			'done'   => ( $counts['pending'] < 1 ),
+			'counts' => $counts,
+			'log'    => array_values( array_filter( $log ) ),
+		);
+	}
+
+	/**
+	 * Finalize a job: extras, redirects, sitemap, zip.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array|WP_Error
+	 */
+	public function finalize( $job_id ) {
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return new WP_Error( 'wse_no_job', __( 'Export job not found.', 'wp-static-export' ) );
+		}
+
+		$this->writer->set_output_dir( $job['output_dir'] );
+		$notices = array();
+
+		$counts = $this->counts( $job_id );
+		if ( $counts['pending'] > 0 ) {
+			return array(
+				'done'   => false,
+				'counts' => $counts,
+			);
+		}
+
+		$this->writer->write( '404.html', $this->build_404() );
+
+		if ( WSE_Settings::get( 'generate_sitemap' ) ) {
+			$this->writer->write( 'sitemap.xml', $this->build_sitemap( $job_id ) );
+		}
+		if ( WSE_Settings::get( 'generate_robots' ) ) {
+			$this->writer->write( 'robots.txt', $this->build_robots() );
+		}
+
+		$this->writer->write( '_redirects', $this->build_redirects() );
+		$this->writer->write( '_headers', $this->build_headers() );
+
+		$zip = new WSE_Zip();
+		$res = $zip->zip_dir( $job['output_dir'], $job['zip_path'] );
+		if ( is_wp_error( $res ) ) {
+			return $res;
+		}
+
+		if ( 0 === $counts['done'] ) {
+			$notices[] = __( 'No pages were exported. Check your post type settings.', 'wp-static-export' );
+		}
+
+		$job['phase']  = 'done';
+		$job['notice'] = $notices;
+		$job['finished'] = current_time( 'mysql' );
+		$this->save_job( $job );
+
+		return array(
+			'done'   => true,
+			'counts' => $counts,
+			'zip'    => $job['zip_url'],
+			'log'    => $notices,
+		);
+	}
+
+	/**
+	 * Get progress counts.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array
+	 */
+	public function counts( $job_id ) {
+		global $wpdb;
+		$table = $this->table();
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare( "SELECT status, COUNT(*) AS n FROM {$table} WHERE job_id = %s GROUP BY status", $job_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			ARRAY_A
+		);
+
+		$counts = array(
+			'pending' => 0,
+			'done'    => 0,
+			'error'   => 0,
+			'skipped' => 0,
+			'total'   => 0,
+		);
+		foreach ( (array) $rows as $row ) {
+			$status = $row['status'];
+			if ( isset( $counts[ $status ] ) ) {
+				$counts[ $status ] = (int) $row['n'];
+			}
+			$counts['total'] += (int) $row['n'];
+		}
+		return $counts;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Item processing
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Process a page item.
+	 *
+	 * @param string $job_id Job ID.
+	 * @param object $item   Row.
+	 * @return string Log line.
+	 */
+	protected function process_page_item( $job_id, $item ) {
+		$crawler = new WSE_Crawler();
+		$result  = $crawler->fetch( $item->source_url, false );
+
+		if ( '' !== $result['error'] || $result['status'] >= 400 || '' === $result['body'] ) {
+			$this->mark( $item->id, 'error', $result['status'], '' !== $result['error'] ? $result['error'] : 'HTTP ' . $result['status'] );
+			return sprintf( '[error] %s (%s)', $item->source_url, $result['status'] );
+		}
+
+		$processor = new WSE_HTML_Processor( $this->writer );
+
+		if ( $this->is_non_html( $item->local_path, $result['headers'] ) ) {
+			$body = $this->rewrite_absolute_urls( $result['body'] );
+			$this->writer->write( $item->local_path, $body );
+			$this->mark( $item->id, 'done', $result['status'], '' );
+			return sprintf( '[feed] %s -> %s', $item->source_url, $item->local_path );
+		}
+
+		$processed = $processor->process( $result['body'], $item->source_url, $item->local_path );
+
+		$this->writer->write( $item->local_path, $processed['html'] );
+
+		if ( ! empty( $processed['assets'] ) ) {
+			$this->insert_items( $job_id, $processed['assets'], 'asset' );
+		}
+
+		$this->mark( $item->id, 'done', $result['status'], '' );
+		return sprintf( '[page] %s -> %s', $item->source_url, $item->local_path );
+	}
+
+	/**
+	 * Process an asset item.
+	 *
+	 * @param string $job_id Job ID.
+	 * @param object $item   Row.
+	 * @return string Log line.
+	 */
+	protected function process_asset_item( $job_id, $item ) {
+		if ( $this->writer->exists( $item->local_path ) ) {
+			$this->mark( $item->id, 'skipped', 0, 'already downloaded' );
+			return '';
+		}
+
+		$processor = new WSE_Asset_Processor( $this->writer, new WSE_Crawler() );
+		$result    = $processor->process( $item->source_url, $item->local_path );
+
+		if ( ! empty( $result['assets'] ) ) {
+			$this->insert_items( $job_id, $result['assets'], 'asset' );
+		}
+
+		if ( '' !== $result['error'] ) {
+			$this->mark( $item->id, 'error', $result['status'], $result['error'] );
+			return sprintf( '[asset error] %s (%s)', $item->source_url, $result['error'] );
+		}
+
+		$this->mark( $item->id, 'done', $result['status'], '' );
+		return sprintf( '[asset] %s', $item->source_url );
+	}
+
+	/**
+	 * Insert items (deduplicated).
+	 *
+	 * @param string   $job_id Job ID.
+	 * @param string[] $urls   URLs.
+	 * @param string   $type   "page" or "asset".
+	 * @return int
+	 */
+	protected function insert_items( $job_id, $urls, $type ) {
+		global $wpdb;
+		$table = $this->table();
+		$now   = current_time( 'mysql' );
+		$count = 0;
+		$chunk = array();
+
+		foreach ( (array) $urls as $url ) {
+			$url = trim( (string) $url );
+			if ( '' === $url ) {
+				continue;
+			}
+			$hash = md5( $type . '|' . $url );
+			$path = ( 'page' === $type )
+				? $this->writer->url_to_local_path( $url, 'page' )
+				: $this->writer->url_to_local_path( $url, 'asset' );
+
+			$chunk[] = $wpdb->prepare( '(%s, %s, %s, %s, %s, %s, %s)', $job_id, $type, $url, $hash, $path, 'pending', $now );
+
+			if ( count( $chunk ) >= 100 ) {
+				$count += $this->flush_insert( $chunk );
+				$chunk  = array();
+			}
+		}
+
+		if ( ! empty( $chunk ) ) {
+			$count += $this->flush_insert( $chunk );
+		}
+
+		return $count;
+	}
+
+	/**
+	 * Flush a chunk of prepared value tuples via INSERT IGNORE.
+	 *
+	 * @param array $chunk Prepared tuples.
+	 * @return int
+	 */
+	protected function flush_insert( array $chunk ) {
+		global $wpdb;
+		$table = $this->table();
+		$sql   = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at) VALUES " . implode( ', ', $chunk );
+		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		return false === $result ? 0 : (int) $result;
+	}
+
+	/**
+	 * Mark an item status.
+	 *
+	 * @param int    $id          Item ID.
+	 * @param string $status      Status.
+	 * @param int    $http_status HTTP status.
+	 * @param string $message     Message.
+	 * @return void
+	 */
+	protected function mark( $id, $status, $http_status, $message ) {
+		global $wpdb;
+		$wpdb->update(
+			$this->table(),
+			array(
+				'status'      => $status,
+				'http_status' => (int) $http_status,
+				'message'     => $message,
+			),
+			array( 'id' => (int) $id ),
+			array( '%s', '%d', '%s' ),
+			array( '%d' )
+		);
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Job storage
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Save job data.
+	 *
+	 * @param array $job Job data.
+	 * @return void
+	 */
+	protected function save_job( array $job ) {
+		$jobs = get_option( self::JOBS_OPTION, array() );
+		if ( ! is_array( $jobs ) ) {
+			$jobs = array();
+		}
+		$jobs[ $job['id'] ] = $job;
+
+		if ( count( $jobs ) > 5 ) {
+			$jobs = array_slice( $jobs, -5, 5, true );
+		}
+		update_option( self::JOBS_OPTION, $jobs );
+	}
+
+	/**
+	 * Get job data.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array|null
+	 */
+	public function get_job( $job_id ) {
+		$jobs = get_option( self::JOBS_OPTION, array() );
+		return ( is_array( $jobs ) && isset( $jobs[ $job_id ] ) ) ? $jobs[ $job_id ] : null;
+	}
+
+	/* ---------------------------------------------------------------------
+	 * Static extras
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Whether a response should be stored without HTML processing.
+	 *
+	 * @param string $local_path Local path.
+	 * @param array  $headers    Response headers.
+	 * @return bool
+	 */
+	protected function is_non_html( $local_path, array $headers ) {
+		if ( preg_match( '~\.(?:xml|json|txt|rss|atom|xsl)$~i', $local_path ) ) {
+			return true;
+		}
+
+		$ct = '';
+		if ( isset( $headers['content-type'] ) ) {
+			$ct = is_array( $headers['content-type'] ) ? reset( $headers['content-type'] ) : $headers['content-type'];
+		}
+		$ct = strtolower( (string) $ct );
+		if ( '' === $ct || false !== strpos( $ct, 'html' ) ) {
+			return false;
+		}
+		foreach ( array( 'xml', 'rss', 'atom', 'json', 'plain' ) as $needle ) {
+			if ( false !== strpos( $ct, $needle ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Replace local origin URLs with the configured public URL in raw text.
+	 *
+	 * @param string $body Raw content.
+	 * @return string
+	 */
+	protected function rewrite_absolute_urls( $body ) {
+		$public = WSE_Settings::get( 'public_url' );
+		$target = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
+
+		$body = str_replace( untrailingslashit( home_url() ), $target, $body );
+		$body = str_replace( untrailingslashit( site_url() ), $target, $body );
+
+		return $body;
+	}
+
+	/**
+	 * Build a static 404 page.
+	 *
+	 * @return string
+	 */
+	protected function build_404() {
+		$url     = home_url( '/wse-404-' . wp_generate_password( 10, false ) . '/' );
+		$crawler = new WSE_Crawler();
+		$result  = $crawler->fetch( $url, false );
+
+		if ( '' === $result['body'] ) {
+			return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
+		}
+
+		$processor = new WSE_HTML_Processor( $this->writer );
+		$processed = $processor->process( $result['body'], $url, '404.html' );
+
+		$this->download_recursive( $processed['assets'] );
+
+		return $processed['html'];
+	}
+
+	/**
+	 * Download a set of assets (and their references), skipping existing files.
+	 *
+	 * @param string[] $urls URLs.
+	 * @return void
+	 */
+	protected function download_recursive( array $urls ) {
+		$processor = new WSE_Asset_Processor( $this->writer, new WSE_Crawler() );
+		$queue     = array_values( array_unique( $urls ) );
+		$seen      = array();
+		$guard     = 0;
+
+		while ( ! empty( $queue ) && $guard < 500 ) {
+			$guard++;
+			$url = array_shift( $queue );
+			if ( isset( $seen[ $url ] ) ) {
+				continue;
+			}
+			$seen[ $url ] = true;
+
+			$local = $this->writer->url_to_local_path( $url, 'asset' );
+			if ( $this->writer->exists( $local ) ) {
+				continue;
+			}
+			$res = $processor->process( $url, $local );
+			foreach ( (array) $res['assets'] as $new ) {
+				if ( ! isset( $seen[ $new ] ) ) {
+					$queue[] = $new;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Build sitemap.xml.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return string
+	 */
+	protected function build_sitemap( $job_id ) {
+		global $wpdb;
+		$table = $this->table();
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT source_url FROM {$table} WHERE job_id = %s AND item_type = 'page' AND status IN ('done','skipped')", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$job_id
+			)
+		);
+
+		$public = WSE_Settings::get( 'public_url' );
+		$public = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
+		$base   = (string) wp_parse_url( home_url(), PHP_URL_PATH );
+		$base   = '/' === $base ? '' : untrailingslashit( $base );
+
+		$urls = array();
+		foreach ( (array) $rows as $row ) {
+			if ( preg_match( '~[?&]feed=~i', $row->source_url ) ) {
+				continue;
+			}
+			$path = (string) wp_parse_url( $row->source_url, PHP_URL_PATH );
+			if ( '' !== $base && 0 === strpos( $path, $base ) ) {
+				$path = substr( $path, strlen( $base ) );
+			}
+			$path = '/' . ltrim( $path, '/' );
+			if ( preg_match( '~/feed/?$~', $path ) || preg_match( '~\.(?:xml|json|txt)$~i', $path ) ) {
+				continue;
+			}
+			$urls[] = $public . $path;
+		}
+		$urls = array_values( array_unique( $urls ) );
+
+		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+		foreach ( $urls as $u ) {
+			$xml .= "\t<url><loc>" . esc_url( $u ) . "</loc></url>\n";
+		}
+		$xml .= '</urlset>' . "\n";
+
+		return $xml;
+	}
+
+	/**
+	 * Build robots.txt.
+	 *
+	 * @return string
+	 */
+	protected function build_robots() {
+		$public = WSE_Settings::get( 'public_url' );
+		$public = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
+
+		$out  = "User-agent: *\n";
+		$out .= "Allow: /\n\n";
+		if ( WSE_Settings::get( 'generate_sitemap' ) ) {
+			$out .= "Sitemap: {$public}/sitemap.xml\n";
+		}
+		return $out;
+	}
+
+	/**
+	 * Build the Cloudflare Pages _redirects file.
+	 *
+	 * @return string
+	 */
+	protected function build_redirects() {
+		$lines = array(
+			'# Generated by WP Static Export',
+			'/index.php / 301',
+			'/wp-login.php / 301',
+			'/wp-admin/* / 301',
+			'/xmlrpc.php / 301',
+			'/feed/ /feed/index.xml 200',
+			'/feed /feed/index.xml 200',
+			'/:path*/feed/ /:path*/feed/index.xml 200',
+		);
+
+		if ( WSE_Settings::get( 'preserve_redirects' ) ) {
+			$lines[] = '# Add legacy path redirects below as needed.';
+		}
+
+		return implode( "\n", $lines ) . "\n";
+	}
+
+	/**
+	 * Build the Cloudflare Pages _headers file.
+	 *
+	 * @return string
+	 */
+	protected function build_headers() {
+		$lines = array(
+			'/*.css',
+			'  Cache-Control: public, max-age=2592000',
+			'/*.js',
+			'  Cache-Control: public, max-age=2592000',
+			'/wp-content/uploads/*',
+			'  Cache-Control: public, max-age=31536000, immutable',
+			'/assets/*',
+			'  Cache-Control: public, max-age=31536000, immutable',
+			'/index.html',
+			'  Cache-Control: public, max-age=0, must-revalidate',
+		);
+		return implode( "\n", $lines ) . "\n";
+	}
+}

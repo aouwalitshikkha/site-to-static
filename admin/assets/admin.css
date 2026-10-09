@@ -1,0 +1,92 @@
+.wse-wrap .wse-intro {
+	max-width: 760px;
+	font-size: 14px;
+}
+
+.wse-wrap .wse-inline {
+	margin-bottom: 4px;
+	display: inline-block;
+}
+
+.wse-wrap .wse-tabs {
+	margin-bottom: 20px;
+}
+
+.wse-spinner {
+	float: none;
+	margin-left: 10px;
+}
+
+.wse-progress {
+	max-width: 760px;
+	margin: 18px 0;
+}
+
+.wse-bar {
+	height: 18px;
+	background: #e0e0e0;
+	border-radius: 9px;
+	overflow: hidden;
+}
+
+.wse-bar > span {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: #2271b1;
+	border-radius: 9px;
+	transition: width 0.25s ease;
+}
+
+.wse-stats {
+	margin-top: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px;
+	color: #50575e;
+}
+
+.wse-stats em {
+	font-style: normal;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.wse-log {
+	max-height: 340px;
+	overflow: auto;
+	background: #1d2327;
+	color: #dcdcde;
+	padding: 12px 14px;
+	border-radius: 6px;
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.wse-result {
+	margin: 16px 0;
+}
+
+.wse-code {
+	background: #f0f0f1;
+	padding: 12px 14px;
+	border-radius: 6px;
+	overflow: auto;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.wse-steps > li {
+	margin-bottom: 18px;
+}
+
+.wse-sublist {
+	list-style: decimal;
+	margin-left: 20px;
+}
+
+.wse-deploy .wse-steps > li > p {
+	margin: 0 0 6px;
+}
