@@ -1,6 +1,6 @@
 === WP Static Export ===
-Contributors: aouwalitshikkha
-Tags: static, export, static site, cloudflare pages, github
+Contributors: aouwal
+Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4

@@ -93,6 +93,9 @@ class WSE_Admin {
 					'done'       => __( 'Export complete.', 'wp-static-export' ),
 					'error'      => __( 'An error occurred.', 'wp-static-export' ),
 					'confirm'    => __( 'Start a new static export?', 'wp-static-export' ),
+					'download'   => __( 'Download export ZIP', 'wp-static-export' ),
+					/* translators: %s: number of discovered URLs. */
+					'discovered' => __( 'Discovered %s URLs.', 'wp-static-export' ),
 				),
 			)
 		);

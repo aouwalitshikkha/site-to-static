@@ -343,7 +343,36 @@ class WSE_Writer {
 	 */
 	public function write( $local, $contents ) {
 		$this->ensure_dir_for( $local );
-		return false !== file_put_contents( $this->abs_path( $local ), $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		$abs = $this->abs_path( $local );
+
+		$fs = $this->filesystem();
+		if ( $fs ) {
+			return (bool) $fs->put_contents( $abs, $contents, FS_CHMOD_FILE );
+		}
+
+		return false !== file_put_contents( $abs, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- fallback when WP_Filesystem is unavailable.
+	}
+
+	/**
+	 * Get an initialized WP_Filesystem instance, if available.
+	 *
+	 * @return WP_Filesystem_Base|null
+	 */
+	protected function filesystem() {
+		global $wp_filesystem;
+		if ( $wp_filesystem instanceof WP_Filesystem_Base ) {
+			return $wp_filesystem;
+		}
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( function_exists( 'WP_Filesystem' ) && WP_Filesystem() ) {
+			global $wp_filesystem;
+			if ( $wp_filesystem instanceof WP_Filesystem_Base ) {
+				return $wp_filesystem;
+			}
+		}
+		return null;
 	}
 
 	/**

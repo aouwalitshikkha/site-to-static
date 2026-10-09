@@ -72,7 +72,7 @@
 					.text( WSE.i18n.done + ' ' )
 					.append( $( '<a class="button button-primary" download></a>' )
 						.attr( 'href', res.data.zip )
-						.text( 'Download export ZIP' ) );
+						.text( WSE.i18n.download ) );
 				$( '#wse-result' ).removeAttr( 'hidden' ).empty().append( $notice );
 			} )
 			.fail( function () {
@@ -124,7 +124,7 @@
 					}
 					jobId = res.data.job_id;
 					setCounts( res.data.counts );
-					log( 'Discovered ' + ( res.data.total || 0 ) + ' URLs.' );
+					log( WSE.i18n.discovered.replace( '%s', res.data.total || 0 ) );
 					runBatch();
 				} )
 				.fail( function () {

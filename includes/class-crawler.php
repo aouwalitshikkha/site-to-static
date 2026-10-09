@@ -23,7 +23,7 @@ class WSE_Crawler {
 		$args = array(
 			'timeout'     => 60,
 			'redirection' => 5,
-			'sslverify'   => false,
+			'sslverify'   => ! $this->is_local_host( $url ),
 			'user-agent'  => 'WP-Static-Export/' . WSE_VERSION . '; ' . home_url(),
 			'headers'     => array(
 				'Accept'          => $is_asset ? '*/*' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -67,6 +67,7 @@ class WSE_Crawler {
 	 * @return array|null
 	 */
 	protected function fetch_fallback( $url ) {
+		$verify = ! $this->is_local_host( $url );
 		$context = stream_context_create(
 			array(
 				'http' => array(
@@ -76,8 +77,8 @@ class WSE_Crawler {
 					'header'        => "Accept: */*\r\nAccept-Encoding: identity\r\n",
 				),
 				'ssl'  => array(
-					'verify_peer'      => false,
-					'verify_peer_name' => false,
+					'verify_peer'      => $verify,
+					'verify_peer_name' => $verify,
 				),
 			)
 		);
@@ -98,5 +99,28 @@ class WSE_Crawler {
 			'error'   => '',
 			'headers' => array(),
 		);
+	}
+
+	/**
+	 * Whether a URL points to a local development host.
+	 * SSL verification is only relaxed for these hosts.
+	 *
+	 * @param string $url URL.
+	 * @return bool
+	 */
+	protected function is_local_host( $url ) {
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		if ( '' === $host ) {
+			return true;
+		}
+		if ( in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true ) ) {
+			return true;
+		}
+		foreach ( array( '.local', '.localhost', '.test', '.invalid' ) as $suffix ) {
+			if ( substr( $host, -strlen( $suffix ) ) === $suffix ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
