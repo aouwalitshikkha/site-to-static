@@ -12,7 +12,7 @@ global $wpdb;
 delete_option( 'wse_settings' );
 delete_option( 'wse_jobs' );
 
-$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wpstatic_job_items" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wpstatic_job_items" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup of this plugin's own table.
 
 $uploads = wp_upload_dir();
 if ( empty( $uploads['error'] ) ) {

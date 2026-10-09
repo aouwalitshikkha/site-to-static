@@ -69,7 +69,7 @@ class WSE_Exporter {
 		}
 
 		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $this->table() . ' WHERE job_id = %s', $job_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $this->table() . ' WHERE job_id = %s', $job_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); values are prepared.
 
 		$this->writer->set_output_dir( $output );
 
@@ -116,6 +116,7 @@ class WSE_Exporter {
 
 		$this->writer->set_output_dir( $job['output_dir'] );
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); queue state changes every batch so caching cannot persist across requests. Values are prepared.
 		$items = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE job_id = %s AND status = 'pending' ORDER BY item_type = 'asset' ASC, id ASC LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -216,6 +217,7 @@ class WSE_Exporter {
 	public function counts( $job_id ) {
 		global $wpdb;
 		$table = $this->table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); counts change every batch so caching cannot persist across requests. Values are prepared.
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare( "SELECT status, COUNT(*) AS n FROM {$table} WHERE job_id = %s GROUP BY status", $job_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
@@ -361,7 +363,7 @@ class WSE_Exporter {
 		global $wpdb;
 		$table = $this->table();
 		$sql   = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at) VALUES " . implode( ', ', $chunk );
-		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; bulk insert of pre-escaped tuples. No caching applies to writes.
 		return false === $result ? 0 : (int) $result;
 	}
 
@@ -376,6 +378,7 @@ class WSE_Exporter {
 	 */
 	protected function mark( $id, $status, $http_status, $message ) {
 		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; $wpdb->update() escapes values via format arrays. No caching applies to writes.
 		$wpdb->update(
 			$this->table(),
 			array(
@@ -559,6 +562,7 @@ class WSE_Exporter {
 	protected function build_sitemap( $job_id ) {
 		global $wpdb;
 		$table = $this->table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); one-shot export read. Values are prepared.
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT source_url FROM {$table} WHERE job_id = %s AND item_type = 'page' AND status IN ('done','skipped')", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
