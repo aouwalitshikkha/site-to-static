@@ -24,7 +24,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Rewrites internal links to portable relative (or root-absolute) URLs.
 - Removes server-side features that cannot work statically (search forms, comment forms, comment feeds).
 - Strips WordPress version tags and staging `noindex` robots meta so the exported site is indexable.
-- Embeds an invisible HTML source-code credit (author attribution) in every exported file. It never shows in the browser and cannot be disabled.
+- Embeds invisible multi-part source-code credits (author attribution) in every exported file: a `<head>` comment, a fingerprinted footer comment, an encoded marker, plus credits in CSS/JS, feeds, sitemap, robots and Cloudflare files. They never show in the browser and cannot be disabled.
 - Generates `404.html`, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
 - Chunked, timeout-safe export with a live progress log.
 - Optional WP-CLI command: `wp static-export run`.

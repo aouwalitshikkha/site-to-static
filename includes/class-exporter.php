@@ -172,7 +172,7 @@ class WSE_Exporter {
 			);
 		}
 
-		$this->writer->write( '404.html', $this->build_404() );
+		$this->writer->write( '404.html', $this->build_404( $job_id ) );
 
 		if ( WSE_Settings::get( 'generate_sitemap' ) ) {
 			$this->writer->write( 'sitemap.xml', $this->build_sitemap( $job_id ) );
@@ -268,7 +268,7 @@ class WSE_Exporter {
 			return sprintf( '[feed] %s -> %s', $item->source_url, $item->local_path );
 		}
 
-		$processed = $processor->process( $result['body'], $item->source_url, $item->local_path );
+		$processed = $processor->process( $result['body'], $item->source_url, $item->local_path, $job_id );
 
 		$this->writer->write( $item->local_path, $processed['html'] );
 
@@ -491,19 +491,20 @@ class WSE_Exporter {
 	/**
 	 * Build a static 404 page.
 	 *
+	 * @param string $job_id Export job ID.
 	 * @return string
 	 */
-	protected function build_404() {
+	protected function build_404( $job_id ) {
 		$url     = home_url( '/wse-404-' . wp_generate_password( 10, false ) . '/' );
 		$crawler = new WSE_Crawler();
 		$result  = $crawler->fetch( $url, false );
 
 		if ( '' === $result['body'] ) {
-			return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
+			return WSE_Brand::html_comment() . "\n" . '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
 		}
 
 		$processor = new WSE_HTML_Processor( $this->writer );
-		$processed = $processor->process( $result['body'], $url, '404.html' );
+		$processed = $processor->process( $result['body'], $url, '404.html', $job_id );
 
 		$this->download_recursive( $processed['assets'] );
 
@@ -583,6 +584,7 @@ class WSE_Exporter {
 
 		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		$xml .= WSE_Brand::xml_comment() . "\n";
+		$xml .= WSE_Brand::encoded_comment() . "\n";
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 		foreach ( $urls as $u ) {
 			$xml .= "\t<url><loc>" . esc_url( $u ) . "</loc></url>\n";

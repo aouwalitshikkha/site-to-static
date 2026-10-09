@@ -61,10 +61,13 @@ class WSE_Asset_Processor {
 
 		if ( 'css' === $ext ) {
 			$processed  = $this->process_css( $result['body'], $url, $local_path );
-			$body       = $processed['css'];
+			$body       = $this->prepend_css_credit( $processed['css'] );
 			$discovered = $processed['assets'];
 		} else {
 			$body = $result['body'];
+			if ( in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
+				$body = WSE_Brand::js_comment() . "\n" . $body;
+			}
 		}
 
 		$this->writer->write( $local_path, $body );
@@ -119,6 +122,24 @@ class WSE_Asset_Processor {
 			'css'    => $css,
 			'assets' => array_values( array_unique( $assets ) ),
 		);
+	}
+
+	/**
+	 * Prepend the export credit to CSS. Keeps @charset first when present.
+	 *
+	 * @param string $css CSS contents.
+	 * @return string
+	 */
+	protected function prepend_css_credit( $css ) {
+		$credit = WSE_Brand::css_comment();
+		$trimmed = ltrim( $css, "\xEF\xBB\xBF \t\r\n" );
+		if ( 0 === stripos( $trimmed, '@charset' ) ) {
+			$semi = strpos( $trimmed, ';' );
+			if ( false !== $semi ) {
+				return substr( $trimmed, 0, $semi + 1 ) . "\n" . $credit . substr( $trimmed, $semi + 1 );
+			}
+		}
+		return $credit . "\n" . $css;
 	}
 
 	/**

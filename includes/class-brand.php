@@ -74,4 +74,54 @@ class WSE_Brand {
 	public static function text_comment() {
 		return '# ' . implode( ' | ', self::lines() );
 	}
+
+	/**
+	 * Per-export fingerprint lines (unique to each export job).
+	 *
+	 * @param string $job_id Export job ID.
+	 * @return string[]
+	 */
+	public static function footer_lines( $job_id ) {
+		$lines   = self::lines();
+		$lines[] = 'Export: ' . substr( (string) $job_id, 0, 12 ) . ' / ' . gmdate( 'Y-m-d H:i' ) . ' UTC';
+		return $lines;
+	}
+
+	/**
+	 * Footer HTML comment credit with per-export fingerprint.
+	 *
+	 * @param string $job_id Export job ID.
+	 * @return string Full "<!-- ... -->" block.
+	 */
+	public static function html_footer_comment( $job_id ) {
+		return '<!--' . "\n" . '  ' . implode( "\n" . '  ', self::footer_lines( $job_id ) ) . "\n" . '-->';
+	}
+
+	/**
+	 * Encoded credit marker. Decodes (base64) to the plain credit text.
+	 * A plain-text search for the author name or URL will not find it.
+	 *
+	 * @return string Full "<!-- ... -->" block, safe in HTML and XML.
+	 */
+	public static function encoded_comment() {
+		return '<!--' . base64_encode( implode( ' | ', self::lines() ) ) . '-->';
+	}
+
+	/**
+	 * CSS file credit.
+	 *
+	 * @return string
+	 */
+	public static function css_comment() {
+		return '/* ' . implode( ' | ', self::lines() ) . ' */';
+	}
+
+	/**
+	 * JS file credit.
+	 *
+	 * @return string
+	 */
+	public static function js_comment() {
+		return '// ' . implode( ' | ', self::lines() );
+	}
 }
