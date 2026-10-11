@@ -1,31 +1,31 @@
-/* Site to Static — branding: Abdul Aouwal (abdulaouwal.com)
+/* Aouwal Static Site Export — branding: Abdul Aouwal (abdulaouwal.com)
    Palette: slate dark (#0f172a / #1e293b) + indigo accent (#4f46e5) */
 
-.sts-wrap {
-	--sts-indigo: #4f46e5;
-	--sts-indigo-dark: #4338ca;
-	--sts-indigo-light: #a78bfa;
-	--sts-slate-900: #0f172a;
-	--sts-slate-800: #1e293b;
-	--sts-slate-700: #334155;
-	--sts-slate-200: #e2e8f0;
-	--sts-radius: 10px;
+.aouwal-wrap {
+	--aouwal-indigo: #4f46e5;
+	--aouwal-indigo-dark: #4338ca;
+	--aouwal-indigo-light: #a78bfa;
+	--aouwal-slate-900: #0f172a;
+	--aouwal-slate-800: #1e293b;
+	--aouwal-slate-700: #334155;
+	--aouwal-slate-200: #e2e8f0;
+	--aouwal-radius: 10px;
 }
 
 /* Branded header */
-.sts-brand {
+.aouwal-brand {
 	display: flex;
 	align-items: center;
 	gap: 16px;
 	margin: 16px 0 20px;
 	padding: 18px 22px;
-	border-radius: var(--sts-radius);
-	background: linear-gradient(135deg, var(--sts-slate-900) 0%, var(--sts-slate-800) 55%, var(--sts-indigo-dark) 140%);
+	border-radius: var(--aouwal-radius);
+	background: linear-gradient(135deg, var(--aouwal-slate-900) 0%, var(--aouwal-slate-800) 55%, var(--aouwal-indigo-dark) 140%);
 	color: #fff;
 	box-shadow: 0 6px 20px rgba(15, 23, 42, 0.25);
 }
 
-.sts-brand-mark {
+.aouwal-brand-mark {
 	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
@@ -35,44 +35,44 @@
 	border-radius: 12px;
 	background: rgba(255, 255, 255, 0.08);
 	border: 1px solid rgba(167, 139, 250, 0.5);
-	color: var(--sts-indigo-light);
+	color: var(--aouwal-indigo-light);
 	font-family: Consolas, Monaco, "SFMono-Regular", Menlo, monospace;
 	font-size: 18px;
 	font-weight: 700;
 	letter-spacing: -1px;
 }
 
-.sts-brand-text {
+.aouwal-brand-text {
 	display: flex;
 	flex-direction: column;
 	line-height: 1.3;
 }
 
-.sts-brand-title {
+.aouwal-brand-title {
 	font-size: 20px;
 	font-weight: 700;
 	letter-spacing: -0.2px;
 	color: #fff;
 }
 
-.sts-brand-sub {
+.aouwal-brand-sub {
 	font-size: 13px;
-	color: var(--sts-slate-200);
+	color: var(--aouwal-slate-200);
 }
 
-.sts-brand-sub a,
-.sts-brand-site {
-	color: var(--sts-indigo-light);
+.aouwal-brand-sub a,
+.aouwal-brand-site {
+	color: var(--aouwal-indigo-light);
 	text-decoration: none;
 }
 
-.sts-brand-sub a:hover,
-.sts-brand-site:hover {
+.aouwal-brand-sub a:hover,
+.aouwal-brand-site:hover {
 	color: #fff;
 	text-decoration: underline;
 }
 
-.sts-brand-site {
+.aouwal-brand-site {
 	margin-left: auto;
 	font-size: 13px;
 	font-weight: 600;
@@ -83,64 +83,64 @@
 }
 
 /* Tabs */
-.sts-wrap .sts-tabs {
+.aouwal-wrap .aouwal-tabs {
 	margin-bottom: 20px;
-	border-bottom-color: var(--sts-slate-200);
+	border-bottom-color: var(--aouwal-slate-200);
 }
 
-.sts-wrap .nav-tab-active,
-.sts-wrap .nav-tab-active:focus,
-.sts-wrap .nav-tab-active:hover {
-	border-bottom-color: var(--sts-indigo);
-	color: var(--sts-indigo);
+.aouwal-wrap .nav-tab-active,
+.aouwal-wrap .nav-tab-active:focus,
+.aouwal-wrap .nav-tab-active:hover {
+	border-bottom-color: var(--aouwal-indigo);
+	color: var(--aouwal-indigo);
 }
 
 /* Content */
-.sts-wrap .sts-intro {
+.aouwal-wrap .aouwal-intro {
 	max-width: 760px;
 	font-size: 14px;
 }
 
-.sts-wrap .sts-inline {
+.aouwal-wrap .aouwal-inline {
 	margin-bottom: 4px;
 	display: inline-block;
 }
 
-.sts-wrap .sts-settings h2,
-.sts-wrap .sts-deploy h2 {
+.aouwal-wrap .aouwal-settings h2,
+.aouwal-wrap .aouwal-deploy h2 {
 	margin-top: 28px;
 	padding-bottom: 8px;
-	border-bottom: 2px solid var(--sts-slate-200);
+	border-bottom: 2px solid var(--aouwal-slate-200);
 }
 
 /* Progress */
-.sts-spinner {
+.aouwal-spinner {
 	float: none;
 	margin-left: 10px;
 }
 
-.sts-progress {
+.aouwal-progress {
 	max-width: 760px;
 	margin: 18px 0;
 }
 
-.sts-bar {
+.aouwal-bar {
 	height: 18px;
-	background: var(--sts-slate-200);
+	background: var(--aouwal-slate-200);
 	border-radius: 9px;
 	overflow: hidden;
 }
 
-.sts-bar > span {
+.aouwal-bar > span {
 	display: block;
 	height: 100%;
 	width: 0;
-	background: linear-gradient(90deg, var(--sts-indigo) 0%, var(--sts-indigo-light) 100%);
+	background: linear-gradient(90deg, var(--aouwal-indigo) 0%, var(--aouwal-indigo-light) 100%);
 	border-radius: 9px;
 	transition: width 0.25s ease;
 }
 
-.sts-stats {
+.aouwal-stats {
 	margin-top: 8px;
 	display: flex;
 	flex-wrap: wrap;
@@ -148,20 +148,20 @@
 	color: #50575e;
 }
 
-.sts-stats em {
+.aouwal-stats em {
 	font-style: normal;
 	font-weight: 600;
-	color: var(--sts-slate-900);
+	color: var(--aouwal-slate-900);
 }
 
 /* Log */
-.sts-log {
+.aouwal-log {
 	max-height: 340px;
 	overflow: auto;
-	background: var(--sts-slate-900);
-	color: var(--sts-slate-200);
+	background: var(--aouwal-slate-900);
+	color: var(--aouwal-slate-200);
 	padding: 12px 14px;
-	border-radius: var(--sts-radius);
+	border-radius: var(--aouwal-radius);
 	font-family: Consolas, Monaco, "SFMono-Regular", Menlo, monospace;
 	font-size: 12px;
 	line-height: 1.5;
@@ -169,45 +169,45 @@
 	word-break: break-all;
 }
 
-.sts-result {
+.aouwal-result {
 	margin: 16px 0;
 }
 
 /* Deploy */
-.sts-code {
-	background: var(--sts-slate-900);
-	color: var(--sts-slate-200);
+.aouwal-code {
+	background: var(--aouwal-slate-900);
+	color: var(--aouwal-slate-200);
 	padding: 12px 14px;
-	border-radius: var(--sts-radius);
+	border-radius: var(--aouwal-radius);
 	overflow: auto;
 	font-family: Consolas, Monaco, "SFMono-Regular", Menlo, monospace;
 	font-size: 13px;
 	line-height: 1.6;
 }
 
-.sts-steps > li {
+.aouwal-steps > li {
 	margin-bottom: 18px;
 }
 
-.sts-sublist {
+.aouwal-sublist {
 	list-style: decimal;
 	margin-left: 20px;
 }
 
-.sts-deploy .sts-steps > li > p {
+.aouwal-deploy .aouwal-steps > li > p {
 	margin: 0 0 6px;
 }
 
 /* Buttons */
-.sts-wrap .button-primary {
-	background: var(--sts-indigo);
-	border-color: var(--sts-indigo-dark);
+.aouwal-wrap .button-primary {
+	background: var(--aouwal-indigo);
+	border-color: var(--aouwal-indigo-dark);
 	color: #fff;
 }
 
-.sts-wrap .button-primary:hover,
-.sts-wrap .button-primary:focus {
-	background: var(--sts-indigo-dark);
-	border-color: var(--sts-indigo-dark);
+.aouwal-wrap .button-primary:hover,
+.aouwal-wrap .button-primary:focus {
+	background: var(--aouwal-indigo-dark);
+	border-color: var(--aouwal-indigo-dark);
 	color: #fff;
 }

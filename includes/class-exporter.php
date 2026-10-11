@@ -2,27 +2,27 @@
 /**
  * Export orchestration.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class STS_Exporter
+ * Class AOUWAL_Exporter
  */
-class STS_Exporter {
+class AOUWAL_Exporter {
 
 	/**
 	 * Jobs option name.
 	 *
 	 * @var string
 	 */
-	const JOBS_OPTION = 'sts_jobs';
+	const JOBS_OPTION = 'aouwal_jobs';
 
 	/**
 	 * Writer.
 	 *
-	 * @var STS_Writer
+	 * @var AOUWAL_Writer
 	 */
 	protected $writer;
 
@@ -30,7 +30,7 @@ class STS_Exporter {
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->writer = new STS_Writer();
+		$this->writer = new AOUWAL_Writer();
 	}
 
 	/**
@@ -40,7 +40,7 @@ class STS_Exporter {
 	 */
 	public function table() {
 		global $wpdb;
-		return $wpdb->prefix . 'sts_job_items';
+		return $wpdb->prefix . 'aouwal_job_items';
 	}
 
 	/* ---------------------------------------------------------------------
@@ -57,15 +57,15 @@ class STS_Exporter {
 
 		$uploads = wp_upload_dir();
 		if ( ! empty( $uploads['error'] ) ) {
-			return new WP_Error( 'sts_uploads', $uploads['error'] );
+			return new WP_Error( 'aouwal_uploads', $uploads['error'] );
 		}
 
-		$base      = trailingslashit( $uploads['basedir'] ) . 'site-to-static';
+		$base      = trailingslashit( $uploads['basedir'] ) . 'aouwal-static-site-export';
 		$output    = $base . '/' . $job_id . '/site';
 		$zip_path  = $base . '/' . $job_id . '.zip';
 
 		if ( ! wp_mkdir_p( $output ) ) {
-			return new WP_Error( 'sts_mkdir', __( 'Could not create the export directory.', 'site-to-static' ) );
+			return new WP_Error( 'aouwal_mkdir', __( 'Could not create the export directory.', 'aouwal-static-site-export' ) );
 		}
 
 		global $wpdb;
@@ -73,7 +73,7 @@ class STS_Exporter {
 
 		$this->writer->set_output_dir( $output );
 
-		$discovery = new STS_URL_Discovery();
+		$discovery = new AOUWAL_URL_Discovery();
 		$urls      = $discovery->discover();
 
 		$inserted = $this->insert_items( $job_id, $urls, 'page' );
@@ -84,10 +84,11 @@ class STS_Exporter {
 			'phase'      => 'crawl',
 			'output_dir' => $output,
 			'zip_path'   => $zip_path,
-			'zip_url'    => trailingslashit( $uploads['baseurl'] ) . 'site-to-static/' . $job_id . '.zip',
+			'zip_url'    => trailingslashit( $uploads['baseurl'] ) . 'aouwal-static-site-export/' . $job_id . '.zip',
 			'notice'     => array(),
 		);
 		$this->save_job( $job );
+		$this->prune_old_jobs( $base, $job_id );
 
 		$counts = $this->counts( $job_id );
 
@@ -108,7 +109,7 @@ class STS_Exporter {
 	public function process_batch( $job_id, $limit = 5 ) {
 		$job = $this->get_job( $job_id );
 		if ( ! $job ) {
-			return new WP_Error( 'sts_no_job', __( 'Export job not found.', 'site-to-static' ) );
+			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
 		}
 
 		global $wpdb;
@@ -159,7 +160,7 @@ class STS_Exporter {
 	public function finalize( $job_id ) {
 		$job = $this->get_job( $job_id );
 		if ( ! $job ) {
-			return new WP_Error( 'sts_no_job', __( 'Export job not found.', 'site-to-static' ) );
+			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
 		}
 
 		$this->writer->set_output_dir( $job['output_dir'] );
@@ -175,24 +176,24 @@ class STS_Exporter {
 
 		$this->writer->write( '404.html', $this->build_404( $job_id ) );
 
-		if ( STS_Settings::get( 'generate_sitemap' ) ) {
+		if ( AOUWAL_Settings::get( 'generate_sitemap' ) ) {
 			$this->writer->write( 'sitemap.xml', $this->build_sitemap( $job_id ) );
 		}
-		if ( STS_Settings::get( 'generate_robots' ) ) {
+		if ( AOUWAL_Settings::get( 'generate_robots' ) ) {
 			$this->writer->write( 'robots.txt', $this->build_robots() );
 		}
 
 		$this->writer->write( '_redirects', $this->build_redirects() );
 		$this->writer->write( '_headers', $this->build_headers() );
 
-		$zip = new STS_Zip();
+		$zip = new AOUWAL_Zip();
 		$res = $zip->zip_dir( $job['output_dir'], $job['zip_path'] );
 		if ( is_wp_error( $res ) ) {
 			return $res;
 		}
 
 		if ( 0 === $counts['done'] ) {
-			$notices[] = __( 'No pages were exported. Check your post type settings.', 'site-to-static' );
+			$notices[] = __( 'No pages were exported. Check your post type settings.', 'aouwal-static-site-export' );
 		}
 
 		$job['phase']  = 'done';
@@ -252,7 +253,7 @@ class STS_Exporter {
 	 * @return string Log line.
 	 */
 	protected function process_page_item( $job_id, $item ) {
-		$crawler = new STS_Crawler();
+		$crawler = new AOUWAL_Crawler();
 		$result  = $crawler->fetch( $item->source_url, false );
 
 		if ( '' !== $result['error'] || $result['status'] >= 400 || '' === $result['body'] ) {
@@ -260,11 +261,11 @@ class STS_Exporter {
 			return sprintf( '[error] %s (%s)', $item->source_url, $result['status'] );
 		}
 
-		$processor = new STS_HTML_Processor( $this->writer );
+		$processor = new AOUWAL_HTML_Processor( $this->writer );
 
 		if ( $this->is_non_html( $item->local_path, $result['headers'] ) ) {
 			$body = $this->rewrite_absolute_urls( $result['body'] );
-			if ( STS_Brand::should_include() ) {
+			if ( AOUWAL_Brand::should_include() ) {
 				$body = $this->inject_xml_comment( $body );
 			}
 			$this->writer->write( $item->local_path, $body );
@@ -297,7 +298,7 @@ class STS_Exporter {
 			return '';
 		}
 
-		$processor = new STS_Asset_Processor( $this->writer, new STS_Crawler() );
+		$processor = new AOUWAL_Asset_Processor( $this->writer, new AOUWAL_Crawler() );
 		$result    = $processor->process( $item->source_url, $item->local_path );
 
 		if ( ! empty( $result['assets'] ) ) {
@@ -426,6 +427,62 @@ class STS_Exporter {
 		return ( is_array( $jobs ) && isset( $jobs[ $job_id ] ) ) ? $jobs[ $job_id ] : null;
 	}
 
+	/**
+	 * Delete export directories and ZIPs that no longer have a stored job.
+	 *
+	 * Export output is kept only for the jobs retained via save_job() (5).
+	 * Removal uses WP_Filesystem and never touches paths outside $base.
+	 *
+	 * @param string $base   Absolute base directory for exports.
+	 * @param string $job_id Current job ID (always kept).
+	 * @return void
+	 */
+	protected function prune_old_jobs( $base, $job_id ) {
+		$jobs = get_option( self::JOBS_OPTION, array() );
+		if ( ! is_array( $jobs ) ) {
+			$jobs = array();
+		}
+		$keep = array( $job_id );
+		foreach ( $jobs as $id => $stored ) {
+			$keep[] = (string) $id;
+		}
+
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		global $wp_filesystem;
+		if ( ! ( $wp_filesystem instanceof WP_Filesystem_Base ) ) {
+			if ( ! function_exists( 'WP_Filesystem' ) || ! WP_Filesystem() ) {
+				return;
+			}
+			global $wp_filesystem;
+		}
+		if ( ! ( $wp_filesystem instanceof WP_Filesystem_Base ) ) {
+			return;
+		}
+
+		$entries = $wp_filesystem->dirlist( $base );
+		if ( ! is_array( $entries ) ) {
+			return;
+		}
+		foreach ( $entries as $name => $info ) {
+			$name = (string) $name;
+			if ( '.' === $name || '..' === $name ) {
+				continue;
+			}
+			$id = preg_replace( '/\.zip$/', '', $name );
+			if ( in_array( $id, $keep, true ) ) {
+				continue;
+			}
+			$path = trailingslashit( $base ) . $name;
+			if ( ! empty( $info['type'] ) && 'd' === $info['type'] ) {
+				$wp_filesystem->rmdir( $path, true );
+			} else {
+				$wp_filesystem->delete( $path );
+			}
+		}
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Static extras
 	 * ------------------------------------------------------------------ */
@@ -465,7 +522,7 @@ class STS_Exporter {
 	 * @return string
 	 */
 	protected function rewrite_absolute_urls( $body ) {
-		$public = STS_Settings::get( 'public_url' );
+		$public = AOUWAL_Settings::get( 'public_url' );
 		$target = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
 
 		$body = str_replace( untrailingslashit( home_url() ), $target, $body );
@@ -481,7 +538,7 @@ class STS_Exporter {
 	 * @return string
 	 */
 	protected function inject_xml_comment( $body ) {
-		$comment = STS_Brand::xml_comment();
+		$comment = AOUWAL_Brand::xml_comment();
 		$trimmed = ltrim( $body );
 		if ( 0 === strpos( $trimmed, '<?xml' ) ) {
 			$offset = strpos( $body, '<?xml' );
@@ -500,19 +557,19 @@ class STS_Exporter {
 	 * @return string
 	 */
 	protected function build_404( $job_id ) {
-		$url     = home_url( '/sts-404-' . wp_generate_password( 10, false ) . '/' );
-		$crawler = new STS_Crawler();
+		$url     = home_url( '/aouwal-404-' . wp_generate_password( 10, false ) . '/' );
+		$crawler = new AOUWAL_Crawler();
 		$result  = $crawler->fetch( $url, false );
 
 		if ( '' === $result['body'] ) {
 			$fallback = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
-			if ( STS_Brand::should_include() ) {
-				$fallback = STS_Brand::html_comment() . "\n" . $fallback;
+			if ( AOUWAL_Brand::should_include() ) {
+				$fallback = AOUWAL_Brand::html_comment() . "\n" . $fallback;
 			}
 			return $fallback;
 		}
 
-		$processor = new STS_HTML_Processor( $this->writer );
+		$processor = new AOUWAL_HTML_Processor( $this->writer );
 		$processed = $processor->process( $result['body'], $url, '404.html', $job_id );
 
 		$this->download_recursive( $processed['assets'] );
@@ -527,7 +584,7 @@ class STS_Exporter {
 	 * @return void
 	 */
 	protected function download_recursive( array $urls ) {
-		$processor = new STS_Asset_Processor( $this->writer, new STS_Crawler() );
+		$processor = new AOUWAL_Asset_Processor( $this->writer, new AOUWAL_Crawler() );
 		$queue     = array_values( array_unique( $urls ) );
 		$seen      = array();
 		$guard     = 0;
@@ -570,7 +627,7 @@ class STS_Exporter {
 			)
 		);
 
-		$public = STS_Settings::get( 'public_url' );
+		$public = AOUWAL_Settings::get( 'public_url' );
 		$public = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
 		$base   = (string) wp_parse_url( home_url(), PHP_URL_PATH );
 		$base   = '/' === $base ? '' : untrailingslashit( $base );
@@ -593,8 +650,8 @@ class STS_Exporter {
 		$urls = array_values( array_unique( $urls ) );
 
 		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
-		if ( STS_Brand::should_include() ) {
-			$xml .= STS_Brand::xml_comment() . "\n";
+		if ( AOUWAL_Brand::should_include() ) {
+			$xml .= AOUWAL_Brand::xml_comment() . "\n";
 		}
 		$xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 		foreach ( $urls as $u ) {
@@ -611,16 +668,16 @@ class STS_Exporter {
 	 * @return string
 	 */
 	protected function build_robots() {
-		$public = STS_Settings::get( 'public_url' );
+		$public = AOUWAL_Settings::get( 'public_url' );
 		$public = $public ? untrailingslashit( $public ) : untrailingslashit( home_url() );
 
 		$out = '';
-		if ( STS_Brand::should_include() ) {
-			$out .= STS_Brand::text_comment() . "\n";
+		if ( AOUWAL_Brand::should_include() ) {
+			$out .= AOUWAL_Brand::text_comment() . "\n";
 		}
 		$out .= "User-agent: *\n";
 		$out .= "Allow: /\n\n";
-		if ( STS_Settings::get( 'generate_sitemap' ) ) {
+		if ( AOUWAL_Settings::get( 'generate_sitemap' ) ) {
 			$out .= "Sitemap: {$public}/sitemap.xml\n";
 		}
 		return $out;
@@ -633,8 +690,8 @@ class STS_Exporter {
 	 */
 	protected function build_redirects() {
 		$lines   = array();
-		if ( STS_Brand::should_include() ) {
-			$lines[] = STS_Brand::text_comment();
+		if ( AOUWAL_Brand::should_include() ) {
+			$lines[] = AOUWAL_Brand::text_comment();
 		}
 		$lines[] = '/index.php / 301';
 		$lines[] = '/wp-login.php / 301';
@@ -644,7 +701,7 @@ class STS_Exporter {
 		$lines[] = '/feed /feed/index.xml 200';
 		$lines[] = '/:path*/feed/ /:path*/feed/index.xml 200';
 
-		if ( STS_Settings::get( 'preserve_redirects' ) ) {
+		if ( AOUWAL_Settings::get( 'preserve_redirects' ) ) {
 			$lines[] = '# Add legacy path redirects below as needed.';
 		}
 
@@ -658,8 +715,8 @@ class STS_Exporter {
 	 */
 	protected function build_headers() {
 		$lines = array();
-		if ( STS_Brand::should_include() ) {
-			$lines[] = STS_Brand::text_comment();
+		if ( AOUWAL_Brand::should_include() ) {
+			$lines[] = AOUWAL_Brand::text_comment();
 		}
 		$lines[] = '/*.css';
 		$lines[] = '  Cache-Control: public, max-age=2592000';

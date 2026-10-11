@@ -2,37 +2,37 @@
 /**
  * Asset downloading and CSS reference recursion.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class STS_Asset_Processor
+ * Class AOUWAL_Asset_Processor
  */
-class STS_Asset_Processor {
+class AOUWAL_Asset_Processor {
 
 	/**
 	 * Writer.
 	 *
-	 * @var STS_Writer
+	 * @var AOUWAL_Writer
 	 */
 	protected $writer;
 
 	/**
 	 * Crawler.
 	 *
-	 * @var STS_Crawler
+	 * @var AOUWAL_Crawler
 	 */
 	protected $crawler;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param STS_Writer  $writer  Writer.
-	 * @param STS_Crawler $crawler Crawler.
+	 * @param AOUWAL_Writer  $writer  Writer.
+	 * @param AOUWAL_Crawler $crawler Crawler.
 	 */
-	public function __construct( STS_Writer $writer, STS_Crawler $crawler ) {
+	public function __construct( AOUWAL_Writer $writer, AOUWAL_Crawler $crawler ) {
 		$this->writer  = $writer;
 		$this->crawler = $crawler;
 	}
@@ -62,14 +62,14 @@ class STS_Asset_Processor {
 		if ( 'css' === $ext ) {
 			$processed  = $this->process_css( $result['body'], $url, $local_path );
 			$body       = $processed['css'];
-			if ( STS_Brand::should_include() ) {
+			if ( AOUWAL_Brand::should_include() ) {
 				$body = $this->prepend_css_credit( $body );
 			}
 			$discovered = $processed['assets'];
 		} else {
 			$body = $result['body'];
-			if ( STS_Brand::should_include() && in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
-				$body = STS_Brand::js_comment() . "\n" . $body;
+			if ( AOUWAL_Brand::should_include() && in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
+				$body = AOUWAL_Brand::js_comment() . "\n" . $body;
 			}
 		}
 
@@ -98,6 +98,9 @@ class STS_Asset_Processor {
 				return null;
 			}
 			$resolved = $this->strip_query( $this->resolve_url( $base_url, $url ) );
+			if ( ! $this->crawler->is_url_allowed_for_fetch( $resolved ) ) {
+				return null;
+			}
 			$assets[] = $resolved;
 			$target   = $this->writer->url_to_local_path( $resolved, 'asset' );
 			return $this->writer->href( $local_path, $target, false );
@@ -134,7 +137,7 @@ class STS_Asset_Processor {
 	 * @return string
 	 */
 	protected function prepend_css_credit( $css ) {
-		$credit = STS_Brand::css_comment();
+		$credit = AOUWAL_Brand::css_comment();
 		$trimmed = ltrim( $css, "\xEF\xBB\xBF \t\r\n" );
 		if ( 0 === stripos( $trimmed, '@charset' ) ) {
 			$semi = strpos( $trimmed, ';' );
@@ -152,7 +155,7 @@ class STS_Asset_Processor {
 	 * @return string
 	 */
 	protected function strip_query( $url ) {
-		if ( ! STS_Settings::get( 'strip_query' ) ) {
+		if ( ! AOUWAL_Settings::get( 'strip_query' ) ) {
 			return $url;
 		}
 		$pos = strpos( $url, '?' );

@@ -2,22 +2,22 @@
 /**
  * Settings storage and sanitization.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class STS_Settings
+ * Class AOUWAL_Settings
  */
-class STS_Settings {
+class AOUWAL_Settings {
 
 	/**
 	 * Option name.
 	 *
 	 * @var string
 	 */
-	const OPTION = 'sts_settings';
+	const OPTION = 'aouwal_settings';
 
 	/**
 	 * Default settings.

@@ -2,15 +2,15 @@
 /**
  * Admin UI, menus and AJAX endpoints.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class STS_Admin
+ * Class AOUWAL_Admin
  */
-class STS_Admin {
+class AOUWAL_Admin {
 
 	/**
 	 * Page hook suffix.
@@ -27,9 +27,9 @@ class STS_Admin {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
 
-		add_action( 'wp_ajax_sts_start', array( $this, 'ajax_start' ) );
-		add_action( 'wp_ajax_sts_batch', array( $this, 'ajax_batch' ) );
-		add_action( 'wp_ajax_sts_finalize', array( $this, 'ajax_finalize' ) );
+		add_action( 'wp_ajax_aouwal_start', array( $this, 'ajax_start' ) );
+		add_action( 'wp_ajax_aouwal_batch', array( $this, 'ajax_batch' ) );
+		add_action( 'wp_ajax_aouwal_finalize', array( $this, 'ajax_finalize' ) );
 	}
 
 	/**
@@ -39,10 +39,10 @@ class STS_Admin {
 	 */
 	public function menu() {
 		$this->hook = add_menu_page(
-			__( 'Static Export', 'site-to-static' ),
-			__( 'Static Export', 'site-to-static' ),
+			__( 'Static Export', 'aouwal-static-site-export' ),
+			__( 'Static Export', 'aouwal-static-site-export' ),
 			'manage_options',
-			'site-to-static',
+			'aouwal-static-site-export',
 			array( $this, 'render' ),
 			'dashicons-download',
 			81
@@ -56,12 +56,12 @@ class STS_Admin {
 	 */
 	public function register_settings() {
 		register_setting(
-			'sts_settings_group',
-			STS_Settings::OPTION,
+			'aouwal_settings_group',
+			AOUWAL_Settings::OPTION,
 			array(
 				'type'              => 'array',
-				'sanitize_callback' => array( 'STS_Settings', 'sanitize' ),
-				'default'           => STS_Settings::defaults(),
+				'sanitize_callback' => array( 'AOUWAL_Settings', 'sanitize' ),
+				'default'           => AOUWAL_Settings::defaults(),
 			)
 		);
 	}
@@ -77,25 +77,25 @@ class STS_Admin {
 			return;
 		}
 
-		wp_enqueue_style( 'sts-admin', STS_PLUGIN_URL . 'admin/assets/admin.css', array(), STS_VERSION );
-		wp_enqueue_script( 'sts-admin', STS_PLUGIN_URL . 'admin/assets/export.js', array( 'jquery' ), STS_VERSION, true );
+		wp_enqueue_style( 'aouwal-admin', AOUWAL_PLUGIN_URL . 'admin/assets/admin.css', array(), AOUWAL_VERSION );
+		wp_enqueue_script( 'aouwal-admin', AOUWAL_PLUGIN_URL . 'admin/assets/export.js', array( 'jquery' ), AOUWAL_VERSION, true );
 		wp_localize_script(
-			'sts-admin',
-			'STS',
+			'aouwal-admin',
+			'AOUWAL',
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'sts_ajax' ),
-				'batch'   => (int) STS_Settings::get( 'batch_size', 5 ),
+				'nonce'   => wp_create_nonce( 'aouwal_ajax' ),
+				'batch'   => (int) AOUWAL_Settings::get( 'batch_size', 5 ),
 				'i18n'    => array(
-					'starting'   => __( 'Discovering URLs…', 'site-to-static' ),
-					'crawling'   => __( 'Processing', 'site-to-static' ),
-					'finalizing' => __( 'Packaging export…', 'site-to-static' ),
-					'done'       => __( 'Export complete.', 'site-to-static' ),
-					'error'      => __( 'An error occurred.', 'site-to-static' ),
-					'confirm'    => __( 'Start a new static export?', 'site-to-static' ),
-					'download'   => __( 'Download export ZIP', 'site-to-static' ),
+					'starting'   => __( 'Discovering URLs…', 'aouwal-static-site-export' ),
+					'crawling'   => __( 'Processing', 'aouwal-static-site-export' ),
+					'finalizing' => __( 'Packaging export…', 'aouwal-static-site-export' ),
+					'done'       => __( 'Export complete.', 'aouwal-static-site-export' ),
+					'error'      => __( 'An error occurred.', 'aouwal-static-site-export' ),
+					'confirm'    => __( 'Start a new static export?', 'aouwal-static-site-export' ),
+					'download'   => __( 'Download export ZIP', 'aouwal-static-site-export' ),
 					/* translators: %s: number of discovered URLs. */
-					'discovered' => __( 'Discovered %s URLs.', 'site-to-static' ),
+					'discovered' => __( 'Discovered %s URLs.', 'aouwal-static-site-export' ),
 				),
 			)
 		);
@@ -108,42 +108,42 @@ class STS_Admin {
 	 */
 	public function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to access this page.', 'site-to-static' ) );
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'aouwal-static-site-export' ) );
 		}
 
 		$tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'settings'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$tabs = array(
-			'settings' => __( 'Settings', 'site-to-static' ),
-			'export'   => __( 'Export', 'site-to-static' ),
-			'deploy'   => __( 'Deploy', 'site-to-static' ),
+			'settings' => __( 'Settings', 'aouwal-static-site-export' ),
+			'export'   => __( 'Export', 'aouwal-static-site-export' ),
+			'deploy'   => __( 'Deploy', 'aouwal-static-site-export' ),
 		);
 		if ( ! isset( $tabs[ $tab ] ) ) {
 			$tab = 'settings';
 		}
 
-		echo '<div class="wrap sts-wrap">';
-		echo '<div class="sts-brand">';
-		echo '<span class="sts-brand-mark" aria-hidden="true">&lt;/&gt;</span>';
-		echo '<span class="sts-brand-text">';
-		echo '<span class="sts-brand-title">' . esc_html__( 'Site to Static', 'site-to-static' ) . '</span>';
+		echo '<div class="wrap aouwal-wrap">';
+		echo '<div class="aouwal-brand">';
+		echo '<span class="aouwal-brand-mark" aria-hidden="true">&lt;/&gt;</span>';
+		echo '<span class="aouwal-brand-text">';
+		echo '<span class="aouwal-brand-title">' . esc_html__( 'Aouwal Static Site Export', 'aouwal-static-site-export' ) . '</span>';
 		printf(
-			'<span class="sts-brand-sub">%1$s <a href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">%2$s</a></span>',
-			esc_html__( 'by', 'site-to-static' ),
-			esc_html__( 'Abdul Aouwal', 'site-to-static' )
+			'<span class="aouwal-brand-sub">%1$s <a href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">%2$s</a></span>',
+			esc_html__( 'by', 'aouwal-static-site-export' ),
+			esc_html__( 'Abdul Aouwal', 'aouwal-static-site-export' )
 		);
 		echo '</span>';
-		echo '<a class="sts-brand-site" href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">abdulaouwal.com</a>';
+		echo '<a class="aouwal-brand-site" href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">abdulaouwal.com</a>';
 		echo '</div>';
 
 		if ( isset( $_GET['settings-updated'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'site-to-static' ) . '</p></div>';
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'aouwal-static-site-export' ) . '</p></div>';
 		}
 
-		echo '<h2 class="nav-tab-wrapper sts-tabs">';
+		echo '<h2 class="nav-tab-wrapper aouwal-tabs">';
 		foreach ( $tabs as $key => $label ) {
 			$url   = add_query_arg(
 				array(
-					'page' => 'site-to-static',
+					'page' => 'aouwal-static-site-export',
 					'tab'  => $key,
 				),
 				admin_url( 'admin.php' )
@@ -155,13 +155,13 @@ class STS_Admin {
 
 		switch ( $tab ) {
 			case 'export':
-				require STS_PLUGIN_DIR . 'admin/views/export.php';
+				require AOUWAL_PLUGIN_DIR . 'admin/views/export.php';
 				break;
 			case 'deploy':
-				require STS_PLUGIN_DIR . 'admin/views/deploy.php';
+				require AOUWAL_PLUGIN_DIR . 'admin/views/deploy.php';
 				break;
 			default:
-				require STS_PLUGIN_DIR . 'admin/views/settings.php';
+				require AOUWAL_PLUGIN_DIR . 'admin/views/settings.php';
 				break;
 		}
 
@@ -174,11 +174,11 @@ class STS_Admin {
 	 * @return void
 	 */
 	public function ajax_start() {
-		check_ajax_referer( 'sts_ajax', 'nonce' );
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'site-to-static' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
 		}
-		$exporter = new STS_Exporter();
+		$exporter = new AOUWAL_Exporter();
 		$result   = $exporter->start();
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -192,14 +192,14 @@ class STS_Admin {
 	 * @return void
 	 */
 	public function ajax_batch() {
-		check_ajax_referer( 'sts_ajax', 'nonce' );
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'site-to-static' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
 		}
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
-		$batch  = (int) STS_Settings::get( 'batch_size', 5 );
+		$batch  = (int) AOUWAL_Settings::get( 'batch_size', 5 );
 
-		$exporter = new STS_Exporter();
+		$exporter = new AOUWAL_Exporter();
 		$result   = $exporter->process_batch( $job_id, max( 1, $batch ) );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -213,13 +213,13 @@ class STS_Admin {
 	 * @return void
 	 */
 	public function ajax_finalize() {
-		check_ajax_referer( 'sts_ajax', 'nonce' );
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'site-to-static' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
 		}
 		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
 
-		$exporter = new STS_Exporter();
+		$exporter = new AOUWAL_Exporter();
 		$result   = $exporter->finalize( $job_id );
 		if ( is_wp_error( $result ) ) {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
@@ -228,4 +228,4 @@ class STS_Admin {
 	}
 }
 
-new STS_Admin();
+new AOUWAL_Admin();

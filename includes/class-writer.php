@@ -2,15 +2,15 @@
 /**
  * Output path mapping and file writing.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class STS_Writer
+ * Class AOUWAL_Writer
  */
-class STS_Writer {
+class AOUWAL_Writer {
 
 	/**
 	 * Absolute output directory for a job.
@@ -306,7 +306,7 @@ class STS_Writer {
 	 * @return string
 	 */
 	public function href( $from_local, $to_local, $to_dir = false ) {
-		if ( 'root' === STS_Settings::get( 'url_style', 'relative' ) ) {
+		if ( 'root' === AOUWAL_Settings::get( 'url_style', 'relative' ) ) {
 			$target = $to_local;
 			if ( $to_dir && 'index.html' === basename( $target ) ) {
 				$target = dirname( $target );
@@ -337,20 +337,42 @@ class STS_Writer {
 	/**
 	 * Write string contents to a local path.
 	 *
+	 * Export output lives only inside the job directory under
+	 * wp_upload_dir() . '/aouwal-static-site-export', and is written
+	 * exclusively via WP_Filesystem. Paths escaping the output directory
+	 * are refused.
+	 *
 	 * @param string $local    Local path.
 	 * @param string $contents Contents.
 	 * @return bool
 	 */
 	public function write( $local, $contents ) {
-		$this->ensure_dir_for( $local );
 		$abs = $this->abs_path( $local );
+		if ( ! $this->is_within_output_dir( $abs ) ) {
+			return false;
+		}
+		$this->ensure_dir_for( $local );
 
 		$fs = $this->filesystem();
-		if ( $fs ) {
-			return (bool) $fs->put_contents( $abs, $contents, FS_CHMOD_FILE );
+		if ( ! $fs ) {
+			return false;
 		}
+		return (bool) $fs->put_contents( $abs, $contents, FS_CHMOD_FILE );
+	}
 
-		return false !== file_put_contents( $abs, $contents ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- fallback when WP_Filesystem is unavailable.
+	/**
+	 * Whether an absolute path stays inside the output directory.
+	 *
+	 * @param string $abs Absolute path.
+	 * @return bool
+	 */
+	protected function is_within_output_dir( $abs ) {
+		$base = rtrim( str_replace( '\\', '/', (string) $this->output_dir ), '/' );
+		$path = str_replace( '\\', '/', (string) $abs );
+		if ( '' === $base ) {
+			return false;
+		}
+		return $path === $base || 0 === strpos( $path, $base . '/' );
 	}
 
 	/**

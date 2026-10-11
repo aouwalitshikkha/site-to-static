@@ -2,15 +2,15 @@
 /**
  * URL discovery.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class STS_URL_Discovery
+ * Class AOUWAL_URL_Discovery
  */
-class STS_URL_Discovery {
+class AOUWAL_URL_Discovery {
 
 	/**
 	 * Exclude patterns.
@@ -23,7 +23,7 @@ class STS_URL_Discovery {
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->excludes = STS_Settings::exclude_urls();
+		$this->excludes = AOUWAL_Settings::exclude_urls();
 	}
 
 	/**
@@ -36,8 +36,8 @@ class STS_URL_Discovery {
 
 		$urls[] = home_url( '/' );
 
-		$post_types = (array) STS_Settings::get( 'post_types', array( 'post', 'page' ) );
-		if ( STS_Settings::get( 'include_attachments' ) ) {
+		$post_types = (array) AOUWAL_Settings::get( 'post_types', array( 'post', 'page' ) );
+		if ( AOUWAL_Settings::get( 'include_attachments' ) ) {
 			$post_types[] = 'attachment';
 		}
 
@@ -59,23 +59,23 @@ class STS_URL_Discovery {
 			}
 		}
 
-		if ( STS_Settings::get( 'include_taxonomies' ) ) {
+		if ( AOUWAL_Settings::get( 'include_taxonomies' ) ) {
 			$urls = array_merge( $urls, $this->discover_taxonomies() );
 		}
 
-		if ( STS_Settings::get( 'include_authors' ) ) {
+		if ( AOUWAL_Settings::get( 'include_authors' ) ) {
 			$urls = array_merge( $urls, $this->discover_authors() );
 		}
 
-		if ( STS_Settings::get( 'include_dates' ) ) {
+		if ( AOUWAL_Settings::get( 'include_dates' ) ) {
 			$urls = array_merge( $urls, $this->discover_dates() );
 		}
 
-		if ( STS_Settings::get( 'include_feeds' ) ) {
+		if ( AOUWAL_Settings::get( 'include_feeds' ) ) {
 			$urls = array_merge( $urls, $this->discover_feeds() );
 		}
 
-		$urls = array_merge( $urls, STS_Settings::additional_urls() );
+		$urls = array_merge( $urls, AOUWAL_Settings::additional_urls() );
 
 		$urls = array_map( array( $this, 'normalize' ), $urls );
 		$urls = array_filter( $urls );
@@ -220,7 +220,7 @@ class STS_URL_Discovery {
 			}
 		}
 
-		if ( STS_Settings::get( 'include_authors' ) ) {
+		if ( AOUWAL_Settings::get( 'include_authors' ) ) {
 			$users = get_users(
 				array(
 					'has_published_posts' => true,
@@ -270,7 +270,7 @@ class STS_URL_Discovery {
 			return false;
 		}
 
-		if ( ! ( new STS_Writer() )->is_internal_url( $url ) ) {
+		if ( ! ( new AOUWAL_Writer() )->is_internal_url( $url ) ) {
 			return false;
 		}
 

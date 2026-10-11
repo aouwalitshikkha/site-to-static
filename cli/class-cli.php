@@ -2,7 +2,7 @@
 /**
  * WP-CLI commands.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -14,7 +14,7 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 /**
  * Export the site to static HTML.
  */
-class STS_CLI {
+class AOUWAL_CLI {
 
 	/**
 	 * Run a full static export.
@@ -37,7 +37,7 @@ class STS_CLI {
 	public function run( $args, $assoc_args ) {
 		$batch = isset( $assoc_args['batch'] ) ? max( 1, (int) $assoc_args['batch'] ) : 10;
 
-		$exporter = new STS_Exporter();
+		$exporter = new AOUWAL_Exporter();
 		$start    = $exporter->start();
 
 		if ( is_wp_error( $start ) ) {
@@ -82,4 +82,4 @@ class STS_CLI {
 	}
 }
 
-WP_CLI::add_command( 'static-export', 'STS_CLI' );
+WP_CLI::add_command( 'aouwal-static-export', 'AOUWAL_CLI' );

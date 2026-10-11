@@ -1,4 +1,4 @@
-# Site to Static
+# Aouwal Static Site Export
 
 **By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant**
 
@@ -24,10 +24,10 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Rewrites internal links to portable relative (or root-absolute) URLs.
 - Removes server-side features that cannot work statically (search forms, comment forms, comment feeds).
 - Strips WordPress version tags and staging `noindex` robots meta so the exported site is indexable.
-- Embeds invisible multi-part source-code credits (author attribution) in every exported file: a `<head>` comment, a fingerprinted footer comment, an encoded marker, plus credits in CSS/JS, feeds, sitemap, robots and Cloudflare files. They never show in the browser and cannot be disabled.
+- Optional, invisible source-code credit (off by default) that can be enabled in Settings. It never shows in the browser.
 - Generates `404.html`, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
 - Chunked, timeout-safe export with a live progress log.
-- Optional WP-CLI command: `wp static-export run`.
+- Optional WP-CLI command: `wp aouwal-static-export run`.
 
 ## Requirements
 
@@ -39,8 +39,8 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 
 **From a ZIP:**
 1. Download/clone this repository.
-2. Copy the `site-to-static` folder into `wp-content/plugins/`.
-3. Activate **Site to Static** under *Plugins*.
+2. Copy the `aouwal-static-site-export` folder into `wp-content/plugins/`.
+3. Activate **Aouwal Static Site Export** under *Plugins*.
 
 **With git:**
 ```bash
@@ -62,7 +62,7 @@ Open **Static Export** in the WordPress admin menu. Three tabs:
 ### WP-CLI
 
 ```bash
-wp static-export run --batch=10
+wp aouwal-static-export run --batch=10
 ```
 Runs a full export and prints the resulting ZIP URL.
 
@@ -86,7 +86,7 @@ Runs a full export and prints the resulting ZIP URL.
 1. Download and unzip the export.
 2. Push the files to a GitHub repository:
    ```bash
-   cd site-to-static-site
+   cd aouwal-static-site-export-site
    git init
    git add .
    git commit -m "Initial static export"
@@ -110,8 +110,8 @@ The export includes a `_redirects` file (feed rewrites, `/index.php` cleanup) an
 ## Project structure
 
 ```
-site-to-static/
-├── site-to-static.php          # bootstrap + activation
+aouwal-static-site-export/
+├── aouwal-static-site-export.php          # bootstrap + activation
 ├── uninstall.php                 # cleanup on uninstall
 ├── readme.txt                    # WordPress.org-style readme
 ├── includes/

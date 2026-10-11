@@ -2,20 +2,20 @@
 /**
  * HTML rewriting and dynamic-content stripping.
  *
- * @package WP_Static_Export
+ * @package Aouwal_Static_Export
  */
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Class STS_HTML_Processor
+ * Class AOUWAL_HTML_Processor
  */
-class STS_HTML_Processor {
+class AOUWAL_HTML_Processor {
 
 	/**
 	 * Writer.
 	 *
-	 * @var STS_Writer
+	 * @var AOUWAL_Writer
 	 */
 	protected $writer;
 
@@ -37,9 +37,9 @@ class STS_HTML_Processor {
 	/**
 	 * Constructor.
 	 *
-	 * @param STS_Writer $writer Writer instance.
+	 * @param AOUWAL_Writer $writer Writer instance.
 	 */
-	public function __construct( STS_Writer $writer ) {
+	public function __construct( AOUWAL_Writer $writer ) {
 		$this->writer = $writer;
 	}
 
@@ -73,9 +73,10 @@ class STS_HTML_Processor {
 		$xpath = new DOMXPath( $doc );
 
 		$this->remove_dynamic( $xpath );
-		$this->rewrite_urls( $doc, $xpath, $source_url, $local_path, $assets );
+		$crawler = new AOUWAL_Crawler();
+		$this->rewrite_urls( $doc, $xpath, $source_url, $local_path, $assets, $crawler );
 
-		$include_credit = STS_Brand::should_include();
+		$include_credit = AOUWAL_Brand::should_include();
 		$branded        = false;
 		if ( $include_credit ) {
 			$branded = $this->add_brand_comment( $doc );
@@ -85,7 +86,7 @@ class STS_HTML_Processor {
 		$out = $doc->saveHTML();
 
 		if ( $include_credit && ! $branded ) {
-			$out = STS_Brand::html_comment() . "\n" . $out;
+			$out = AOUWAL_Brand::html_comment() . "\n" . $out;
 		}
 
 		return array(
@@ -101,7 +102,7 @@ class STS_HTML_Processor {
 	 * @return bool True when the comment was placed in the DOM.
 	 */
 	protected function add_brand_comment( DOMDocument $doc ) {
-		$comment = $doc->createComment( "\n  " . implode( "\n  ", STS_Brand::lines() ) . "\n" );
+		$comment = $doc->createComment( "\n  " . implode( "\n  ", AOUWAL_Brand::lines() ) . "\n" );
 
 		$heads = $doc->getElementsByTagName( 'head' );
 		if ( $heads->length ) {
@@ -136,7 +137,7 @@ class STS_HTML_Processor {
 	 * @return void
 	 */
 	protected function add_footer_comment( DOMDocument $doc, $job_id ) {
-		$comment = $doc->createComment( "\n  " . implode( "\n  ", STS_Brand::footer_lines( $job_id ) ) . "\n" );
+		$comment = $doc->createComment( "\n  " . implode( "\n  ", AOUWAL_Brand::footer_lines( $job_id ) ) . "\n" );
 
 		$bodies = $doc->getElementsByTagName( 'body' );
 		if ( $bodies->length ) {
@@ -211,7 +212,7 @@ class STS_HTML_Processor {
 			'//form[@id="commentform"]',
 		);
 
-		if ( STS_Settings::get( 'strip_search' ) ) {
+		if ( AOUWAL_Settings::get( 'strip_search' ) ) {
 			$queries[] = '//form[@role="search"]';
 			$queries[] = '//*[contains(@class,"search-form")]';
 			$queries[] = '//*[@id="searchform"]';
@@ -239,14 +240,15 @@ class STS_HTML_Processor {
 	/**
 	 * Rewrite URL-bearing attributes.
 	 *
-	 * @param DOMDocument $doc         Document.
-	 * @param DOMXPath    $xpath       XPath.
-	 * @param string      $source_url  Source URL.
-	 * @param string      $local_path  Local path.
-	 * @param array       $assets      Asset accumulator.
+	 * @param DOMDocument    $doc         Document.
+	 * @param DOMXPath       $xpath       XPath.
+	 * @param string         $source_url  Source URL.
+	 * @param string         $local_path  Local path.
+	 * @param array          $assets      Asset accumulator.
+	 * @param AOUWAL_Crawler $crawler     Crawler (SSRF guard for enqueued assets).
 	 * @return void
 	 */
-	protected function rewrite_urls( DOMDocument $doc, DOMXPath $xpath, $source_url, $local_path, array &$assets ) {
+	protected function rewrite_urls( DOMDocument $doc, DOMXPath $xpath, $source_url, $local_path, array &$assets, AOUWAL_Crawler $crawler ) {
 		$attrs = array( 'src', 'href', 'poster', 'data-src', 'data-lazy-src', 'data-bg', 'data-background', 'data-background-image' );
 
 		foreach ( $attrs as $attr ) {
@@ -259,7 +261,7 @@ class STS_HTML_Processor {
 				if ( '' === trim( $raw ) ) {
 					continue;
 				}
-				$resolved = $this->process_url( $raw, $source_url, $local_path, $node, $attr, $assets );
+				$resolved = $this->process_url( $raw, $source_url, $local_path, $node, $attr, $assets, $crawler );
 				if ( null !== $resolved ) {
 					$node->setAttribute( $attr, $resolved );
 				}
@@ -280,7 +282,7 @@ class STS_HTML_Processor {
 				if ( '' === trim( $raw ) ) {
 					continue;
 				}
-				$rewritten = $this->rewrite_srcset( $raw, $source_url, $local_path, $assets );
+				$rewritten = $this->rewrite_srcset( $raw, $source_url, $local_path, $assets, $crawler );
 				$node->setAttribute( $attr, $rewritten );
 			}
 		}
@@ -293,7 +295,7 @@ class STS_HTML_Processor {
 				if ( false === stripos( $style, 'url(' ) ) {
 					continue;
 				}
-				$node->setAttribute( 'style', $this->rewrite_css_urls( $style, $source_url, $local_path, $assets ) );
+				$node->setAttribute( 'style', $this->rewrite_css_urls( $style, $source_url, $local_path, $assets, $crawler ) );
 			}
 		}
 
@@ -307,7 +309,7 @@ class STS_HTML_Processor {
 				}
 				$css = preg_replace( '~/\*#\s*source(?:URL|MappingURL)=[^*]*\*/~', '', $css );
 				if ( false !== stripos( $css, 'url(' ) ) {
-					$css = $this->rewrite_css_urls( $css, $source_url, $local_path, $assets );
+					$css = $this->rewrite_css_urls( $css, $source_url, $local_path, $assets, $crawler );
 				}
 				$node->nodeValue = $css; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			}
@@ -317,15 +319,16 @@ class STS_HTML_Processor {
 	/**
 	 * Process a single URL attribute value.
 	 *
-	 * @param string      $raw        Raw value.
-	 * @param string      $source_url Source URL.
-	 * @param string      $local_path Local path.
-	 * @param DOMNode     $node       Node.
-	 * @param string      $attr       Attribute name.
-	 * @param array       $assets     Asset accumulator.
+	 * @param string         $raw        Raw value.
+	 * @param string         $source_url Source URL.
+	 * @param string         $local_path Local path.
+	 * @param DOMNode        $node       Node.
+	 * @param string         $attr       Attribute name.
+	 * @param array          $assets     Asset accumulator.
+	 * @param AOUWAL_Crawler $crawler    Crawler (SSRF guard for enqueued assets).
 	 * @return string|null
 	 */
-	protected function process_url( $raw, $source_url, $local_path, $node, $attr, array &$assets ) {
+	protected function process_url( $raw, $source_url, $local_path, $node, $attr, array &$assets, AOUWAL_Crawler $crawler ) {
 		$raw = trim( $raw );
 
 		if ( preg_match( '~^(?:data:|mailto:|tel:|javascript:|sms:|#)~i', $raw ) ) {
@@ -347,10 +350,13 @@ class STS_HTML_Processor {
 		$kind = $this->classify( $tag, $attr, $resolved, $rel );
 
 		if ( 'asset' === $kind ) {
-			if ( ! STS_Settings::get( 'download_assets' ) ) {
+			if ( ! AOUWAL_Settings::get( 'download_assets' ) ) {
 				return null;
 			}
 			$asset_key = $this->strip_query( $resolved );
+			if ( ! $crawler->is_url_allowed_for_fetch( $asset_key ) ) {
+				return null;
+			}
 			$assets[]  = $asset_key;
 			$target    = $this->writer->url_to_local_path( $asset_key, 'asset' );
 			return $this->writer->href( $local_path, $target, false );
@@ -414,13 +420,14 @@ class STS_HTML_Processor {
 	/**
 	 * Rewrite a srcset attribute.
 	 *
-	 * @param string $srcset     Raw srcset.
-	 * @param string $source_url Source URL.
-	 * @param string $local_path Local path.
-	 * @param array  $assets     Asset accumulator.
+	 * @param string         $srcset     Raw srcset.
+	 * @param string         $source_url Source URL.
+	 * @param string         $local_path Local path.
+	 * @param array          $assets     Asset accumulator.
+	 * @param AOUWAL_Crawler $crawler    Crawler (SSRF guard for enqueued assets).
 	 * @return string
 	 */
-	protected function rewrite_srcset( $srcset, $source_url, $local_path, array &$assets ) {
+	protected function rewrite_srcset( $srcset, $source_url, $local_path, array &$assets, AOUWAL_Crawler $crawler ) {
 		$parts = explode( ',', $srcset );
 		$out   = array();
 		foreach ( $parts as $part ) {
@@ -432,9 +439,13 @@ class STS_HTML_Processor {
 			$url  = $bits[0];
 			$desc = isset( $bits[1] ) ? $bits[1] : '';
 
-			if ( STS_Settings::get( 'download_assets' ) && ! preg_match( '~^(?:data:|#)~i', $url ) ) {
+			if ( AOUWAL_Settings::get( 'download_assets' ) && ! preg_match( '~^(?:data:|#)~i', $url ) ) {
 				$resolved  = $this->resolve_url( $source_url, $url );
 				$resolved  = $this->strip_query( $resolved );
+				if ( ! $crawler->is_url_allowed_for_fetch( $resolved ) ) {
+					$out[] = trim( $url . ' ' . $desc );
+					continue;
+				}
 				$assets[]  = $resolved;
 				$target    = $this->writer->url_to_local_path( $resolved, 'asset' );
 				$url       = $this->writer->href( $local_path, $target, false );
@@ -448,24 +459,28 @@ class STS_HTML_Processor {
 	/**
 	 * Rewrite url() references inside a CSS string.
 	 *
-	 * @param string $css        CSS.
-	 * @param string $source_url Base URL.
-	 * @param string $local_path Local path.
-	 * @param array  $assets     Asset accumulator.
+	 * @param string         $css        CSS.
+	 * @param string         $source_url Base URL.
+	 * @param string         $local_path Local path.
+	 * @param array          $assets     Asset accumulator.
+	 * @param AOUWAL_Crawler $crawler    Crawler (SSRF guard for enqueued assets).
 	 * @return string
 	 */
-	protected function rewrite_css_urls( $css, $source_url, $local_path, array &$assets ) {
+	protected function rewrite_css_urls( $css, $source_url, $local_path, array &$assets, AOUWAL_Crawler $crawler ) {
 		return preg_replace_callback(
 			'#url\(\s*([\'"]?)([^\'")]+)\1\s*\)#i',
-			function ( $m ) use ( $source_url, $local_path, &$assets ) {
+			function ( $m ) use ( $source_url, $local_path, &$assets, $crawler ) {
 				$url = trim( $m[2] );
 				if ( '' === $url || preg_match( '~^(?:data:|#)~i', $url ) ) {
 					return $m[0];
 				}
-				if ( ! STS_Settings::get( 'download_assets' ) ) {
+				if ( ! AOUWAL_Settings::get( 'download_assets' ) ) {
 					return $m[0];
 				}
 				$resolved = $this->strip_query( $this->resolve_url( $source_url, $url ) );
+				if ( ! $crawler->is_url_allowed_for_fetch( $resolved ) ) {
+					return $m[0];
+				}
 				$assets[] = $resolved;
 				$target   = $this->writer->url_to_local_path( $resolved, 'asset' );
 				return 'url(' . $this->writer->href( $local_path, $target, false ) . ')';
@@ -481,7 +496,7 @@ class STS_HTML_Processor {
 	 * @return string
 	 */
 	protected function strip_query( $url ) {
-		if ( ! STS_Settings::get( 'strip_query' ) ) {
+		if ( ! AOUWAL_Settings::get( 'strip_query' ) ) {
 			return $url;
 		}
 		$pos = strpos( $url, '?' );
