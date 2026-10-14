@@ -4,7 +4,7 @@ Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,10 +53,14 @@ No, not unless you enable it. Under Settings → Attribution you can opt in to a
 
 == Changelog ==
 
+= 1.0.2 =
+* Removed the non-HTTP-API remote fetch fallback from the crawler; all remote requests now use the WordPress HTTP API (`wp_remote_get`) exclusively.
+
 = 1.0.1 =
 * Renamed to "Aouwal Static Site Export" (aouwal_) with a distinctive slug. Previous sts_ settings and job table are migrated automatically on activation.
 * Export output is written via WP_Filesystem only, inside the plugin's own uploads directory.
 * Server-side fetching is restricted to the site's own hosts and public IPs (SSRF hardening).
+
 = 1.0.0 =
 * Initial release.
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
