@@ -44,10 +44,6 @@ class AOUWAL_Crawler {
 		$response = wp_remote_get( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
-			$fallback = $this->fetch_fallback( $url );
-			if ( null !== $fallback ) {
-				return $fallback;
-			}
 			return array(
 				'body'    => '',
 				'status'  => 0,
@@ -66,50 +62,6 @@ class AOUWAL_Crawler {
 			'status'  => (int) wp_remote_retrieve_response_code( $response ),
 			'error'   => '',
 			'headers' => $headers,
-		);
-	}
-
-	/**
-	 * Fallback fetch using a stream context.
-	 *
-	 * @param string $url URL.
-	 * @return array|null
-	 */
-	protected function fetch_fallback( $url ) {
-		if ( ! $this->is_url_allowed_for_fetch( $url ) ) {
-			return null;
-		}
-		$verify = ! $this->is_local_host( $url );
-		$context = stream_context_create(
-			array(
-				'http' => array(
-					'method'        => 'GET',
-					'timeout'       => 60,
-					'ignore_errors' => true,
-					'header'        => "Accept: */*\r\nAccept-Encoding: identity\r\n",
-				),
-				'ssl'  => array(
-					'verify_peer'      => $verify,
-					'verify_peer_name' => $verify,
-				),
-			)
-		);
-
-		$body = @file_get_contents( $url, false, $context ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents, WordPress.PHP.NoSilencedErrors.Discouraged
-		if ( false === $body ) {
-			return null;
-		}
-
-		$status = 200;
-		if ( isset( $http_response_header[0] ) && preg_match( '#HTTP/\S+\s+(\d{3})#', $http_response_header[0], $m ) ) {
-			$status = (int) $m[1];
-		}
-
-		return array(
-			'body'    => (string) $body,
-			'status'  => $status,
-			'error'   => '',
-			'headers' => array(),
 		);
 	}
 
