@@ -66,6 +66,10 @@ class AOUWAL_Asset_Processor {
 				$body = $this->prepend_css_credit( $body );
 			}
 			$discovered = $processed['assets'];
+		} elseif ( $this->is_manifest( $ext, $result['body'] ) ) {
+			$processed  = $this->process_manifest( $result['body'], $url, $local_path );
+			$body       = $processed['manifest'];
+			$discovered = $processed['assets'];
 		} else {
 			$body = $result['body'];
 			if ( AOUWAL_Brand::should_include() && in_array( $ext, array( 'js', 'mjs', 'cjs' ), true ) ) {
@@ -79,6 +83,89 @@ class AOUWAL_Asset_Processor {
 			'assets' => $discovered,
 			'status' => $result['status'],
 			'error'  => '',
+		);
+	}
+
+	/**
+	 * Whether an asset looks like a web app manifest.
+	 *
+	 * @param string $ext  File extension.
+	 * @param string $body Raw body.
+	 * @return bool
+	 */
+	protected function is_manifest( $ext, $body ) {
+		if ( ! in_array( $ext, array( 'json', 'webmanifest' ), true ) ) {
+			return false;
+		}
+		$data = json_decode( $body, true );
+		return is_array( $data ) && ( isset( $data['icons'] ) || isset( $data['start_url'] ) );
+	}
+
+	/**
+	 * Rewrite icon/src URLs inside a web app manifest and collect icons.
+	 *
+	 * @param string $manifest   Raw manifest JSON.
+	 * @param string $base_url   Manifest URL (base for relative refs).
+	 * @param string $local_path Local path of the manifest file.
+	 * @return array{manifest:string,assets:string[]}
+	 */
+	protected function process_manifest( $manifest, $base_url, $local_path ) {
+		$assets = array();
+		$data   = json_decode( $manifest, true );
+
+		if ( ! is_array( $data ) ) {
+			return array(
+				'manifest' => $manifest,
+				'assets'   => $assets,
+			);
+		}
+
+		$rewrite = function ( $url ) use ( $base_url, $local_path, &$assets ) {
+			$url = trim( (string) $url );
+			if ( '' === $url || preg_match( '~^(?:data:|#|about:)~i', $url ) ) {
+				return $url;
+			}
+			$resolved = $this->strip_query( $this->resolve_url( $base_url, $url ) );
+			if ( ! $this->crawler->is_url_allowed_for_fetch( $resolved ) ) {
+				return $url;
+			}
+			$assets[] = $resolved;
+			$target   = $this->writer->url_to_local_path( $resolved, 'asset' );
+			return $this->writer->href( $local_path, $target, false );
+		};
+
+		if ( isset( $data['icons'] ) && is_array( $data['icons'] ) ) {
+			foreach ( $data['icons'] as $i => $icon ) {
+				if ( is_array( $icon ) && isset( $icon['src'] ) ) {
+					$data['icons'][ $i ]['src'] = $rewrite( $icon['src'] );
+				}
+			}
+		}
+
+		if ( isset( $data['shortcuts'] ) && is_array( $data['shortcuts'] ) ) {
+			foreach ( $data['shortcuts'] as $s => $shortcut ) {
+				if ( ! is_array( $shortcut ) || empty( $shortcut['icons'] ) || ! is_array( $shortcut['icons'] ) ) {
+					continue;
+				}
+				foreach ( $shortcut['icons'] as $i => $icon ) {
+					if ( is_array( $icon ) && isset( $icon['src'] ) ) {
+						$data['shortcuts'][ $s ]['icons'][ $i ]['src'] = $rewrite( $icon['src'] );
+					}
+				}
+			}
+		}
+
+		$encoded = wp_json_encode( $data, JSON_UNESCAPED_SLASHES );
+		if ( false === $encoded ) {
+			return array(
+				'manifest' => $manifest,
+				'assets'   => array_values( array_unique( $assets ) ),
+			);
+		}
+
+		return array(
+			'manifest' => $encoded,
+			'assets'   => array_values( array_unique( $assets ) ),
 		);
 	}
 

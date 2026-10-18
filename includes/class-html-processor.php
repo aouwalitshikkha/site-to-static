@@ -349,6 +349,10 @@ class AOUWAL_HTML_Processor {
 
 		$kind = $this->classify( $tag, $attr, $resolved, $rel );
 
+		if ( 'skip' === $kind ) {
+			return null;
+		}
+
 		if ( 'asset' === $kind ) {
 			if ( ! AOUWAL_Settings::get( 'download_assets' ) ) {
 				return null;
@@ -386,13 +390,18 @@ class AOUWAL_HTML_Processor {
 	 * @param string $attr     Attribute name.
 	 * @param string $url      Resolved URL.
 	 * @param string $rel      rel attribute.
-	 * @return string "asset" or "page".
+	 * @return string "asset", "page" or "skip".
 	 */
 	protected function classify( $tag, $attr, $url, $rel ) {
 		$ext = strtolower( pathinfo( (string) wp_parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
 		$is_asset_ext = in_array( $ext, $this->asset_extensions, true );
 
 		if ( 'link' === $tag ) {
+			foreach ( preg_split( '/\s+/', trim( $rel ) ) as $token ) {
+				if ( in_array( $token, array( 'preconnect', 'dns-prefetch', 'prerender', 'profile' ), true ) ) {
+					return 'skip';
+				}
+			}
 			if ( in_array( $rel, array( 'canonical', 'alternate', 'next', 'prev', 'author' ), true ) ) {
 				return 'page';
 			}
