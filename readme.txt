@@ -4,7 +4,7 @@ Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -110,6 +110,11 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 
 == Changelog ==
 
+= 1.0.3 =
+* Fixed link hint tags (preconnect, dns-prefetch, prerender, profile) being downloaded and rewritten to broken local files.
+* Fixed multi-token rel values (for example "preconnect dns-prefetch") being misclassified.
+* Localize web app manifest icon and shortcut URLs so they work on the static site.
+
 = 1.0.2 =
 * Removed the non-HTTP-API remote fetch fallback from the crawler; all remote requests now use the WordPress HTTP API (`wp_remote_get`) exclusively.
 
@@ -123,6 +128,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.0.3 =
+Fixes link hint handling and localizes web app manifest icons in exports. Update recommended.
 
 = 1.0.2 =
 All remote requests now use the WordPress HTTP API. Update to stay secure and compliant with the WordPress.org plugin guidelines.
