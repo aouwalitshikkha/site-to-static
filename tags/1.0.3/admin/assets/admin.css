@@ -1,0 +1,213 @@
+/* Aouwal Static Site Export — branding: Abdul Aouwal (abdulaouwal.com)
+   Palette: slate dark (#0f172a / #1e293b) + indigo accent (#4f46e5) */
+
+.aouwal-wrap {
+	--aouwal-indigo: #4f46e5;
+	--aouwal-indigo-dark: #4338ca;
+	--aouwal-indigo-light: #a78bfa;
+	--aouwal-slate-900: #0f172a;
+	--aouwal-slate-800: #1e293b;
+	--aouwal-slate-700: #334155;
+	--aouwal-slate-200: #e2e8f0;
+	--aouwal-radius: 10px;
+}
+
+/* Branded header */
+.aouwal-brand {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin: 16px 0 20px;
+	padding: 18px 22px;
+	border-radius: var(--aouwal-radius);
+	background: linear-gradient(135deg, var(--aouwal-slate-900) 0%, var(--aouwal-slate-800) 55%, var(--aouwal-indigo-dark) 140%);
+	color: #fff;
+	box-shadow: 0 6px 20px rgba(15, 23, 42, 0.25);
+}
+
+.aouwal-brand-mark {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 46px;
+	height: 46px;
+	border-radius: 12px;
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(167, 139, 250, 0.5);
+	color: var(--aouwal-indigo-light);
+	font-family: Consolas, Monaco, "SFMono-Regular", Menlo, monospace;
+	font-size: 18px;
+	font-weight: 700;
+	letter-spacing: -1px;
+}
+
+.aouwal-brand-text {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.3;
+}
+
+.aouwal-brand-title {
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: -0.2px;
+	color: #fff;
+}
+
+.aouwal-brand-sub {
+	font-size: 13px;
+	color: var(--aouwal-slate-200);
+}
+
+.aouwal-brand-sub a,
+.aouwal-brand-site {
+	color: var(--aouwal-indigo-light);
+	text-decoration: none;
+}
+
+.aouwal-brand-sub a:hover,
+.aouwal-brand-site:hover {
+	color: #fff;
+	text-decoration: underline;
+}
+
+.aouwal-brand-site {
+	margin-left: auto;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: 999px;
+	border: 1px solid rgba(167, 139, 250, 0.45);
+	white-space: nowrap;
+}
+
+/* Tabs */
+.aouwal-wrap .aouwal-tabs {
+	margin-bottom: 20px;
+	border-bottom-color: var(--aouwal-slate-200);
+}
+
+.aouwal-wrap .nav-tab-active,
+.aouwal-wrap .nav-tab-active:focus,
+.aouwal-wrap .nav-tab-active:hover {
+	border-bottom-color: var(--aouwal-indigo);
+	color: var(--aouwal-indigo);
+}
+
+/* Content */
+.aouwal-wrap .aouwal-intro {
+	max-width: 760px;
+	font-size: 14px;
+}
+
+.aouwal-wrap .aouwal-inline {
+	margin-bottom: 4px;
+	display: inline-block;
+}
+
+.aouwal-wrap .aouwal-settings h2,
+.aouwal-wrap .aouwal-deploy h2 {
+	margin-top: 28px;
+	padding-bottom: 8px;
+	border-bottom: 2px solid var(--aouwal-slate-200);
+}
+
+/* Progress */
+.aouwal-spinner {
+	float: none;
+	margin-left: 10px;
+}
+
+.aouwal-progress {
+	max-width: 760px;
+	margin: 18px 0;
+}
+
+.aouwal-bar {
+	height: 18px;
+	background: var(--aouwal-slate-200);
+	border-radius: 9px;
+	overflow: hidden;
+}
+
+.aouwal-bar > span {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: linear-gradient(90deg, var(--aouwal-indigo) 0%, var(--aouwal-indigo-light) 100%);
+	border-radius: 9px;
+	transition: width 0.25s ease;
+}
+
+.aouwal-stats {
+	margin-top: 8px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18px;
+	color: #50575e;
+}
+
+.aouwal-stats em {
+	font-style: normal;
+	font-weight: 600;
+	color: var(--aouwal-slate-900);
+}
+
+/* Log */
+.aouwal-log {
+	max-height: 340px;
+	overflow: auto;
+	background: var(--aouwal-slate-900);
+	color: var(--aouwal-slate-200);
+	padding: 12px 14px;
+	border-radius: var(--aouwal-radius);
+	font-family: Consolas, Monaco, "SFMono-Regular", Menlo, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.aouwal-result {
+	margin: 16px 0;
+}
+
+/* Deploy */
+.aouwal-code {
+	background: var(--aouwal-slate-900);
+	color: var(--aouwal-slate-200);
+	padding: 12px 14px;
+	border-radius: var(--aouwal-radius);
+	overflow: auto;
+	font-family: Consolas, Monaco, "SFMono-Regular", Menlo, monospace;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.aouwal-steps > li {
+	margin-bottom: 18px;
+}
+
+.aouwal-sublist {
+	list-style: decimal;
+	margin-left: 20px;
+}
+
+.aouwal-deploy .aouwal-steps > li > p {
+	margin: 0 0 6px;
+}
+
+/* Buttons */
+.aouwal-wrap .button-primary {
+	background: var(--aouwal-indigo);
+	border-color: var(--aouwal-indigo-dark);
+	color: #fff;
+}
+
+.aouwal-wrap .button-primary:hover,
+.aouwal-wrap .button-primary:focus {
+	background: var(--aouwal-indigo-dark);
+	border-color: var(--aouwal-indigo-dark);
+	color: #fff;
+}
