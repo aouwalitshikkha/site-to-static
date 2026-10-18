@@ -2,6 +2,10 @@
 
 **By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant**
 
+[![WordPress.org](https://img.shields.io/badge/WordPress.org-Aouwal%20Static%20Site%20Export-21759b?logo=wordpress&logoColor=white)](https://wordpress.org/plugins/aouwal-static-site-export/)
+
+Also available on the WordPress plugin directory: **<https://wordpress.org/plugins/aouwal-static-site-export/>**
+
 Export a WordPress site to a fully static HTML bundle with localized assets — ready to push to GitHub and deploy on Cloudflare Pages (or any static host).
 
 The plugin crawls your site over loopback HTTP, captures the fully rendered HTML of every page (theme, plugins and all), downloads and localizes assets, rewrites links to be portable, strips server-side features, and packages everything into a downloadable ZIP.
@@ -36,6 +40,10 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - For the recommendation feature (none) — no external services required
 
 ## Installation
+
+**From the WordPress plugin directory:**
+1. Search for **Aouwal Static Site Export** under *Plugins → Add New*, or install it directly from <https://wordpress.org/plugins/aouwal-static-site-export/>.
+2. Click *Install Now*, then *Activate*.
 
 **From a ZIP:**
 1. Download/clone this repository.
@@ -140,6 +148,7 @@ aouwal-static-site-export/
 **Abdul Aouwal** — Technical SEO Consultant & Specialist for indexing, crawl & AI visibility.
 
 - Website: [abdulaouwal.com](https://abdulaouwal.com)
+- WordPress.org: [Aouwal Static Site Export](https://wordpress.org/plugins/aouwal-static-site-export/)
 - GitHub: [@aouwalitshikkha](https://github.com/aouwalitshikkha)
 - LinkedIn: [aouwalitshikkha](https://www.linkedin.com/in/aouwalitshikkha/)
 - Instagram: [@aouwalcmc](https://www.instagram.com/aouwalcmc)
