@@ -91,10 +91,10 @@ Runs a full export and prints the resulting ZIP URL.
 
 ## Deploy to Cloudflare Pages via GitHub
 
-1. Download and unzip the export.
+1. Download the export and unzip it into a new folder.
 2. Push the files to a GitHub repository:
    ```bash
-   cd aouwal-static-site-export-site
+   # from inside the folder where you unzipped the export
    git init
    git add .
    git commit -m "Initial static export"

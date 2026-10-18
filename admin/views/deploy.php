@@ -29,11 +29,11 @@ if ( is_array( $aouwal_jobs ) && ! empty( $aouwal_jobs ) ) {
 	<h2><?php esc_html_e( 'Deploy to Cloudflare Pages via GitHub', 'aouwal-static-site-export' ); ?></h2>
 	<ol class="aouwal-steps">
 		<li>
-			<p><strong><?php esc_html_e( 'Download and unzip the export.', 'aouwal-static-site-export' ); ?></strong></p>
+			<p><strong><?php esc_html_e( 'Download the export and unzip it into a new folder.', 'aouwal-static-site-export' ); ?></strong></p>
 		</li>
 		<li>
 			<p><strong><?php esc_html_e( 'Create a GitHub repository and push the files.', 'aouwal-static-site-export' ); ?></strong></p>
-			<pre class="aouwal-code">cd aouwal-static-site-export-site
+			<pre class="aouwal-code"># from inside the folder where you unzipped the export
 git init
 git add .
 git commit -m "Initial static export"
