@@ -86,6 +86,10 @@ No. You run the export from the WordPress admin and download a ZIP file. The Dep
 
 No. The plugin only reads your content and writes the export to a files folder inside your own WordPress uploads directory. Your live site, database and settings stay unchanged, and you can delete the export files at any time.
 
+= Where are export files stored, and are they public? =
+
+Exports are written to `wp-content/uploads/aouwal-static-site-export/`, the same area WordPress uses for its own export files. The folder is protected from browsing with an `index.php` file and, on Apache, a `.htaccess` deny rule. The ZIP is served only through a signed, expiring admin link, never a permanent public URL, and the file disappears when the job is pruned. Nginx ignores `.htaccess`, so on Nginx either add a deny rule for `wp-content/uploads/aouwal-static-site-export/` or move exports outside the web root. Developers can relocate the directory with the `aouwal_export_dir` filter.
+
 = Which WordPress and PHP versions are supported? =
 
 The plugin requires WordPress 6.0 or later and PHP 7.4 or later. It is tested up to WordPress 7.1. It uses only the WordPress HTTP API and the WordPress filesystem, so it works on standard shared hosting.
