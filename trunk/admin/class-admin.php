@@ -30,6 +30,7 @@ class AOUWAL_Admin {
 		add_action( 'wp_ajax_aouwal_start', array( $this, 'ajax_start' ) );
 		add_action( 'wp_ajax_aouwal_batch', array( $this, 'ajax_batch' ) );
 		add_action( 'wp_ajax_aouwal_finalize', array( $this, 'ajax_finalize' ) );
+		add_action( 'admin_post_aouwal_download', array( $this, 'download_zip' ) );
 	}
 
 	/**
@@ -225,6 +226,67 @@ class AOUWAL_Admin {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * Serve a job ZIP through an authenticated, expiring URL.
+	 *
+	 * URL format: admin-post.php?action=aouwal_download&job_id=<id>&_wpnonce=<nonce>.
+	 * The nonce expires on the default WordPress tick and the file is
+	 * removed when old jobs are pruned, so leaked URLs stop working.
+	 *
+	 * @return void
+	 */
+	public function download_zip() {
+		$job_id = isset( $_GET['job_id'] ) ? sanitize_text_field( wp_unslash( $_GET['job_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		check_admin_referer( 'aouwal_download_' . $job_id );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to access this page.', 'aouwal-static-site-export' ), 403 );
+		}
+		if ( 1 !== preg_match( '/^[a-f0-9]{20}$/', $job_id ) ) {
+			wp_die( esc_html__( 'Export job not found.', 'aouwal-static-site-export' ), 404 );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		$job      = $exporter->get_job( $job_id );
+		if ( ! $job || empty( $job['zip_path'] ) ) {
+			wp_die( esc_html__( 'Export job not found.', 'aouwal-static-site-export' ), 404 );
+		}
+
+		$path     = wp_normalize_path( (string) $job['zip_path'] );
+		$allowed  = false;
+		foreach ( AOUWAL_Exporter::storage_dirs() as $dir ) {
+			$dir = wp_normalize_path( $dir );
+			if ( $path === $dir || 0 === strpos( $path, rtrim( $dir, '/' ) . '/' ) ) {
+				$allowed = true;
+				break;
+			}
+		}
+		if ( ! $allowed || basename( $path ) !== $job_id . '.zip' ) {
+			wp_die( esc_html__( 'Export job not found.', 'aouwal-static-site-export' ), 404 );
+		}
+		if ( ! file_exists( $path ) ) {
+			wp_die( esc_html__( 'Export file not found. Run a new export.', 'aouwal-static-site-export' ), 404 );
+		}
+
+		nocache_headers();
+		header( 'X-Robots-Tag: noindex, nofollow', true );
+		header( 'Content-Type: application/zip' );
+		header( 'Content-Disposition: attachment; filename="static-export-' . $job_id . '.zip"' );
+		header( 'Content-Length: ' . filesize( $path ) );
+
+		$handle = fopen( $path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Local export ZIP streaming; not a remote fetch.
+		if ( ! $handle ) {
+			wp_die( esc_html__( 'Could not read the export file.', 'aouwal-static-site-export' ), 500 );
+		}
+		while ( ! feof( $handle ) ) {
+			echo fread( $handle, 262144 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread,WordPress.Security.EscapeOutput.OutputNotEscaped -- Chunked local ZIP streaming avoids loading the whole archive via WP_Filesystem; binary output.
+			if ( function_exists( 'flush' ) ) {
+				flush();
+			}
+		}
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Local stream close.
+		exit;
 	}
 }
 

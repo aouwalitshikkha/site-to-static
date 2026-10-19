@@ -4,7 +4,7 @@ Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.3
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,10 @@ No. You run the export from the WordPress admin and download a ZIP file. The Dep
 
 No. The plugin only reads your content and writes the export to a files folder inside your own WordPress uploads directory. Your live site, database and settings stay unchanged, and you can delete the export files at any time.
 
+= Where are export files stored, and are they public? =
+
+Exports are written to `wp-content/uploads/aouwal-static-site-export/`, the same area WordPress uses for its own export files. The folder is protected from browsing with an `index.php` file and, on Apache, a `.htaccess` deny rule. The ZIP is served only through a signed, expiring admin link, never a permanent public URL, and the file disappears when the job is pruned. Nginx ignores `.htaccess`, so on Nginx either add a deny rule for `wp-content/uploads/aouwal-static-site-export/` or move exports outside the web root. Developers can relocate the directory with the `aouwal_export_dir` filter.
+
 = Which WordPress and PHP versions are supported? =
 
 The plugin requires WordPress 6.0 or later and PHP 7.4 or later. It is tested up to WordPress 7.1. It uses only the WordPress HTTP API and the WordPress filesystem, so it works on standard shared hosting.
@@ -110,6 +114,14 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 
 == Changelog ==
 
+= 1.1.0 =
+* Security: export ZIP downloads now use a signed, expiring admin link instead of a permanent public URL. A shared or leaked link stops working when the nonce expires and when the job is pruned.
+* Security: the export folder is protected from direct browsing with an index.php guard and, on Apache, a .htaccess deny rule.
+* New aouwal_export_dir filter to store export files outside the web root (recommended on Nginx).
+* The Deploy tab shows a ready-to-paste Nginx deny rule when the server runs Nginx.
+* WP-CLI prints the local ZIP path instead of a public URL.
+* Fixed the Deploy tab and README instructions for exports that have no wrapper folder.
+
 = 1.0.3 =
 * Fixed link hint tags (preconnect, dns-prefetch, prerender, profile) being downloaded and rewritten to broken local files.
 * Fixed multi-token rel values (for example "preconnect dns-prefetch") being misclassified.
@@ -128,6 +140,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Security release. Export ZIPs now download through signed, expiring links instead of a permanent public URL, and the export folder is protected from direct access. Recommended for every site.
 
 = 1.0.3 =
 Fixes link hint handling and localizes web app manifest icons in exports. Update recommended.

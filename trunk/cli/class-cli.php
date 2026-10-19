@@ -78,7 +78,9 @@ class AOUWAL_CLI {
 		}
 
 		$progress->finish();
-		WP_CLI::success( sprintf( 'Export complete: %s', $final['zip'] ) );
+		$done_job = $exporter->get_job( $job_id );
+		$done_zip = ( $done_job && ! empty( $done_job['zip_path'] ) ) ? $done_job['zip_path'] : $final['zip'];
+		WP_CLI::success( sprintf( 'Export complete: %s', $done_zip ) );
 	}
 }
 

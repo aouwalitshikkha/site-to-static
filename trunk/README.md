@@ -30,6 +30,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Strips WordPress version tags and staging `noindex` robots meta so the exported site is indexable.
 - Optional, invisible source-code credit (off by default) that can be enabled in Settings. It never shows in the browser.
 - Generates `404.html`, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
+- Stores exports in a protected uploads subfolder and serves the ZIP only through a signed, expiring admin link. Use the `aouwal_export_dir` filter to relocate exports outside the web root.
 - Chunked, timeout-safe export with a live progress log.
 - Optional WP-CLI command: `wp aouwal-static-export run`.
 
@@ -72,7 +73,7 @@ Open **Static Export** in the WordPress admin menu. Three tabs:
 ```bash
 wp aouwal-static-export run --batch=10
 ```
-Runs a full export and prints the resulting ZIP URL.
+Runs a full export and prints the resulting ZIP path.
 
 ## Settings reference
 
@@ -91,10 +92,10 @@ Runs a full export and prints the resulting ZIP URL.
 
 ## Deploy to Cloudflare Pages via GitHub
 
-1. Download and unzip the export.
+1. Download the export and unzip it into a new folder.
 2. Push the files to a GitHub repository:
    ```bash
-   cd aouwal-static-site-export-site
+   # from inside the folder where you unzipped the export
    git init
    git add .
    git commit -m "Initial static export"
@@ -123,7 +124,7 @@ aouwal-static-site-export/
 ├── uninstall.php                 # cleanup on uninstall
 ├── readme.txt                    # WordPress.org-style readme
 ├── includes/
-│   ├── class-plugin.php
+│   ├── class-brand.php
 │   ├── class-settings.php
 │   ├── class-writer.php          # permalink → path mapping, relative links
 │   ├── class-url-discovery.php   # URL enumeration
