@@ -43,6 +43,126 @@ class AOUWAL_Exporter {
 		return $wpdb->prefix . 'aouwal_job_items';
 	}
 
+	/**
+	 * Absolute base directory for all export artifacts.
+	 *
+	 * Defaults to a subdirectory of the WordPress uploads directory, in line
+	 * with core's own export storage. The `aouwal_export_dir` filter mirrors
+	 * `wp_privacy_exports_dir`, so a site can relocate exports outside the web
+	 * root (for example on Nginx, where .htaccess does not apply).
+	 *
+	 * @return string Directory path without a trailing slash, or empty on error.
+	 */
+	public static function base_dir() {
+		$uploads = wp_upload_dir();
+		if ( ! empty( $uploads['error'] ) || empty( $uploads['basedir'] ) ) {
+			return '';
+		}
+		$default = trailingslashit( $uploads['basedir'] ) . 'aouwal-static-site-export';
+
+		/**
+		 * Filters the directory used to store export files.
+		 *
+		 * Return an absolute path outside the web root to keep export
+		 * artifacts unreachable by direct URL on any web server. The path
+		 * must be writable by the web server user.
+		 *
+		 * @param string $default Default export directory.
+		 */
+		$dir = apply_filters( 'aouwal_export_dir', $default );
+		if ( ! is_string( $dir ) || '' === trim( $dir ) ) {
+			return $default;
+		}
+		return untrailingslashit( $dir );
+	}
+
+	/**
+	 * Every directory an export may legitimately live in.
+	 *
+	 * Includes the resolved base and the default uploads location, so jobs
+	 * created before an `aouwal_export_dir` filter was added stay
+	 * downloadable. Never broadens access beyond these two plugin-owned paths.
+	 *
+	 * @return string[]
+	 */
+	public static function storage_dirs() {
+		$dirs = array();
+
+		$base = self::base_dir();
+		if ( '' !== $base ) {
+			$dirs[] = $base;
+		}
+
+		$uploads = wp_upload_dir();
+		if ( empty( $uploads['error'] ) && ! empty( $uploads['basedir'] ) ) {
+			$dirs[] = trailingslashit( $uploads['basedir'] ) . 'aouwal-static-site-export';
+		}
+
+		return array_values( array_unique( array_filter( $dirs ) ) );
+	}
+
+	/**
+	 * Signed, expiring download URL for a job ZIP.
+	 *
+	 * Served via admin-post with a WP nonce (12-24h lifetime) and a
+	 * manage_options capability check. The URL stops working when the
+	 * nonce expires or when the job is pruned.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return string
+	 */
+	public function get_download_url( $job_id ) {
+		$job_id = preg_replace( '/[^a-f0-9]/', '', strtolower( (string) $job_id ) );
+		$nonce  = wp_create_nonce( 'aouwal_download_' . $job_id );
+		return add_query_arg(
+			array(
+				'action'   => 'aouwal_download',
+				'job_id'   => $job_id,
+				'_wpnonce' => $nonce,
+			),
+			admin_url( 'admin-post.php' )
+		);
+	}
+
+	/**
+	 * Drop index.php + .htaccess guards into the export base directory.
+	 *
+	 * Direct URLs are never advertised in the UI. On Apache these files deny
+	 * direct access entirely; on Nginx they are inert, so the signed download
+	 * URL is the gate. Relocate with the `aouwal_export_dir` filter to keep
+	 * artifacts outside the web root on any server.
+	 *
+	 * @param string $base Absolute base directory.
+	 * @return void
+	 */
+	protected function protect_base_dir( $base ) {
+		if ( '' === $base ) {
+			return;
+		}
+		if ( ! function_exists( 'WP_Filesystem' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		global $wp_filesystem;
+		if ( ! ( $wp_filesystem instanceof WP_Filesystem_Base ) ) {
+			if ( ! function_exists( 'WP_Filesystem' ) || ! WP_Filesystem() ) {
+				return;
+			}
+			global $wp_filesystem;
+		}
+		if ( ! ( $wp_filesystem instanceof WP_Filesystem_Base ) ) {
+			return;
+		}
+		$index = trailingslashit( $base ) . 'index.php';
+		if ( ! $wp_filesystem->exists( $index ) ) {
+			$wp_filesystem->put_contents( $index, "<?php\n// Silence is golden.\n", FS_CHMOD_FILE );
+		}
+		$htaccess = trailingslashit( $base ) . '.htaccess';
+		if ( ! $wp_filesystem->exists( $htaccess ) ) {
+			$rules = "<IfModule mod_authz_core.c>\n\tRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n\tOrder deny,allow\n\tDeny from all\n</IfModule>\n";
+			$wp_filesystem->put_contents( $htaccess, $rules, FS_CHMOD_FILE );
+		}
+	}
+
 	/* ---------------------------------------------------------------------
 	 * Job lifecycle
 	 * ------------------------------------------------------------------ */
@@ -55,14 +175,13 @@ class AOUWAL_Exporter {
 	public function start() {
 		$job_id = substr( md5( uniqid( (string) wp_rand(), true ) ), 0, 20 );
 
-		$uploads = wp_upload_dir();
-		if ( ! empty( $uploads['error'] ) ) {
-			return new WP_Error( 'aouwal_uploads', $uploads['error'] );
+		$base = self::base_dir();
+		if ( '' === $base ) {
+			return new WP_Error( 'aouwal_uploads', __( 'Could not determine the export directory.', 'aouwal-static-site-export' ) );
 		}
 
-		$base      = trailingslashit( $uploads['basedir'] ) . 'aouwal-static-site-export';
-		$output    = $base . '/' . $job_id . '/site';
-		$zip_path  = $base . '/' . $job_id . '.zip';
+		$output   = $base . '/' . $job_id . '/site';
+		$zip_path = $base . '/' . $job_id . '.zip';
 
 		if ( ! wp_mkdir_p( $output ) ) {
 			return new WP_Error( 'aouwal_mkdir', __( 'Could not create the export directory.', 'aouwal-static-site-export' ) );
@@ -84,11 +203,11 @@ class AOUWAL_Exporter {
 			'phase'      => 'crawl',
 			'output_dir' => $output,
 			'zip_path'   => $zip_path,
-			'zip_url'    => trailingslashit( $uploads['baseurl'] ) . 'aouwal-static-site-export/' . $job_id . '.zip',
 			'notice'     => array(),
 		);
 		$this->save_job( $job );
 		$this->prune_old_jobs( $base, $job_id );
+		$this->protect_base_dir( $base );
 
 		$counts = $this->counts( $job_id );
 
@@ -204,7 +323,7 @@ class AOUWAL_Exporter {
 		return array(
 			'done'   => true,
 			'counts' => $counts,
-			'zip'    => $job['zip_url'],
+			'zip'    => $this->get_download_url( $job_id ),
 			'log'    => $notices,
 		);
 	}
@@ -468,6 +587,9 @@ class AOUWAL_Exporter {
 		foreach ( $entries as $name => $info ) {
 			$name = (string) $name;
 			if ( '.' === $name || '..' === $name ) {
+				continue;
+			}
+			if ( '.' === $name[0] || 'index.php' === $name ) {
 				continue;
 			}
 			$id = preg_replace( '/\.zip$/', '', $name );
