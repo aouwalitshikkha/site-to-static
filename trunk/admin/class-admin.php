@@ -86,7 +86,6 @@ class AOUWAL_Admin {
 			array(
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'aouwal_ajax' ),
-				'batch'   => (int) AOUWAL_Settings::get( 'batch_size', 5 ),
 				'i18n'    => array(
 					'starting'   => __( 'Discovering URLs…', 'aouwal-static-site-export' ),
 					'crawling'   => __( 'Processing', 'aouwal-static-site-export' ),
