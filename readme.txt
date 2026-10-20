@@ -4,7 +4,7 @@ Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -114,6 +114,10 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 
 == Changelog ==
 
+= 1.1.1 =
+* Removed the unused localized AOUWAL.batch value. The batch size is read server-side on every request, so exports always use the current setting.
+* Corrected the project structure tree in the README so it matches the actual file layout.
+
 = 1.1.0 =
 * Security: export ZIP downloads now use a signed, expiring admin link instead of a permanent public URL. A shared or leaked link stops working when the nonce expires and when the job is pruned.
 * Security: the export folder is protected from direct browsing with an index.php guard and, on Apache, a .htaccess deny rule.
@@ -140,6 +144,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Housekeeping release: removes unused localized admin data and corrects the README project structure. No behaviour change; update at your convenience.
 
 = 1.1.0 =
 Security release. Export ZIPs now download through signed, expiring links instead of a permanent public URL, and the export folder is protected from direct access. Recommended for every site.
