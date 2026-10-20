@@ -123,6 +123,8 @@ aouwal-static-site-export/
 ├── aouwal-static-site-export.php          # bootstrap + activation
 ├── uninstall.php                 # cleanup on uninstall
 ├── readme.txt                    # WordPress.org-style readme
+├── README.md                     # this file
+├── LICENSE                       # GPL-2.0-or-later
 ├── includes/
 │   ├── class-brand.php
 │   ├── class-settings.php
