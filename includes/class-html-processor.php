@@ -191,7 +191,7 @@ class AOUWAL_HTML_Processor {
 			'//*[contains(@id,"wp-emoji")]',
 			'//meta[@name="generator"]',
 			'//meta[@name="robots"][contains(@content,"noindex")]',
-			'//*[contains(@class,"wp-block-latest-comments")]',
+			'//base',
 			'//link[contains(@rel,"https://api.w.org")]',
 			'//link[@rel="EditURI"]',
 			'//link[@rel="wlwmanifest"]',
@@ -199,18 +199,23 @@ class AOUWAL_HTML_Processor {
 			'//link[@rel="shortlink"]',
 			'//link[contains(@href,"wp-json")]',
 			'//script[contains(@src,"wp-emoji")]',
-			'//script[contains(@src,"comment-reply")]',
 			'//script[contains(@src,"wp-includes/js/wp-embed")]',
 			'//script[contains(.,"_wpemojiSettings")]',
 			'//script[contains(.,"concatemoji")]',
-			'//link[contains(@href,"/comments/feed")]',
-			'//link[contains(@title,"Comments Feed")]',
-			'//*[@id="comments"]',
-			'//*[@id="respond"]',
-			'//*[contains(@class,"comment-respond")]',
-			'//*[contains(@class,"comment-form")]',
-			'//form[@id="commentform"]',
 		);
+
+		if ( AOUWAL_Settings::get( 'strip_comments' ) ) {
+			$queries[] = '//*[contains(@class,"wp-block-latest-comments")]';
+			$queries[] = '//style[contains(@id,"wp-block-latest-comments-inline-css")]';
+			$queries[] = '//script[contains(@src,"comment-reply")]';
+			$queries[] = '//link[contains(@href,"/comments/feed")]';
+			$queries[] = '//link[contains(@title,"Comments Feed")]';
+			$queries[] = '//*[@id="comments"]';
+			$queries[] = '//*[@id="respond"]';
+			$queries[] = '//*[contains(@class,"comment-respond")]';
+			$queries[] = '//*[contains(@class,"comment-form")]';
+			$queries[] = '//form[@id="commentform"]';
+		}
 
 		if ( AOUWAL_Settings::get( 'strip_search' ) ) {
 			$queries[] = '//form[@role="search"]';
@@ -265,7 +270,7 @@ class AOUWAL_HTML_Processor {
 				if ( null !== $resolved ) {
 					$node->setAttribute( $attr, $resolved );
 				}
-				if ( 'data-lazy-src' === $attr && $node instanceof DOMElement && 'img' === strtolower( $node->tagName ) ) {
+				if ( 'data-lazy-src' === $attr && null !== $resolved && $node instanceof DOMElement && 'img' === strtolower( $node->tagName ) ) {
 					$node->setAttribute( 'src', $resolved );
 				}
 			}
@@ -501,13 +506,14 @@ class AOUWAL_HTML_Processor {
 	/**
 	 * Strip the query string from a URL.
 	 *
+	 * Always applied: a static file system cannot distinguish `style.css`
+	 * from `style.css?ver=1.2`, so keeping the query string would produce
+	 * links and asset keys that never resolve on the exported site.
+	 *
 	 * @param string $url URL.
 	 * @return string
 	 */
 	protected function strip_query( $url ) {
-		if ( ! AOUWAL_Settings::get( 'strip_query' ) ) {
-			return $url;
-		}
 		$pos = strpos( $url, '?' );
 		if ( false === $pos ) {
 			return $url;

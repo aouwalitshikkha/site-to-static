@@ -49,8 +49,7 @@ unset( $aouwal_post_types['attachment'] );
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Asset handling', 'aouwal-static-site-export' ); ?></th>
 			<td>
-				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[download_assets]" value="1" <?php checked( $aouwal['download_assets'] ); ?> /> <?php esc_html_e( 'Download &amp; localize all assets (CSS, JS, images, fonts)', 'aouwal-static-site-export' ); ?></label><br />
-				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[strip_query]" value="1" <?php checked( $aouwal['strip_query'] ); ?> /> <?php esc_html_e( 'Strip cache-busting query strings (e.g. ?ver=1.2)', 'aouwal-static-site-export' ); ?></label>
+				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[download_assets]" value="1" <?php checked( $aouwal['download_assets'] ); ?> /> <?php esc_html_e( 'Download &amp; localize all assets (CSS, JS, images, fonts)', 'aouwal-static-site-export' ); ?></label>
 			</td>
 		</tr>
 		<tr>
@@ -100,7 +99,8 @@ unset( $aouwal_post_types['attachment'] );
 			<td>
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[generate_sitemap]" value="1" <?php checked( $aouwal['generate_sitemap'] ); ?> /> <?php esc_html_e( 'sitemap.xml', 'aouwal-static-site-export' ); ?></label><br />
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[generate_robots]" value="1" <?php checked( $aouwal['generate_robots'] ); ?> /> <?php esc_html_e( 'robots.txt', 'aouwal-static-site-export' ); ?></label><br />
-				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[preserve_redirects]" value="1" <?php checked( $aouwal['preserve_redirects'] ); ?> /> <?php esc_html_e( 'Cloudflare Pages _redirects file', 'aouwal-static-site-export' ); ?></label>
+				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[preserve_redirects]" value="1" <?php checked( $aouwal['preserve_redirects'] ); ?> /> <?php esc_html_e( 'Cloudflare Pages _redirects file', 'aouwal-static-site-export' ); ?></label><br />
+				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[generate_headers]" value="1" <?php checked( $aouwal['generate_headers'] ); ?> /> <?php esc_html_e( 'Cloudflare Pages _headers file', 'aouwal-static-site-export' ); ?></label>
 			</td>
 		</tr>
 		<tr>
