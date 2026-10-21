@@ -131,7 +131,7 @@ class AOUWAL_Writer {
 			if ( '' === $base ) {
 				return true;
 			}
-			if ( 0 === strpos( $path, $base ) ) {
+			if ( $path === $base || 0 === strpos( $path, $base . '/' ) ) {
 				return true;
 			}
 		}
@@ -141,12 +141,18 @@ class AOUWAL_Writer {
 	/**
 	 * Strip the site base path from a URL path.
 	 *
+	 * The base is only stripped on a path boundary, so a site installed in
+	 * `/w` does not swallow `/w2/` or `/wp-content/` from the same host.
+	 *
 	 * @param string $path URL path.
 	 * @return string
 	 */
 	protected function strip_base( $path ) {
 		foreach ( array( $this->home_path, $this->site_path ) as $base ) {
-			if ( '' !== $base && 0 === strpos( $path, $base ) ) {
+			if ( '' === $base ) {
+				continue;
+			}
+			if ( $path === $base || 0 === strpos( $path, $base . '/' ) ) {
 				$path = substr( $path, strlen( $base ) );
 				break;
 			}
@@ -202,16 +208,55 @@ class AOUWAL_Writer {
 			return $this->clean_path( $rel . '/index.xml' );
 		}
 
-		$ext = strtolower( pathinfo( $rel, PATHINFO_EXTENSION ) );
-		if ( '' !== $ext && ! in_array( $ext, array( 'html', 'htm', 'php' ), true ) ) {
+		// A trailing slash always means a directory, even when the slug
+		// contains a dot (e.g. /v1.2/ must not become a file named "v1.2").
+		if ( '/' === substr( $rel, -1 ) ) {
+			return $this->clean_path( rtrim( $rel, '/' ) . '/index.html' );
+		}
+
+		$ext  = strtolower( (string) pathinfo( $rel, PATHINFO_EXTENSION ) );
+		$name = (string) pathinfo( $rel, PATHINFO_FILENAME );
+		$dir  = dirname( $rel );
+		$pre  = ( '.' === $dir || '' === $dir ) ? '' : $dir . '/';
+
+		if ( in_array( $ext, array( 'html', 'htm' ), true ) ) {
+			// Permalinks that already end in .html: keep the flat file name.
 			return $this->clean_path( $rel );
 		}
 
-		$rel = rtrim( $rel, '/' );
-		if ( '' !== $ext ) {
-			$rel = substr( $rel, 0, -( strlen( $ext ) + 1 ) );
+		if ( 'php' === $ext ) {
+			// A .php endpoint cannot run on a static host. Keep the file name
+			// but serve it as .html so /index.php becomes index.html.
+			return $this->clean_path( $pre . $name . '.html' );
 		}
+
+		if ( '' !== $ext && in_array( $ext, $this->file_extensions(), true ) ) {
+			// A real file (PDF, XML, image, ...) rather than a page URL.
+			return $this->clean_path( $rel );
+		}
+
 		return $this->clean_path( $rel . '/index.html' );
+	}
+
+	/**
+	 * Extensions that identify a real file rather than a page URL.
+	 *
+	 * Anything not listed here is treated as a page slug and written as
+	 * `<slug>/index.html`, so dotted slugs such as "/v1.2" still resolve.
+	 *
+	 * @return string[]
+	 */
+	protected function file_extensions() {
+		return array(
+			// Documents and data.
+			'pdf', 'txt', 'csv', 'xml', 'json', 'rss', 'atom', 'zip', 'gz', 'tar',
+			'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'rtf',
+			// Front-end assets.
+			'css', 'js', 'mjs', 'map', 'wasm',
+			'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif', 'ico', 'bmp', 'tif', 'tiff',
+			'mp3', 'm4a', 'wav', 'ogg', 'flac', 'mp4', 'm4v', 'mov', 'webm', 'ogv', 'avi',
+			'woff', 'woff2', 'ttf', 'otf', 'eot',
+		);
 	}
 
 	/**

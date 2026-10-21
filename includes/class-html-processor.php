@@ -191,6 +191,7 @@ class AOUWAL_HTML_Processor {
 			'//*[contains(@id,"wp-emoji")]',
 			'//meta[@name="generator"]',
 			'//meta[@name="robots"][contains(@content,"noindex")]',
+			'//base',
 			'//link[contains(@rel,"https://api.w.org")]',
 			'//link[@rel="EditURI"]',
 			'//link[@rel="wlwmanifest"]',
@@ -269,7 +270,7 @@ class AOUWAL_HTML_Processor {
 				if ( null !== $resolved ) {
 					$node->setAttribute( $attr, $resolved );
 				}
-				if ( 'data-lazy-src' === $attr && $node instanceof DOMElement && 'img' === strtolower( $node->tagName ) ) {
+				if ( 'data-lazy-src' === $attr && null !== $resolved && $node instanceof DOMElement && 'img' === strtolower( $node->tagName ) ) {
 					$node->setAttribute( 'src', $resolved );
 				}
 			}
