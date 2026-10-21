@@ -6,14 +6,22 @@
  */
 
 defined( 'ABSPATH' ) || exit;
+
+$aouwal_zip_available = AOUWAL_Zip::available();
 ?>
 <div class="aouwal-export">
+	<?php if ( ! $aouwal_zip_available ) : ?>
+		<div class="notice notice-error">
+			<p><?php esc_html_e( 'The PHP zip extension is not available. The export is disabled because Aouwal Static Site Export cannot package the exported files without it. Ask your host to enable the zip extension, then reload this page.', 'aouwal-static-site-export' ); ?></p>
+		</div>
+	<?php endif; ?>
+
 	<p class="aouwal-intro">
 		<?php esc_html_e( 'Generate a static copy of your site. The plugin crawls every page, downloads and localizes all assets, then packages everything into a ZIP you can push to GitHub and deploy on Cloudflare Pages.', 'aouwal-static-site-export' ); ?>
 	</p>
 
 	<p>
-		<button type="button" class="button button-primary button-hero" id="aouwal-start">
+		<button type="button" class="button button-primary button-hero" id="aouwal-start" <?php disabled( ! $aouwal_zip_available ); ?>>
 			<?php esc_html_e( 'Start static export', 'aouwal-static-site-export' ); ?>
 		</button>
 		<span class="spinner aouwal-spinner" id="aouwal-spinner"></span>
