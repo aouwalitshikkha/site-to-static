@@ -67,9 +67,10 @@
 				$( '#aouwal-start' ).prop( 'disabled', false );
 				phase( AOUWAL.i18n.done );
 				log( res.data.log );
-				var $notice = $( '<div class="notice notice-success"><p></p></div>' );
+				var hasErrors = res.data.counts && res.data.counts.error > 0;
+				var $notice = $( '<div class="notice ' + ( hasErrors ? 'notice-warning' : 'notice-success' ) + '"><p></p></div>' );
 				$notice.find( 'p' )
-					.text( AOUWAL.i18n.done + ' ' )
+					.text( ( hasErrors ? AOUWAL.i18n.done_with_errors : AOUWAL.i18n.done ) + ' ' )
 					.append( $( '<a class="button button-primary" download></a>' )
 						.attr( 'href', res.data.zip )
 						.text( AOUWAL.i18n.download ) );

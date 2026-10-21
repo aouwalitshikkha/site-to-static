@@ -31,8 +31,10 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Optional, invisible source-code credit (off by default) that can be enabled in Settings. It never shows in the browser.
 - Generates `404.html` and, when enabled, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
 - Stores exports in a protected uploads subfolder and serves the ZIP only through a signed, expiring admin link. Use the `aouwal_export_dir` filter to relocate exports outside the web root.
+- Caps single assets (25 MB by default) so one large video or archive cannot exhaust PHP memory, and reports any page or asset that could not be written instead of marking it done.
+- Fetches only public URLs: the SSRF guard validates every redirect hop and both A and AAAA records.
 - Chunked, timeout-safe export with a live progress log.
-- Optional WP-CLI command: `wp aouwal-static-export run`.
+- Optional WP-CLI command: `wp aouwal-static-export run`. It exits non-zero when items fail, so CI catches incomplete exports.
 
 ## Requirements
 
@@ -81,6 +83,7 @@ Runs a full export and prints the resulting ZIP path.
 | Post types | Which post types to export (posts, pages, CPTs). |
 | Archives | Include taxonomy, author and/or date archives and RSS feeds. Turning RSS feeds off also removes the feed rules from `_redirects`. |
 | Asset handling | Download and localize assets. Query strings are always stripped, because a static file server cannot serve `style.css?ver=1.2` differently from `style.css`. |
+| Maximum asset size | Assets larger than this (default 25 MB) are skipped with an error in the log, so a single large file cannot run the export out of memory. |
 | URL style | `Relative` (portable, works in a subdirectory) or `Root-absolute` (best for a Cloudflare Pages root domain). |
 | Public site URL | Used for `sitemap.xml` / `robots.txt`. Leave blank to use the current site URL. |
 | Additional URLs | Extra URLs to export, one per line. |
@@ -114,6 +117,8 @@ The export includes, when enabled in Settings, a `_redirects` file (`/index.php`
 - Forms need an external endpoint (e.g. Formspree, Web3Forms); server-side WordPress forms will not function.
 - Server-side search and comments are removed by default; both can be kept from Settings.
 - Cloudflare Pages cannot redirect by query string (`/?p=123`); use pretty permalinks.
+- `404.html` uses your theme's 404 template only when the site answers a 404 status for unknown URLs. Sites that return the homepage for every path get a generic 404 page instead, with a note in the export log.
+- The DNS-rebinding window between the SSRF guard's lookup and the actual request cannot be closed through the WordPress HTTP API, which does not expose per-request IP pinning. Every redirect hop is validated, which limits the exposure.
 
 ## Project structure
 

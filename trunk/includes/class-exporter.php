@@ -297,20 +297,28 @@ class AOUWAL_Exporter {
 			);
 		}
 
-		$this->writer->write( '404.html', $this->build_404( $job_id ) );
-
-		if ( AOUWAL_Settings::get( 'generate_sitemap' ) ) {
-			$this->writer->write( 'sitemap.xml', $this->build_sitemap( $job_id ) );
-		}
-		if ( AOUWAL_Settings::get( 'generate_robots' ) ) {
-			$this->writer->write( 'robots.txt', $this->build_robots() );
+		$page_404 = $this->build_404( $job_id );
+		if ( ! empty( $page_404['notice'] ) ) {
+			$notices[] = $page_404['notice'];
 		}
 
-		if ( AOUWAL_Settings::get( 'preserve_redirects' ) ) {
-			$this->writer->write( '_redirects', $this->build_redirects() );
+		$failed = array();
+		if ( ! $this->writer->write( '404.html', $page_404['html'] ) ) {
+			$failed[] = '404.html';
 		}
-		if ( AOUWAL_Settings::get( 'generate_headers' ) ) {
-			$this->writer->write( '_headers', $this->build_headers() );
+
+		if ( AOUWAL_Settings::get( 'generate_sitemap' ) && ! $this->writer->write( 'sitemap.xml', $this->build_sitemap( $job_id ) ) ) {
+			$failed[] = 'sitemap.xml';
+		}
+		if ( AOUWAL_Settings::get( 'generate_robots' ) && ! $this->writer->write( 'robots.txt', $this->build_robots() ) ) {
+			$failed[] = 'robots.txt';
+		}
+
+		if ( AOUWAL_Settings::get( 'preserve_redirects' ) && ! $this->writer->write( '_redirects', $this->build_redirects() ) ) {
+			$failed[] = '_redirects';
+		}
+		if ( AOUWAL_Settings::get( 'generate_headers' ) && ! $this->writer->write( '_headers', $this->build_headers() ) ) {
+			$failed[] = '_headers';
 		}
 
 		$zip = new AOUWAL_Zip();
@@ -321,6 +329,27 @@ class AOUWAL_Exporter {
 
 		if ( 0 === $counts['done'] ) {
 			$notices[] = __( 'No pages were exported. Check your post type settings.', 'aouwal-static-site-export' );
+		}
+
+		if ( $counts['error'] > 0 ) {
+			$notices[] = sprintf(
+				/* translators: %s: number of failed pages or assets. */
+				_n(
+					'%s item could not be exported. See the log above for the reason.',
+					'%s items could not be exported. See the log above for the reason.',
+					$counts['error'],
+					'aouwal-static-site-export'
+				),
+				number_format_i18n( $counts['error'] )
+			);
+		}
+
+		if ( ! empty( $failed ) ) {
+			$notices[] = sprintf(
+				/* translators: %s: comma-separated list of file names. */
+				__( 'These files could not be written: %s', 'aouwal-static-site-export' ),
+				implode( ', ', $failed )
+			);
 		}
 
 		$job['phase']  = 'done';
@@ -395,14 +424,18 @@ class AOUWAL_Exporter {
 			if ( AOUWAL_Brand::should_include() ) {
 				$body = $this->inject_xml_comment( $body );
 			}
-			$this->writer->write( $item->local_path, $body );
+			if ( ! $this->writer->write( $item->local_path, $body ) ) {
+				return $this->write_failure( $item, $result['status'] );
+			}
 			$this->mark( $item->id, 'done', $result['status'], '' );
 			return sprintf( '[feed] %s -> %s', $item->source_url, $item->local_path );
 		}
 
 		$processed = $processor->process( $result['body'], $item->source_url, $item->local_path, $job_id );
 
-		$this->writer->write( $item->local_path, $processed['html'] );
+		if ( ! $this->writer->write( $item->local_path, $processed['html'] ) ) {
+			return $this->write_failure( $item, $result['status'] );
+		}
 
 		if ( ! empty( $processed['assets'] ) ) {
 			$this->insert_items( $job_id, $processed['assets'], 'asset' );
@@ -410,6 +443,23 @@ class AOUWAL_Exporter {
 
 		$this->mark( $item->id, 'done', $result['status'], '' );
 		return sprintf( '[page] %s -> %s', $item->source_url, $item->local_path );
+	}
+
+	/**
+	 * Mark an item as failed because its file could not be written.
+	 *
+	 * The item is not marked "done", so the failure shows up in the final
+	 * counts and in the notice shown when the export finishes.
+	 *
+	 * @param object $item        Row.
+	 * @param int    $http_status HTTP status of the fetched response.
+	 * @return string Log line.
+	 */
+	protected function write_failure( $item, $http_status ) {
+		/* translators: %s: local file path. */
+		$message = sprintf( __( 'Could not write %s', 'aouwal-static-site-export' ), $item->local_path );
+		$this->mark( $item->id, 'error', $http_status, $message );
+		return sprintf( '[error] %s (%s)', $item->source_url, $message );
 	}
 
 	/**
@@ -428,13 +478,13 @@ class AOUWAL_Exporter {
 		$processor = new AOUWAL_Asset_Processor( $this->writer, new AOUWAL_Crawler() );
 		$result    = $processor->process( $item->source_url, $item->local_path );
 
-		if ( ! empty( $result['assets'] ) ) {
-			$this->insert_items( $job_id, $result['assets'], 'asset' );
-		}
-
 		if ( '' !== $result['error'] ) {
 			$this->mark( $item->id, 'error', $result['status'], $result['error'] );
 			return sprintf( '[asset error] %s (%s)', $item->source_url, $result['error'] );
+		}
+
+		if ( ! empty( $result['assets'] ) ) {
+			$this->insert_items( $job_id, $result['assets'], 'asset' );
 		}
 
 		$this->mark( $item->id, 'done', $result['status'], '' );
@@ -683,20 +733,44 @@ class AOUWAL_Exporter {
 	/**
 	 * Build a static 404 page.
 	 *
+	 * The theme's 404 template is only used when WordPress actually answers
+	 * the synthetic URL with a 404. Sites that redirect unknown URLs to the
+	 * front page (or answer 200 with the homepage) would otherwise export a
+	 * copy of the homepage as 404.html. A 200 response is still accepted when
+	 * its body differs from the homepage, which covers setups that render the
+	 * 404 template with a 200 status (soft 404).
+	 *
 	 * @param string $job_id Export job ID.
-	 * @return string
+	 * @return array{html:string,notice:string} Page HTML and an optional notice.
 	 */
 	protected function build_404( $job_id ) {
 		$url     = home_url( '/aouwal-404-' . wp_generate_password( 10, false ) . '/' );
 		$crawler = new AOUWAL_Crawler();
 		$result  = $crawler->fetch( $url, false );
 
-		if ( '' === $result['body'] ) {
+		$status   = (int) $result['status'];
+		$use_body = '' !== $result['body'] && 404 === $status;
+		$notice   = '';
+
+		if ( ! $use_body && '' !== $result['body'] && 200 === $status ) {
+			$home = $crawler->fetch( home_url( '/' ), false );
+			if ( '' !== $home['body'] ) {
+				$use_body = $this->page_fingerprint( $result['body'] ) !== $this->page_fingerprint( $home['body'] );
+			} else {
+				$use_body = true;
+			}
+		}
+
+		if ( ! $use_body ) {
+			$notice   = __( 'The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template.', 'aouwal-static-site-export' );
 			$fallback = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
 			if ( AOUWAL_Brand::should_include() ) {
 				$fallback = AOUWAL_Brand::html_comment() . "\n" . $fallback;
 			}
-			return $fallback;
+			return array(
+				'html'   => $fallback,
+				'notice' => $notice,
+			);
 		}
 
 		$processor = new AOUWAL_HTML_Processor( $this->writer );
@@ -704,7 +778,26 @@ class AOUWAL_Exporter {
 
 		$this->download_recursive( $processed['assets'] );
 
-		return $processed['html'];
+		return array(
+			'html'   => $processed['html'],
+			'notice' => $notice,
+		);
+	}
+
+	/**
+	 * Reduce a page body to a comparable fingerprint.
+	 *
+	 * Used to tell a real 404 template from the homepage served for an
+	 * unknown URL. Markup, scripts, styles and whitespace are ignored.
+	 *
+	 * @param string $html Raw HTML.
+	 * @return string
+	 */
+	protected function page_fingerprint( $html ) {
+		$html = (string) preg_replace( '~<(script|style)\b.*?</\1>~is', ' ', (string) $html );
+		$text = wp_strip_all_tags( $html );
+		$text = (string) preg_replace( '~\s+~u', ' ', $text );
+		return trim( $text );
 	}
 
 	/**

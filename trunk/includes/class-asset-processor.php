@@ -77,7 +77,14 @@ class AOUWAL_Asset_Processor {
 			}
 		}
 
-		$this->writer->write( $local_path, $body );
+		if ( ! $this->writer->write( $local_path, $body ) ) {
+			return array(
+				'assets' => array(),
+				'status' => $result['status'],
+				/* translators: %s: local file path. */
+				'error'  => sprintf( __( 'Could not write %s', 'aouwal-static-site-export' ), $local_path ),
+			);
+		}
 
 		return array(
 			'assets' => $discovered,

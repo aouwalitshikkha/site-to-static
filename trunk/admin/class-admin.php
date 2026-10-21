@@ -91,6 +91,7 @@ class AOUWAL_Admin {
 					'crawling'   => __( 'Processing', 'aouwal-static-site-export' ),
 					'finalizing' => __( 'Packaging export…', 'aouwal-static-site-export' ),
 					'done'       => __( 'Export complete.', 'aouwal-static-site-export' ),
+					'done_with_errors' => __( 'Export finished with errors.', 'aouwal-static-site-export' ),
 					'error'      => __( 'An error occurred.', 'aouwal-static-site-export' ),
 					'confirm'    => __( 'Start a new static export?', 'aouwal-static-site-export' ),
 					'download'   => __( 'Download export ZIP', 'aouwal-static-site-export' ),
