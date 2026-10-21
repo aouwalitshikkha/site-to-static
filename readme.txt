@@ -21,7 +21,7 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 = What you can export =
 
 * Posts, pages and custom post types.
-* Taxonomy archives, author archives and date archives.
+* Taxonomy archives, author archives and date archives, including their pagination (page 2 and later).
 * RSS feeds.
 * A `404.html` page, plus `sitemap.xml` and `robots.txt`.
 * Optional Cloudflare Pages `_redirects` and `_headers` files, both on by default.

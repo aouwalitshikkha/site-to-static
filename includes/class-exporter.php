@@ -855,6 +855,11 @@ class AOUWAL_Exporter {
 		$base   = (string) wp_parse_url( home_url(), PHP_URL_PATH );
 		$base   = '/' === $base ? '' : untrailingslashit( $base );
 
+		global $wp_rewrite;
+		$pagination_base = ( $wp_rewrite instanceof WP_Rewrite && ! empty( $wp_rewrite->pagination_base ) )
+			? $wp_rewrite->pagination_base
+			: 'page';
+
 		$urls = array();
 		foreach ( (array) $rows as $row ) {
 			if ( preg_match( '~[?&]feed=~i', $row->source_url ) ) {
@@ -866,6 +871,11 @@ class AOUWAL_Exporter {
 			}
 			$path = '/' . ltrim( $path, '/' );
 			if ( preg_match( '~/feed/?$~', $path ) || preg_match( '~\.(?:xml|json|txt)$~i', $path ) ) {
+				continue;
+			}
+			// Discovered archive pagination (1.4.0) is crawlable but stays out
+			// of the sitemap, matching WordPress core sitemap behavior.
+			if ( preg_match( '~/' . preg_quote( $pagination_base, '~' ) . '/\d+/?$~', $path ) ) {
 				continue;
 			}
 			$urls[] = $public . $path;
