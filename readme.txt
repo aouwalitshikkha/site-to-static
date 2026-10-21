@@ -24,7 +24,7 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 * Taxonomy archives, author archives and date archives.
 * RSS feeds.
 * A `404.html` page, plus `sitemap.xml` and `robots.txt`.
-* A Cloudflare Pages `_redirects` file and a `_headers` file for caching.
+* Optional Cloudflare Pages `_redirects` and `_headers` files, both on by default.
 
 = How the export works =
 
@@ -37,8 +37,8 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 
 = What the export cleans up =
 
-* Removes comment forms, comment sections and comment feeds.
-* Removes search forms.
+* Removes comment forms, comment sections and comment feeds (on by default).
+* Removes search forms (on by default).
 * Strips WordPress version tags.
 * Strips staging "noindex" robots meta so the exported site stays indexable.
 
@@ -68,7 +68,7 @@ Standard themes work well. Sites that depend on client-side JavaScript, such as 
 
 = What happens to search and comments? =
 
-Search and comments are server-side features, so they cannot run on a static host. The plugin removes search forms, comment forms and comment feeds from the export. There is no built-in replacement for them.
+Search and comments are server-side features, so they cannot run on a static host. The plugin removes search forms, comment forms, comment sections and comment feeds from the export by default. Both cleanup steps can be turned off in Settings, for example when you only need a partial static copy. There is no built-in replacement for them.
 
 = Does the export include any credit or branding? =
 
