@@ -173,6 +173,10 @@ class AOUWAL_Exporter {
 	 * @return array|WP_Error Job data or error.
 	 */
 	public function start() {
+		if ( ! AOUWAL_Zip::available() ) {
+			return new WP_Error( 'aouwal_zip_missing', __( 'The PHP zip extension is not available.', 'aouwal-static-site-export' ) );
+		}
+
 		$job_id = substr( md5( uniqid( (string) wp_rand(), true ) ), 0, 20 );
 
 		$base = self::base_dir();
