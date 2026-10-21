@@ -426,6 +426,18 @@ class AOUWAL_Writer {
 	 * @return WP_Filesystem_Base|null
 	 */
 	protected function filesystem() {
+		return self::filesystem_instance();
+	}
+
+	/**
+	 * Get an initialized WP_Filesystem instance for any caller.
+	 *
+	 * Shared with AOUWAL_Zip so the ZIP writer can delete and replace files
+	 * through the same abstraction instead of raw filesystem calls.
+	 *
+	 * @return WP_Filesystem_Base|null
+	 */
+	public static function filesystem_instance() {
 		global $wp_filesystem;
 		if ( $wp_filesystem instanceof WP_Filesystem_Base ) {
 			return $wp_filesystem;
