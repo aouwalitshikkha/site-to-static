@@ -33,6 +33,7 @@ class AOUWAL_Settings {
 			'include_feeds'       => 1,
 			'include_attachments' => 0,
 			'download_assets'     => 1,
+			'max_asset_mb'        => 25,
 			'url_style'           => 'relative',
 			'strip_comments'      => 1,
 			'strip_search'        => 1,
@@ -120,6 +121,9 @@ class AOUWAL_Settings {
 
 		$batch = isset( $input['batch_size'] ) ? absint( $input['batch_size'] ) : $d['batch_size'];
 		$out['batch_size'] = min( 50, max( 1, $batch ) );
+
+		$max_asset_mb        = isset( $input['max_asset_mb'] ) ? absint( $input['max_asset_mb'] ) : $d['max_asset_mb'];
+		$out['max_asset_mb'] = min( 1024, max( 1, $max_asset_mb ) );
 
 		$out['public_url']      = isset( $input['public_url'] ) ? esc_url_raw( trim( (string) $input['public_url'] ) ) : '';
 		$out['additional_urls'] = isset( $input['additional_urls'] ) ? sanitize_textarea_field( (string) $input['additional_urls'] ) : '';

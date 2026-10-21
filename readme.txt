@@ -102,6 +102,8 @@ Yes. Run a new export to create a fresh ZIP, then push the updated files. On Clo
 
 Yes. The export runs in batches, which keeps each request short and avoids server timeouts. If your server is slow, lower the batch size in Settings. Very large sites take more time and produce a larger ZIP file.
 
+Any single asset larger than the "Maximum asset size" setting (25 MB by default) is skipped and listed as an error in the log, so one large video or archive cannot run the export out of memory. Raise the limit if you need to export big media files.
+
 = Is the exported site good for SEO? =
 
 Yes. The export keeps your page URLs, titles and content, generates a `sitemap.xml` and `robots.txt`, and strips version tags and staging "noindex" meta. Because the pages are static HTML, they load quickly and are easy for search engines and AI systems to crawl.

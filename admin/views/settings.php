@@ -53,6 +53,13 @@ unset( $aouwal_post_types['attachment'] );
 			</td>
 		</tr>
 		<tr>
+			<th scope="row"><label for="aouwal_max_asset_mb"><?php esc_html_e( 'Maximum asset size', 'aouwal-static-site-export' ); ?></label></th>
+			<td>
+				<input type="number" min="1" max="1024" id="aouwal_max_asset_mb" name="aouwal_settings[max_asset_mb]" value="<?php echo esc_attr( $aouwal['max_asset_mb'] ); ?>" class="small-text" /> <?php esc_html_e( 'MB', 'aouwal-static-site-export' ); ?>
+				<p class="description"><?php esc_html_e( 'Assets larger than this are skipped with an error in the log, so one large video or archive cannot run the export out of memory. Raise it if you need to export big media files.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
 			<th scope="row"><?php esc_html_e( 'URL style', 'aouwal-static-site-export' ); ?></th>
 			<td>
 				<fieldset>

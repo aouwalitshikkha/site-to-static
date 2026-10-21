@@ -41,13 +41,26 @@ class AOUWAL_Crawler {
 			),
 		);
 
+		// Assets are capped so a single large file cannot exhaust PHP memory.
+		// The cURL transport aborts the transfer (CURLE_WRITE_ERROR) when the
+		// body passes the cap, while the streams transport returns a truncated
+		// body, so both signals are checked below.
+		$limit = $is_asset ? $this->asset_size_limit() : 0;
+		if ( $limit > 0 ) {
+			$args['limit_response_size'] = $limit + 1;
+		}
+
 		$response = wp_remote_get( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
+			$message = $response->get_error_message();
+			if ( $limit > 0 && $this->is_size_abort( $message ) ) {
+				$message = $this->too_large_message( $limit );
+			}
 			return array(
 				'body'    => '',
 				'status'  => 0,
-				'error'   => $response->get_error_message(),
+				'error'   => $message,
 				'headers' => array(),
 			);
 		}
@@ -57,11 +70,56 @@ class AOUWAL_Crawler {
 			$headers[ strtolower( $key ) ] = $value;
 		}
 
+		$body = (string) wp_remote_retrieve_body( $response );
+
+		if ( $limit > 0 && strlen( $body ) > $limit ) {
+			return array(
+				'body'    => '',
+				'status'  => (int) wp_remote_retrieve_response_code( $response ),
+				'error'   => $this->too_large_message( $limit ),
+				'headers' => $headers,
+			);
+		}
+
 		return array(
-			'body'    => (string) wp_remote_retrieve_body( $response ),
+			'body'    => $body,
 			'status'  => (int) wp_remote_retrieve_response_code( $response ),
 			'error'   => '',
 			'headers' => $headers,
+		);
+	}
+
+	/**
+	 * Maximum asset size in bytes, or 0 for no limit.
+	 *
+	 * @return int
+	 */
+	protected function asset_size_limit() {
+		$mb = (int) AOUWAL_Settings::get( 'max_asset_mb', 25 );
+		return $mb > 0 ? $mb * MB_IN_BYTES : 0;
+	}
+
+	/**
+	 * Whether a transport error came from hitting the response size cap.
+	 *
+	 * @param string $message Error message.
+	 * @return bool
+	 */
+	protected function is_size_abort( $message ) {
+		return false !== stripos( $message, 'cURL error 23' ) || false !== stripos( $message, 'Failed writing body' );
+	}
+
+	/**
+	 * Build the "file is too large" error message.
+	 *
+	 * @param int $limit Limit in bytes.
+	 * @return string
+	 */
+	protected function too_large_message( $limit ) {
+		return sprintf(
+			/* translators: %s: size limit in megabytes. */
+			__( 'File is larger than the %s MB asset limit. Raise the limit in Settings or exclude this URL.', 'aouwal-static-site-export' ),
+			number_format_i18n( $limit / MB_IN_BYTES, 0 )
 		);
 	}
 

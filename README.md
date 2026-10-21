@@ -81,6 +81,7 @@ Runs a full export and prints the resulting ZIP path.
 | Post types | Which post types to export (posts, pages, CPTs). |
 | Archives | Include taxonomy, author and/or date archives and RSS feeds. Turning RSS feeds off also removes the feed rules from `_redirects`. |
 | Asset handling | Download and localize assets. Query strings are always stripped, because a static file server cannot serve `style.css?ver=1.2` differently from `style.css`. |
+| Maximum asset size | Assets larger than this (default 25 MB) are skipped with an error in the log, so a single large file cannot run the export out of memory. |
 | URL style | `Relative` (portable, works in a subdirectory) or `Root-absolute` (best for a Cloudflare Pages root domain). |
 | Public site URL | Used for `sitemap.xml` / `robots.txt`. Leave blank to use the current site URL. |
 | Additional URLs | Extra URLs to export, one per line. |
