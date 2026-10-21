@@ -24,6 +24,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 ## Features
 
 - Posts, pages, custom post types, categories, tags, custom taxonomies, author archives and date archives, including archive pagination (`/page/2/` and later) so older posts stay reachable.
+- Keeps HTML5 markup intact: `<picture>`/`<source>`, `<video>`/`<track>`, `<template>` blocks and custom elements survive the parse, and inline scripts that build HTML are not truncated.
 - Downloads and localizes all assets, recursing into CSS `url()` and `@import` references.
 - Rewrites internal links to portable relative (or root-absolute) URLs.
 - Removes server-side features that cannot work statically (search forms, comment forms, comment feeds). Each step can be turned off in Settings.

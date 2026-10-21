@@ -31,7 +31,7 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 1. The plugin discovers every public URL on your site.
 2. It fetches the fully rendered HTML of each page through the WordPress HTTP API.
 3. It downloads and localizes assets, including recursive CSS `url()` and `@import` references.
-4. It rewrites internal links to portable relative or root-absolute URLs.
+4. It rewrites internal links to portable relative or root-absolute URLs, keeping `<picture>`, `<source>`, `<track>`, `<template>` and custom-element markup intact.
 5. It removes server-side features that cannot run on a static host.
 6. It packages everything into a single ZIP file you can download.
 
