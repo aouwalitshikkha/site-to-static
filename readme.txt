@@ -4,7 +4,7 @@ Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -116,6 +116,17 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 
 == Changelog ==
 
+= 1.3.0 =
+* Files that cannot be written (permissions, full disk, WP_Filesystem unavailable) are now reported. The page or asset is marked as an error instead of "done", the log names the path, and the export finishes with a warning that counts the failures.
+* The generated files (404.html, sitemap.xml, robots.txt, _redirects, _headers) are checked the same way, and the log lists any that could not be written.
+* WP-CLI exits with a non-zero status when items fail, so automated exports stop reporting success for an incomplete site.
+* 404.html is only taken from the theme when the site actually answers 404 for unknown URLs. Sites that serve the homepage (or a 200 status) get a generic 404 page and a note in the log.
+* New "Maximum asset size" setting (25 MB by default). Larger files are skipped with a clear error instead of being loaded into memory. HTML pages are never truncated.
+* Security: every redirect hop is validated by the SSRF guard, so a public URL cannot redirect the request to localhost, a private range or a link-local address.
+* Security: the guard resolves both A and AAAA records and validates every address. IPv6-only hosts now work, and IPv4-mapped IPv6 addresses cannot bypass the private-range checks. DNS results are cached per request.
+* The previous ZIP file is removed through WP_Filesystem instead of raw unlink(), with a clear error when it cannot be removed.
+* Documented the one deliberate WP_Filesystem exception (ZipArchive and the directory iterator used to build the archive).
+
 = 1.2.0 =
 * Settings now control what the export actually does:
 * "Remove comment forms and comment sections" now removes comment markup, the comment reply script, comment feed links and the unused block stylesheet.
@@ -166,6 +177,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Adds a Maximum asset size setting (25 MB default), reports failed file writes instead of marking them done, validates every redirect against the SSRF guard, resolves IPv6, and only uses your theme 404 template for real 404s. No action needed.
 
 = 1.2.0 =
 Several settings now work as described: comment removal, the _redirects file and the RSS feed rules are honoured, and a new setting controls the _headers file. Dotted slugs, .php URLs and subdirectory installs now export to the correct paths. Check the Generated files settings after updating.
