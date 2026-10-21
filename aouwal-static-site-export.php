@@ -147,14 +147,9 @@ function aouwal_remove_legacy_data() {
 }
 
 /**
- * Deactivation: clear scheduled events.
+ * Deactivation: nothing to clean up.
  *
- * @return void
+ * The plugin schedules no cron events. Exports live under wp_upload_dir()
+ * and are pruned by prune_old_jobs() on the next export, so deactivation
+ * has nothing to remove.
  */
-function aouwal_deactivate() {
-	$timestamp = wp_next_scheduled( 'aouwal_cron_export' );
-	if ( $timestamp ) {
-		wp_unschedule_event( $timestamp, 'aouwal_cron_export' );
-	}
-}
-register_deactivation_hook( __FILE__, 'aouwal_deactivate' );

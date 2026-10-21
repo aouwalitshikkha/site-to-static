@@ -27,9 +27,6 @@ class AOUWAL_CLI {
 	 * default: 10
 	 * ---
 	 *
-	 * [--keep-zip]
-	 * : Keep the generated zip (default true). Path is printed on completion.
-	 *
 	 * @param array $args       Positional args.
 	 * @param array $assoc_args Associative args.
 	 * @return void
