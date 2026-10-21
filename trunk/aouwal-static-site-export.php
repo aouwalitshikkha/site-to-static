@@ -3,7 +3,7 @@
  * Plugin Name:       Aouwal Static Site Export
  * Plugin URI:        https://github.com/aouwalitshikkha/site-to-static
  * Description:       Export your WordPress site to a fully static HTML bundle (with localized assets) ready to push to GitHub and deploy on Cloudflare Pages.
- * Version:           1.1.2
+ * Version:           1.2.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Abdul Aouwal
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AOUWAL_VERSION', '1.1.2' );
+define( 'AOUWAL_VERSION', '1.2.0' );
 define( 'AOUWAL_PLUGIN_FILE', __FILE__ );
 define( 'AOUWAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AOUWAL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -147,14 +147,9 @@ function aouwal_remove_legacy_data() {
 }
 
 /**
- * Deactivation: clear scheduled events.
+ * Deactivation: nothing to clean up.
  *
- * @return void
+ * The plugin schedules no cron events. Exports live under wp_upload_dir()
+ * and are pruned by prune_old_jobs() on the next export, so deactivation
+ * has nothing to remove.
  */
-function aouwal_deactivate() {
-	$timestamp = wp_next_scheduled( 'aouwal_cron_export' );
-	if ( $timestamp ) {
-		wp_unschedule_event( $timestamp, 'aouwal_cron_export' );
-	}
-}
-register_deactivation_hook( __FILE__, 'aouwal_deactivate' );

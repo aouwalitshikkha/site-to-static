@@ -75,7 +75,7 @@ git push -u origin main</pre>
 
 	<div class="notice notice-info inline">
 		<p>
-			<?php esc_html_e( 'The export includes a _redirects file (Cloudflare Pages) and a _headers file for caching. Query-string URLs such as /?p=123 cannot be redirected by Cloudflare Pages; use path-based URLs going forward.', 'aouwal-static-site-export' ); ?>
+			<?php esc_html_e( 'When enabled in Settings, the export includes a _redirects file (Cloudflare Pages) and a _headers file for caching. Query-string URLs such as /?p=123 cannot be redirected by Cloudflare Pages; use path-based URLs going forward.', 'aouwal-static-site-export' ); ?>
 		</p>
 	</div>
 

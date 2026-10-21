@@ -4,7 +4,7 @@ Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,7 +24,7 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 * Taxonomy archives, author archives and date archives.
 * RSS feeds.
 * A `404.html` page, plus `sitemap.xml` and `robots.txt`.
-* A Cloudflare Pages `_redirects` file and a `_headers` file for caching.
+* Optional Cloudflare Pages `_redirects` and `_headers` files, both on by default.
 
 = How the export works =
 
@@ -37,8 +37,8 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 
 = What the export cleans up =
 
-* Removes comment forms, comment sections and comment feeds.
-* Removes search forms.
+* Removes comment forms, comment sections and comment feeds (on by default).
+* Removes search forms (on by default).
 * Strips WordPress version tags.
 * Strips staging "noindex" robots meta so the exported site stays indexable.
 
@@ -68,7 +68,7 @@ Standard themes work well. Sites that depend on client-side JavaScript, such as 
 
 = What happens to search and comments? =
 
-Search and comments are server-side features, so they cannot run on a static host. The plugin removes search forms, comment forms and comment feeds from the export. There is no built-in replacement for them.
+Search and comments are server-side features, so they cannot run on a static host. The plugin removes search forms, comment forms, comment sections and comment feeds from the export by default. Both cleanup steps can be turned off in Settings, for example when you only need a partial static copy. There is no built-in replacement for them.
 
 = Does the export include any credit or branding? =
 
@@ -114,6 +114,22 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 
 == Changelog ==
 
+= 1.2.0 =
+* Settings now control what the export actually does:
+* "Remove comment forms and comment sections" now removes comment markup, the comment reply script, comment feed links and the unused block stylesheet.
+* "Cloudflare Pages _redirects file" now controls whether that file is written.
+* New "Cloudflare Pages _headers file" setting. The file is no longer written unconditionally.
+* The RSS feeds setting now also removes the feed rules from _redirects.
+* Fixed the nested feed rewrite rule, which used invalid Cloudflare Pages syntax. It is now `/*/feed/ /:splat/feed/index.xml 200`.
+* Page URLs with dots in the slug, such as /v1.2/, are exported as v1.2/index.html instead of a file named "v1.2".
+* /index.php is exported as index.html, and other .php pages as .html, instead of nested folders.
+* Sites installed in a subdirectory no longer treat sibling paths such as /w2/ as internal, and no longer strip their prefix.
+* The base element is removed from exported pages, because every URL is rewritten.
+* Images that use data-lazy-src with a URL the export does not download no longer lose their src attribute.
+* The "Strip cache-busting query strings" setting was removed. Query strings are always stripped, because a static file server cannot serve style.css?ver=1.2 differently from style.css.
+* Documentation, the settings table and the Deploy tab now describe the optional cleanup and generated files accurately.
+* Removed an unused deactivation cron hook and an undocumented WP-CLI --keep-zip option.
+
 = 1.1.2 =
 * The PHP zip extension is now checked when the export starts, before any page is crawled, instead of after a full export.
 * The Export tab shows a clear message and disables the start button when the zip extension is missing.
@@ -148,6 +164,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Several settings now work as described: comment removal, the _redirects file and the RSS feed rules are honoured, and a new setting controls the _headers file. Dotted slugs, .php URLs and subdirectory installs now export to the correct paths. Check the Generated files settings after updating.
 
 = 1.1.2 =
 Fixes a late failure on hosts without the PHP zip extension. The export is now refused up front with a clear message instead of after a full crawl. Update recommended.

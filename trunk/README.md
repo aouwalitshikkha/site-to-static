@@ -14,9 +14,9 @@ The plugin crawls your site over loopback HTTP, captures the fully rendered HTML
 
 1. **Discover** — enumerates posts, pages, custom post types, taxonomy archives, author archives, date archives and feeds.
 2. **Crawl** — requests each URL so the exact rendered HTML WordPress serves is captured.
-3. **Process HTML** — rewrites internal links to relative paths, localizes `src`/`srcset`/inline `url()`, and removes admin bar, `wp-json`, nonces, comment/search forms and staging `noindex` tags.
+3. **Process HTML** — rewrites internal links to relative paths, localizes `src`/`srcset`/inline `url()`, and removes the admin bar, `wp-json` links, nonces, staging `noindex` tags and (unless disabled) comment and search forms.
 4. **Download assets** — CSS, JS, images and fonts are copied locally, with recursive CSS `url()` and `@import` handling.
-5. **Write output** — mirror of your permalink structure (`/about/index.html`, `/blog/post/index.html`), plus `404.html`, `sitemap.xml`, `robots.txt`, `_redirects` and `_headers`.
+5. **Write output** — mirror of your permalink structure (`/about/index.html`, `/blog/post/index.html`), plus `404.html` and, when enabled, `sitemap.xml`, `robots.txt` and the Cloudflare Pages `_redirects` / `_headers` files.
 6. **Package** — everything is zipped for download.
 
 Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, and includes a live progress log.
@@ -26,10 +26,10 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Posts, pages, custom post types, categories, tags, custom taxonomies, author archives and date archives.
 - Downloads and localizes all assets, recursing into CSS `url()` and `@import` references.
 - Rewrites internal links to portable relative (or root-absolute) URLs.
-- Removes server-side features that cannot work statically (search forms, comment forms, comment feeds).
+- Removes server-side features that cannot work statically (search forms, comment forms, comment feeds). Each step can be turned off in Settings.
 - Strips WordPress version tags and staging `noindex` robots meta so the exported site is indexable.
 - Optional, invisible source-code credit (off by default) that can be enabled in Settings. It never shows in the browser.
-- Generates `404.html`, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
+- Generates `404.html` and, when enabled, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
 - Stores exports in a protected uploads subfolder and serves the ZIP only through a signed, expiring admin link. Use the `aouwal_export_dir` filter to relocate exports outside the web root.
 - Chunked, timeout-safe export with a live progress log.
 - Optional WP-CLI command: `wp aouwal-static-export run`.
@@ -38,7 +38,6 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 
 - WordPress 6.0 or newer
 - PHP 7.4 or newer with the `zip`, `dom` and `mbstring` extensions
-- For the recommendation feature (none) — no external services required
 
 ## Installation
 
@@ -80,14 +79,14 @@ Runs a full export and prints the resulting ZIP path.
 | Setting | Description |
 |---|---|
 | Post types | Which post types to export (posts, pages, CPTs). |
-| Archives | Include taxonomy, author and/or date archives and RSS feeds. |
-| Asset handling | Download and localize assets; strip cache-busting query strings. |
+| Archives | Include taxonomy, author and/or date archives and RSS feeds. Turning RSS feeds off also removes the feed rules from `_redirects`. |
+| Asset handling | Download and localize assets. Query strings are always stripped, because a static file server cannot serve `style.css?ver=1.2` differently from `style.css`. |
 | URL style | `Relative` (portable, works in a subdirectory) or `Root-absolute` (best for a Cloudflare Pages root domain). |
 | Public site URL | Used for `sitemap.xml` / `robots.txt`. Leave blank to use the current site URL. |
 | Additional URLs | Extra URLs to export, one per line. |
 | Exclude URLs | Patterns to skip; plain text matches a substring, `/regex/` for a regular expression. |
-| Remove dynamic features | Strip comment sections/forms and search forms. |
-| Generated files | Toggle `sitemap.xml`, `robots.txt` and the Cloudflare `_redirects` file. |
+| Remove dynamic features | Strip comment sections/forms and search forms (both on by default). |
+| Generated files | Toggle `sitemap.xml`, `robots.txt` and the Cloudflare Pages `_redirects` and `_headers` files. |
 | Batch size | URLs processed per request. Lower it if your server times out. |
 
 ## Deploy to Cloudflare Pages via GitHub
@@ -107,13 +106,13 @@ Runs a full export and prints the resulting ZIP path.
 4. Select the repository. Leave the build command blank and set the build output directory to `/` (repository root).
 5. Click **Save and Deploy**. Every future push redeploys automatically.
 
-The export includes a `_redirects` file (feed rewrites, `/index.php` cleanup) and a `_headers` file for caching.
+The export includes, when enabled in Settings, a `_redirects` file (`/index.php` cleanup plus feed rewrites when RSS feeds are on) and a `_headers` file for caching.
 
 ## Known limitations
 
 - Sites that rely heavily on client-side JavaScript (WooCommerce cart, some page builders such as Elementor) may not work fully once static.
 - Forms need an external endpoint (e.g. Formspree, Web3Forms); server-side WordPress forms will not function.
-- Server-side search and comments are removed.
+- Server-side search and comments are removed by default; both can be kept from Settings.
 - Cloudflare Pages cannot redirect by query string (`/?p=123`); use pretty permalinks.
 
 ## Project structure
