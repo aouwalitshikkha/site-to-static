@@ -306,8 +306,12 @@ class AOUWAL_Exporter {
 			$this->writer->write( 'robots.txt', $this->build_robots() );
 		}
 
-		$this->writer->write( '_redirects', $this->build_redirects() );
-		$this->writer->write( '_headers', $this->build_headers() );
+		if ( AOUWAL_Settings::get( 'preserve_redirects' ) ) {
+			$this->writer->write( '_redirects', $this->build_redirects() );
+		}
+		if ( AOUWAL_Settings::get( 'generate_headers' ) ) {
+			$this->writer->write( '_headers', $this->build_headers() );
+		}
 
 		$zip = new AOUWAL_Zip();
 		$res = $zip->zip_dir( $job['output_dir'], $job['zip_path'] );
@@ -823,12 +827,11 @@ class AOUWAL_Exporter {
 		$lines[] = '/wp-login.php / 301';
 		$lines[] = '/wp-admin/* / 301';
 		$lines[] = '/xmlrpc.php / 301';
-		$lines[] = '/feed/ /feed/index.xml 200';
-		$lines[] = '/feed /feed/index.xml 200';
-		$lines[] = '/:path*/feed/ /:path*/feed/index.xml 200';
 
-		if ( AOUWAL_Settings::get( 'preserve_redirects' ) ) {
-			$lines[] = '# Add legacy path redirects below as needed.';
+		if ( AOUWAL_Settings::get( 'include_feeds' ) ) {
+			$lines[] = '/feed/ /feed/index.xml 200';
+			$lines[] = '/feed /feed/index.xml 200';
+			$lines[] = '/*/feed/ /:splat/feed/index.xml 200';
 		}
 
 		return implode( "\n", $lines ) . "\n";

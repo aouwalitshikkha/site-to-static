@@ -238,13 +238,14 @@ class AOUWAL_Asset_Processor {
 	/**
 	 * Strip query string (keeping fragment).
 	 *
+	 * A static file system has no notion of query strings, so a cached copy
+	 * saved as `style.css` would never be served for `style.css?ver=1.2`.
+	 * Query strings are therefore always dropped from asset keys.
+	 *
 	 * @param string $url URL.
 	 * @return string
 	 */
 	protected function strip_query( $url ) {
-		if ( ! AOUWAL_Settings::get( 'strip_query' ) ) {
-			return $url;
-		}
 		$pos = strpos( $url, '?' );
 		if ( false === $pos ) {
 			return $url;

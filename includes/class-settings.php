@@ -34,7 +34,6 @@ class AOUWAL_Settings {
 			'include_attachments' => 0,
 			'download_assets'     => 1,
 			'url_style'           => 'relative',
-			'strip_query'         => 1,
 			'strip_comments'      => 1,
 			'strip_search'        => 1,
 			'batch_size'          => 5,
@@ -44,6 +43,7 @@ class AOUWAL_Settings {
 			'preserve_redirects'  => 1,
 			'generate_sitemap'    => 1,
 			'generate_robots'     => 1,
+			'generate_headers'    => 1,
 			'show_credit'         => 0,
 		);
 	}
@@ -104,12 +104,12 @@ class AOUWAL_Settings {
 			'include_feeds',
 			'include_attachments',
 			'download_assets',
-			'strip_query',
 			'strip_comments',
 			'strip_search',
 			'preserve_redirects',
 			'generate_sitemap',
 			'generate_robots',
+			'generate_headers',
 			'show_credit',
 		);
 		foreach ( $booleans as $key ) {
