@@ -25,13 +25,53 @@ class AOUWAL_HTML_Processor {
 	 * @var string[]
 	 */
 	protected $asset_extensions = array(
-		'css', 'js', 'mjs', 'cjs', 'json', 'map', 'wasm',
-		'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg', 'ico', 'bmp', 'tif', 'tiff',
-		'woff', 'woff2', 'ttf', 'otf', 'eot',
-		'mp4', 'webm', 'ogv', 'mov', 'mp3', 'wav', 'ogg', 'm4a',
-		'pdf', 'zip', 'gz', 'rar', '7z',
-		'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv',
-		'xml', 'txt', 'vtt', 'srt',
+		'css',
+		'js',
+		'mjs',
+		'cjs',
+		'json',
+		'map',
+		'wasm',
+		'png',
+		'jpg',
+		'jpeg',
+		'gif',
+		'webp',
+		'avif',
+		'svg',
+		'ico',
+		'bmp',
+		'tif',
+		'tiff',
+		'woff',
+		'woff2',
+		'ttf',
+		'otf',
+		'eot',
+		'mp4',
+		'webm',
+		'ogv',
+		'mov',
+		'mp3',
+		'wav',
+		'ogg',
+		'm4a',
+		'pdf',
+		'zip',
+		'gz',
+		'rar',
+		'7z',
+		'doc',
+		'docx',
+		'xls',
+		'xlsx',
+		'ppt',
+		'pptx',
+		'csv',
+		'xml',
+		'txt',
+		'vtt',
+		'srt',
 	);
 
 	/**
@@ -83,7 +123,7 @@ class AOUWAL_HTML_Processor {
 			$this->add_footer_comment( $doc, $job_id );
 		}
 
-		$out = $doc->saveHTML();
+		$out = $this->restore_scripts( $this->strip_void_end_tags( $doc->saveHTML() ) );
 
 		if ( $include_credit && ! $branded ) {
 			$out = AOUWAL_Brand::html_comment() . "\n" . $out;
@@ -152,7 +192,23 @@ class AOUWAL_HTML_Processor {
 	}
 
 	/**
+	 * Script bodies saved during parsing.
+	 *
+	 * @var string[]
+	 */
+	protected $script_bodies = array();
+
+	/**
 	 * Load HTML into a DOMDocument with UTF-8 handling.
+	 *
+	 * Libxml2 ships an HTML4 parser, so HTML5 void elements (source, track,
+	 * wbr, embed) are parsed as containers and the elements that follow them
+	 * are nested inside. normalise_void_elements() flattens that before the
+	 * rest of the pipeline runs, and strip_void_end_tags() removes the closing
+	 * tags the serialiser then adds.
+	 *
+	 * The parser also ends a <script> at any closing tag it finds inside the
+	 * body, so protect_scripts() swaps affected bodies for tokens first.
 	 *
 	 * @param string $html HTML.
 	 * @return DOMDocument|null
@@ -161,8 +217,11 @@ class AOUWAL_HTML_Processor {
 		$doc = new DOMDocument();
 		libxml_use_internal_errors( true );
 
-		$encoded = '<?xml encoding="UTF-8">' . $html;
-		$loaded  = $doc->loadHTML( $encoded, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
+		$this->script_bodies = array();
+		$protected           = $this->protect_scripts( $html );
+		$encoded             = '<?xml encoding="UTF-8">' . $protected;
+
+		$loaded = $doc->loadHTML( $encoded, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
 		libxml_clear_errors();
 
 		if ( ! $loaded ) {
@@ -176,7 +235,120 @@ class AOUWAL_HTML_Processor {
 		}
 		$doc->encoding = 'UTF-8';
 
+		$this->normalise_void_elements( $doc );
+
 		return $doc;
+	}
+
+	/**
+	 * Swap script bodies that contain closing tags for opaque tokens.
+	 *
+	 * Libxml ends a script element at the first closing tag in its body, so
+	 * inline JavaScript that builds HTML (`var tpl = "</div>"`) would lose
+	 * everything after it. Only bodies that actually contain a closing tag
+	 * are touched, so the content-based removals in remove_dynamic() keep
+	 * working for ordinary scripts.
+	 *
+	 * @param string $html HTML.
+	 * @return string
+	 */
+	protected function protect_scripts( $html ) {
+		$html = (string) $html;
+
+		return (string) preg_replace_callback(
+			'~(<script\b[^>]*>)(.*?)(</script\s*>)~is',
+			function ( $matches ) {
+				if ( ! preg_match( '~</[a-z]~i', $matches[2] ) ) {
+					return $matches[0];
+				}
+
+				$token                         = 'AOUWALSCRIPTBODY' . count( $this->script_bodies ) . 'TOKEN';
+				$this->script_bodies[ $token ] = $matches[2];
+
+				return $matches[1] . $token . $matches[3];
+			},
+			$html
+		);
+	}
+
+	/**
+	 * Put protected script bodies back after serialisation.
+	 *
+	 * @param string $html Serialised HTML.
+	 * @return string
+	 */
+	protected function restore_scripts( $html ) {
+		if ( empty( $this->script_bodies ) ) {
+			return $html;
+		}
+
+		return strtr( (string) $html, $this->script_bodies );
+	}
+
+	/**
+	 * Re-parent children of HTML5 void elements to their parent.
+	 *
+	 * The HTML4 parser treats <source>, <track>, <wbr> and <embed> as
+	 * containers, so a responsive image ends up nested inside its <source>
+	 * and a video's <track> inside its <source>. Browsers ignore those
+	 * end tags, but the serialised markup is invalid and can confuse
+	 * downstream tooling, so the children are moved back where they belong.
+	 *
+	 * @param DOMDocument $doc Document.
+	 * @return void
+	 */
+	protected function normalise_void_elements( DOMDocument $doc ) {
+		$voids = array( 'source', 'track', 'wbr', 'embed', 'keygen', 'menuitem' );
+
+		$targets = array();
+		foreach ( $doc->getElementsByTagName( '*' ) as $node ) {
+			if ( $node instanceof DOMElement && in_array( strtolower( $node->tagName ), $voids, true ) && $node->hasChildNodes() ) {
+				$targets[] = $node;
+			}
+		}
+
+		foreach ( $targets as $node ) {
+			$parent = $node->parentNode;
+			if ( ! $parent ) {
+				continue;
+			}
+			while ( $node->firstChild ) {
+				$child = $node->firstChild;
+				$node->removeChild( $child );
+				if ( $node->nextSibling ) {
+					$parent->insertBefore( $child, $node->nextSibling );
+				} else {
+					$parent->appendChild( $child );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Remove closing tags the serialiser adds for HTML5 void elements.
+	 *
+	 * Raw-text blocks (script, style, textarea, title) and comments are
+	 * skipped so their content is never altered.
+	 *
+	 * @param string $html Serialised HTML.
+	 * @return string
+	 */
+	protected function strip_void_end_tags( $html ) {
+		$blocks = '~(<script\b[^>]*>.*?</script\s*>|<style\b[^>]*>.*?</style\s*>|<textarea\b[^>]*>.*?</textarea\s*>|<title\b[^>]*>.*?</title\s*>|<!--.*?-->)~is';
+		$parts  = preg_split( $blocks, (string) $html, -1, PREG_SPLIT_DELIM_CAPTURE );
+
+		if ( ! is_array( $parts ) ) {
+			return (string) $html;
+		}
+
+		foreach ( $parts as $index => $part ) {
+			if ( 0 !== $index % 2 ) {
+				continue;
+			}
+			$parts[ $index ] = preg_replace( '~</(?:source|track|wbr|embed|keygen|menuitem)\s*>~i', '', $part );
+		}
+
+		return implode( '', $parts );
 	}
 
 	/**
@@ -366,9 +538,18 @@ class AOUWAL_HTML_Processor {
 			if ( ! $crawler->is_url_allowed_for_fetch( $asset_key ) ) {
 				return null;
 			}
-			$assets[]  = $asset_key;
-			$target    = $this->writer->url_to_local_path( $asset_key, 'asset' );
-			return $this->writer->href( $local_path, $target, false );
+			$assets[] = $asset_key;
+			$target   = $this->writer->url_to_local_path( $asset_key, 'asset' );
+
+			// Fragments address a part of the file (SVG sprites such as
+			// <use href="sprite.svg#icon">), so they must survive the rewrite.
+			$fragment = '';
+			$parts    = wp_parse_url( $resolved );
+			if ( ! empty( $parts['fragment'] ) ) {
+				$fragment = '#' . $parts['fragment'];
+			}
+
+			return $this->writer->href( $local_path, $target, false ) . $fragment;
 		}
 
 		// Page link.
@@ -398,7 +579,7 @@ class AOUWAL_HTML_Processor {
 	 * @return string "asset", "page" or "skip".
 	 */
 	protected function classify( $tag, $attr, $url, $rel ) {
-		$ext = strtolower( pathinfo( (string) wp_parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
+		$ext          = strtolower( pathinfo( (string) wp_parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
 		$is_asset_ext = in_array( $ext, $this->asset_extensions, true );
 
 		if ( 'link' === $tag ) {
@@ -454,15 +635,22 @@ class AOUWAL_HTML_Processor {
 			$desc = isset( $bits[1] ) ? $bits[1] : '';
 
 			if ( AOUWAL_Settings::get( 'download_assets' ) && ! preg_match( '~^(?:data:|#)~i', $url ) ) {
-				$resolved  = $this->resolve_url( $source_url, $url );
-				$resolved  = $this->strip_query( $resolved );
+				$resolved = $this->resolve_url( $source_url, $url );
+				$resolved = $this->strip_query( $resolved );
 				if ( ! $crawler->is_url_allowed_for_fetch( $resolved ) ) {
 					$out[] = trim( $url . ' ' . $desc );
 					continue;
 				}
-				$assets[]  = $resolved;
-				$target    = $this->writer->url_to_local_path( $resolved, 'asset' );
-				$url       = $this->writer->href( $local_path, $target, false );
+
+				$fragment = '';
+				$hash     = strpos( $resolved, '#' );
+				if ( false !== $hash ) {
+					$fragment = substr( $resolved, $hash );
+				}
+
+				$assets[] = $resolved;
+				$target   = $this->writer->url_to_local_path( $resolved, 'asset' );
+				$url      = $this->writer->href( $local_path, $target, false ) . $fragment;
 			}
 
 			$out[] = trim( $url . ' ' . $desc );

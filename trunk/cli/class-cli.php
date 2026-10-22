@@ -53,7 +53,7 @@ class AOUWAL_CLI {
 				WP_CLI::error( $result->get_error_message() );
 			}
 
-			$counts = $result['counts'];
+			$counts  = $result['counts'];
 			$current = $counts['done'] + $counts['error'];
 			$progress->tick( max( 0, $current - $done ) );
 			$done = $current;

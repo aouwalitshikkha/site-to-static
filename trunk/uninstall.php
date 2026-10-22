@@ -29,7 +29,7 @@ if ( empty( $aouwal_uploads['error'] ) && ! empty( $aouwal_uploads['basedir'] ) 
 	$aouwal_filtered = apply_filters( 'aouwal_export_dir', $aouwal_default );
 	if ( is_string( $aouwal_filtered ) && '' !== trim( $aouwal_filtered ) ) {
 		$aouwal_filtered = untrailingslashit( $aouwal_filtered );
-		if ( $aouwal_filtered !== untrailingslashit( $aouwal_default ) ) {
+		if ( untrailingslashit( $aouwal_default ) !== $aouwal_filtered ) {
 			$aouwal_dirs[] = $aouwal_filtered;
 		}
 	}

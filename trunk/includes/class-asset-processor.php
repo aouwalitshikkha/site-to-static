@@ -60,8 +60,8 @@ class AOUWAL_Asset_Processor {
 		$ext        = strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
 
 		if ( 'css' === $ext ) {
-			$processed  = $this->process_css( $result['body'], $url, $local_path );
-			$body       = $processed['css'];
+			$processed = $this->process_css( $result['body'], $url, $local_path );
+			$body      = $processed['css'];
 			if ( AOUWAL_Brand::should_include() ) {
 				$body = $this->prepend_css_credit( $body );
 			}
@@ -231,7 +231,7 @@ class AOUWAL_Asset_Processor {
 	 * @return string
 	 */
 	protected function prepend_css_credit( $css ) {
-		$credit = AOUWAL_Brand::css_comment();
+		$credit  = AOUWAL_Brand::css_comment();
 		$trimmed = ltrim( $css, "\xEF\xBB\xBF \t\r\n" );
 		if ( 0 === stripos( $trimmed, '@charset' ) ) {
 			$semi = strpos( $trimmed, ';' );

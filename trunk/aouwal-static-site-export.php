@@ -3,7 +3,7 @@
  * Plugin Name:       Aouwal Static Site Export
  * Plugin URI:        https://github.com/aouwalitshikkha/site-to-static
  * Description:       Export your WordPress site to a fully static HTML bundle (with localized assets) ready to push to GitHub and deploy on Cloudflare Pages.
- * Version:           1.3.0
+ * Version:           1.4.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Abdul Aouwal
@@ -18,16 +18,11 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AOUWAL_VERSION', '1.3.0' );
+define( 'AOUWAL_VERSION', '1.4.0' );
 define( 'AOUWAL_PLUGIN_FILE', __FILE__ );
 define( 'AOUWAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AOUWAL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AOUWAL_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
-
-// Note: the GitHub distribution defines AOUWAL_FORCE_CREDIT as true so the
-// export credit is always included. This WordPress.org build intentionally
-// omits it, so the credit follows the opt-in "show_credit" setting
-// (default off) instead.
 
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-brand.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-settings.php';

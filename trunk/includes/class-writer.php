@@ -60,7 +60,7 @@ class AOUWAL_Writer {
 	 * @param string $output_dir Absolute output directory.
 	 */
 	public function __construct( $output_dir = '' ) {
-		$this->output_dir = rtrim( $output_dir, "/\\" );
+		$this->output_dir = rtrim( $output_dir, '/\\' );
 		$this->home_url   = untrailingslashit( home_url() );
 		$this->site_url   = untrailingslashit( site_url() );
 		$this->home_path  = (string) wp_parse_url( $this->home_url, PHP_URL_PATH );
@@ -85,7 +85,7 @@ class AOUWAL_Writer {
 	 * @return void
 	 */
 	public function set_output_dir( $dir ) {
-		$this->output_dir = rtrim( $dir, "/\\" );
+		$this->output_dir = rtrim( $dir, '/\\' );
 	}
 
 	/**
@@ -249,13 +249,58 @@ class AOUWAL_Writer {
 	protected function file_extensions() {
 		return array(
 			// Documents and data.
-			'pdf', 'txt', 'csv', 'xml', 'json', 'rss', 'atom', 'zip', 'gz', 'tar',
-			'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'rtf',
+			'pdf',
+			'txt',
+			'csv',
+			'xml',
+			'json',
+			'rss',
+			'atom',
+			'zip',
+			'gz',
+			'tar',
+			'doc',
+			'docx',
+			'xls',
+			'xlsx',
+			'ppt',
+			'pptx',
+			'odt',
+			'ods',
+			'rtf',
 			// Front-end assets.
-			'css', 'js', 'mjs', 'map', 'wasm',
-			'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'avif', 'ico', 'bmp', 'tif', 'tiff',
-			'mp3', 'm4a', 'wav', 'ogg', 'flac', 'mp4', 'm4v', 'mov', 'webm', 'ogv', 'avi',
-			'woff', 'woff2', 'ttf', 'otf', 'eot',
+			'css',
+			'js',
+			'mjs',
+			'map',
+			'wasm',
+			'png',
+			'jpg',
+			'jpeg',
+			'gif',
+			'svg',
+			'webp',
+			'avif',
+			'ico',
+			'bmp',
+			'tif',
+			'tiff',
+			'mp3',
+			'm4a',
+			'wav',
+			'ogg',
+			'flac',
+			'mp4',
+			'm4v',
+			'mov',
+			'webm',
+			'ogv',
+			'avi',
+			'woff',
+			'woff2',
+			'ttf',
+			'otf',
+			'eot',
 		);
 	}
 
@@ -298,7 +343,7 @@ class AOUWAL_Writer {
 				array_pop( $out );
 				continue;
 			}
-			$seg = preg_replace( '/[\x00-\x1F\x7F]/', '', $seg );
+			$seg   = preg_replace( '/[\x00-\x1F\x7F]/', '', $seg );
 			$out[] = $seg;
 		}
 		return implode( '/', $out );
@@ -327,7 +372,7 @@ class AOUWAL_Writer {
 		$common = 0;
 		$max    = min( count( $from_parts ), count( $to_parts ) );
 		while ( $common < $max && $from_parts[ $common ] === $to_parts[ $common ] ) {
-			$common++;
+			++$common;
 		}
 
 		$up  = count( $from_parts ) - $common;

@@ -87,16 +87,16 @@ class AOUWAL_Admin {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'aouwal_ajax' ),
 				'i18n'    => array(
-					'starting'   => __( 'Discovering URLs…', 'aouwal-static-site-export' ),
-					'crawling'   => __( 'Processing', 'aouwal-static-site-export' ),
-					'finalizing' => __( 'Packaging export…', 'aouwal-static-site-export' ),
-					'done'       => __( 'Export complete.', 'aouwal-static-site-export' ),
+					'starting'         => __( 'Discovering URLs…', 'aouwal-static-site-export' ),
+					'crawling'         => __( 'Processing', 'aouwal-static-site-export' ),
+					'finalizing'       => __( 'Packaging export…', 'aouwal-static-site-export' ),
+					'done'             => __( 'Export complete.', 'aouwal-static-site-export' ),
 					'done_with_errors' => __( 'Export finished with errors.', 'aouwal-static-site-export' ),
-					'error'      => __( 'An error occurred.', 'aouwal-static-site-export' ),
-					'confirm'    => __( 'Start a new static export?', 'aouwal-static-site-export' ),
-					'download'   => __( 'Download export ZIP', 'aouwal-static-site-export' ),
+					'error'            => __( 'An error occurred.', 'aouwal-static-site-export' ),
+					'confirm'          => __( 'Start a new static export?', 'aouwal-static-site-export' ),
+					'download'         => __( 'Download export ZIP', 'aouwal-static-site-export' ),
 					/* translators: %s: number of discovered URLs. */
-					'discovered' => __( 'Discovered %s URLs.', 'aouwal-static-site-export' ),
+					'discovered'       => __( 'Discovered %s URLs.', 'aouwal-static-site-export' ),
 				),
 			)
 		);
@@ -253,8 +253,8 @@ class AOUWAL_Admin {
 			wp_die( esc_html__( 'Export job not found.', 'aouwal-static-site-export' ), 404 );
 		}
 
-		$path     = wp_normalize_path( (string) $job['zip_path'] );
-		$allowed  = false;
+		$path    = wp_normalize_path( (string) $job['zip_path'] );
+		$allowed = false;
 		foreach ( AOUWAL_Exporter::storage_dirs() as $dir ) {
 			$dir = wp_normalize_path( $dir );
 			if ( $path === $dir || 0 === strpos( $path, rtrim( $dir, '/' ) . '/' ) ) {

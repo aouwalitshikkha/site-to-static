@@ -35,6 +35,7 @@ class AOUWAL_URL_Discovery {
 		$urls = array();
 
 		$urls[] = home_url( '/' );
+		$urls   = array_merge( $urls, $this->discover_home_pagination() );
 
 		$post_types = (array) AOUWAL_Settings::get( 'post_types', array( 'post', 'page' ) );
 		if ( AOUWAL_Settings::get( 'include_attachments' ) ) {
@@ -106,6 +107,156 @@ class AOUWAL_URL_Discovery {
 	}
 
 	/**
+	 * Discover pagination for the blog index (home or the posts page).
+	 *
+	 * @return string[]
+	 */
+	protected function discover_home_pagination() {
+		$posts_page = (int) get_option( 'page_for_posts' );
+
+		if ( $posts_page > 0 ) {
+			$base = get_permalink( $posts_page );
+		} elseif ( 'posts' === get_option( 'show_on_front' ) ) {
+			$base = home_url( '/' );
+		} else {
+			// A static front page has no posts to paginate.
+			return array();
+		}
+
+		if ( ! $base ) {
+			return array();
+		}
+
+		$counts = wp_count_posts( 'post' );
+		$total  = isset( $counts->publish ) ? (int) $counts->publish : 0;
+
+		return $this->paginate( $base, $total );
+	}
+
+	/**
+	 * Build the paginated URLs for an archive.
+	 *
+	 * Mirrors get_pagenum_link(): the home root, an optional index.php, the
+	 * request path, then the pagination base and the page number.
+	 *
+	 * @param string $base     Archive URL (page 1).
+	 * @param int    $count    Published items in the archive.
+	 * @param int    $per_page Items per page, 0 to use the site setting.
+	 * @return string[]
+	 */
+	protected function paginate( $base, $count, $per_page = 0 ) {
+		$count = (int) $count;
+		if ( $count < 1 ) {
+			return array();
+		}
+
+		$per_page = (int) $per_page;
+		if ( $per_page < 1 ) {
+			$per_page = (int) get_option( 'posts_per_page', 10 );
+		}
+		if ( $per_page < 1 ) {
+			$per_page = 10;
+		}
+
+		$pages = (int) ceil( $count / $per_page );
+		if ( $pages < 2 ) {
+			return array();
+		}
+
+		// Query-based pagination (plain permalinks) cannot be exported: the
+		// writer strips query strings, so every ?paged=N URL would overwrite
+		// page 1 instead of getting its own file.
+		if ( ! get_option( 'permalink_structure' ) ) {
+			return array();
+		}
+
+		global $wp_rewrite;
+		$base = untrailingslashit( (string) $base );
+		$home = untrailingslashit( home_url() );
+
+		$path = $base;
+		if ( 0 === strpos( $path, $home ) ) {
+			$path = ltrim( substr( $path, strlen( $home ) ), '/' );
+		}
+
+		$index = '';
+		if ( $wp_rewrite instanceof WP_Rewrite && $wp_rewrite->using_index_permalinks() ) {
+			$index = $wp_rewrite->index;
+		}
+
+		$urls = array();
+		for ( $page = 2; $page <= $pages; $page++ ) {
+			$parts = array( $home );
+			if ( '' !== $index ) {
+				$parts[] = $index;
+			}
+			if ( '' !== $path ) {
+				$parts[] = $path;
+			}
+			$parts[] = $this->pagination_base();
+			$parts[] = $page;
+
+			$urls[] = user_trailingslashit( implode( '/', array_filter( $parts ) ), 'paged' );
+		}
+
+		return $urls;
+	}
+
+	/**
+	 * Pagination base from the rewrite rules.
+	 *
+	 * @return string
+	 */
+	protected function pagination_base() {
+		global $wp_rewrite;
+		if ( $wp_rewrite instanceof WP_Rewrite && ! empty( $wp_rewrite->pagination_base ) ) {
+			return $wp_rewrite->pagination_base;
+		}
+		return 'page';
+	}
+
+	/**
+	 * Published post counts grouped by year and month.
+	 *
+	 * One grouped lookup keeps date-archive discovery to a single query
+	 * instead of one WP_Query per archive.
+	 *
+	 * @return array{year:array<string,int>,month:array<string,int>}
+	 */
+	protected function date_counts() {
+		static $counts = null;
+
+		if ( null !== $counts ) {
+			return $counts;
+		}
+
+		global $wpdb;
+		$counts = array(
+			'year'  => array(),
+			'month' => array(),
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One aggregate lookup per discovery run; caching would serve stale counts to the next export.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT YEAR(post_date) AS y, MONTH(post_date) AS m, COUNT(ID) AS total FROM {$wpdb->posts} WHERE post_type = %s AND post_status = 'publish' GROUP BY y, m",
+				'post'
+			)
+		);
+
+		foreach ( (array) $rows as $row ) {
+			$year  = (string) (int) $row->y;
+			$month = str_pad( (string) (int) $row->m, 2, '0', STR_PAD_LEFT );
+			$key   = $year . '-' . $month;
+
+			$counts['year'][ $year ] = ( isset( $counts['year'][ $year ] ) ? $counts['year'][ $year ] : 0 ) + (int) $row->total;
+			$counts['month'][ $key ] = (int) $row->total;
+		}
+
+		return $counts;
+	}
+
+	/**
 	 * Discover taxonomy archive URLs.
 	 *
 	 * @return string[]
@@ -129,6 +280,7 @@ class AOUWAL_URL_Discovery {
 				$link = get_term_link( $term );
 				if ( ! is_wp_error( $link ) ) {
 					$urls[] = $link;
+					$urls   = array_merge( $urls, $this->paginate( $link, (int) $term->count ) );
 				}
 			}
 		}
@@ -141,7 +293,7 @@ class AOUWAL_URL_Discovery {
 	 * @return string[]
 	 */
 	protected function discover_authors() {
-		$urls = array();
+		$urls  = array();
 		$users = get_users(
 			array(
 				'has_published_posts' => true,
@@ -152,6 +304,7 @@ class AOUWAL_URL_Discovery {
 			$link = get_author_posts_url( (int) $user_id );
 			if ( $link ) {
 				$urls[] = $link;
+				$urls   = array_merge( $urls, $this->paginate( $link, (int) count_user_posts( (int) $user_id, 'post', true ) ) );
 			}
 		}
 		return $urls;
@@ -163,7 +316,9 @@ class AOUWAL_URL_Discovery {
 	 * @return string[]
 	 */
 	protected function discover_dates() {
-		$urls = array();
+		$urls   = array();
+		$counts = $this->date_counts();
+
 		$years = wp_get_archives(
 			array(
 				'type'   => 'yearly',
@@ -172,8 +327,14 @@ class AOUWAL_URL_Discovery {
 			)
 		);
 		if ( preg_match_all( '#href=["\']([^"\']+)["\']#i', (string) $years, $m ) ) {
-			$urls = array_merge( $urls, $m[1] );
+			foreach ( $m[1] as $link ) {
+				$urls[] = $link;
+				if ( preg_match( '#/(\d{4})/?$#', $link, $year ) && ! empty( $counts['year'][ $year[1] ] ) ) {
+					$urls = array_merge( $urls, $this->paginate( $link, (int) $counts['year'][ $year[1] ] ) );
+				}
+			}
 		}
+
 		$months = wp_get_archives(
 			array(
 				'type'   => 'monthly',
@@ -182,8 +343,18 @@ class AOUWAL_URL_Discovery {
 			)
 		);
 		if ( preg_match_all( '#href=["\']([^"\']+)["\']#i', (string) $months, $m2 ) ) {
-			$urls = array_merge( $urls, $m2[1] );
+			foreach ( $m2[1] as $link ) {
+				$urls[] = $link;
+				if ( ! preg_match( '#/(\d{4})/(\d{2})/?$#', $link, $ym ) ) {
+					continue;
+				}
+				$key = $ym[1] . '-' . $ym[2];
+				if ( ! empty( $counts['month'][ $key ] ) ) {
+					$urls = array_merge( $urls, $this->paginate( $link, (int) $counts['month'][ $key ] ) );
+				}
+			}
 		}
+
 		return $urls;
 	}
 
