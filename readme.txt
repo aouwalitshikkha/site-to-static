@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -61,6 +61,23 @@ The same export folder works on GitHub Pages. Commit the exported files to a rep
 = Netlify, Jamstack and any static host =
 
 The output is a plain folder of HTML files and assets, which makes it a good fit for any Jamstack workflow. Upload it to Netlify (which also reads `_redirects` and `_headers`), Amazon S3, Vercel, a CDN, or any static hosting account. No WordPress, PHP or database is needed to serve it.
+
+= Automate exports with WP-CLI and cron =
+
+Aouwal Static Site Export writes a ZIP and a local folder. It does not schedule exports, and it does not push to Netlify, Cloudflare Pages, S3 or any other host by itself. For hands-off deployments, run the export from WP-CLI on a schedule and let cron and your Git host do the rest.
+
+1. Create a cron job that runs the export and unzips the result into the repository your host watches. The command prints the ZIP path when it finishes, and the last line has the `Success: Export complete:` prefix:
+
+    ZIP=$(wp aouwal-static-export run --batch=10 | tail -n 1 | sed 's/^Success: Export complete: //')
+    unzip -o "$ZIP" -d /var/www/static-repo
+
+2. Commit and push the updated files:
+
+    cd /var/www/static-repo && git add -A && git commit -m "Static export" && git push
+
+3. Cloudflare Pages, Netlify and Vercel redeploy on every push, so the new static site is live a few minutes after the cron job runs.
+
+The command exits with 0 on a clean run, or 1 when some items failed, so your script can stop before pushing a broken build. The ZIP keeps the site structure (`path/index.html`), so unzip it as a folder, not as a flat file list. Machine-readable output and a custom output path are planned.
 
 = Why use a static WordPress website =
 
@@ -135,6 +152,10 @@ No, not unless you enable it. In Settings, under Attribution, you can turn on an
 
 Yes. The export includes `_redirects` and `_headers` files, which Cloudflare Pages reads automatically, and the Deploy tab gives you the GitHub and Cloudflare Pages steps. Connect the repository once and every new export redeploys the site.
 
+= Can I schedule exports or publish to Netlify automatically? =
+
+Not from the plugin settings. Scheduled exports, deploy targets and cache purging are not built in yet. The supported pattern is a cron job that runs `wp aouwal-static-export run --batch=10`, unzips the ZIP into a Git repository, then commits and pushes. Cloudflare Pages, Netlify and Vercel deploy the new commit automatically. The "Automate exports with WP-CLI and cron" section has the exact commands.
+
 = Can I host the exported site anywhere? =
 
 Yes. The output is plain HTML, CSS, JavaScript and media, so it runs on any static hosting or CDN: Netlify, GitHub Pages, Cloudflare Pages, Amazon S3, Vercel, or a basic web host. No WordPress, PHP or database is required.
@@ -161,9 +182,15 @@ Yes. Run a new export to create a fresh ZIP, then push the updated files. On Clo
 
 = Does the plugin work on large sites? =
 
-Yes. The export runs in batches, which keeps each request short and avoids server timeouts. If your server is slow, lower the batch size in Settings. Very large sites take more time and produce a larger ZIP file.
+Yes. The crawl runs in batches, and each batch is one request, so a PHP timeout applies to a batch, not to the whole site or to a single page.
 
-Any single asset larger than the "Maximum asset size" setting (25 MB by default) is skipped and listed as an error in the log, so one large video or archive cannot run the export out of memory. Raise the limit if you need to export big media files.
+Batch size is set in Settings and accepts 1 to 50. The default is 5, so a 2,000-page site already exports in 5-page requests. Do not set 50 or 100: 50 is the maximum and 100 is not accepted. Lower it to 2 to 5 on shared hosting, raise it to 10 to 20 on a fast server. WP-CLI uses 10 URLs per batch by default:
+
+    wp aouwal-static-export run --batch=10
+
+Memory: 256 MB is the practical minimum and 512 MB is comfortable for large media libraries. Any single asset larger than the "Maximum asset size" setting (25 MB by default) is skipped and listed as an error in the log, so one huge video or archive cannot run the export out of memory.
+
+Discovery and ZIP packaging each run in a single request on current versions. Sites with tens of thousands of posts can still hit a limit there. If that happens, exclude heavy post types, raise max_execution_time temporarily, or run the export with WP-CLI.
 
 = Is the exported site good for SEO? =
 
@@ -176,6 +203,12 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.4.1 =
+* Documentation: new "Automate exports with WP-CLI and cron" section with a cron, unzip, commit and push recipe.
+* Documentation: the large-site FAQ now lists the real batch size range (1 to 50, default 5), explains that each batch is one request, and adds memory guidance.
+* Documentation: new FAQ about scheduling exports and publishing to Netlify, Cloudflare Pages or S3 automatically.
+* No code changes in this release.
 
 = 1.4.0 =
 * New display name: Aouwal Static Site Export – Static Site Generator, with a clearer short description and tags. The plugin directory slug is unchanged, so updates keep working as usual.
@@ -250,6 +283,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.4.1 =
+Documentation only: real batch size limits, a WP-CLI, cron and Git deployment recipe, and an answer on scheduling and automatic publishing. No action needed.
 
 = 1.4.0 =
 New name: Aouwal Static Site Export – Static Site Generator. Archives now export their pagination (page 2 and later), HTML5 markup such as picture, source, track and template survives, and SVG sprite fragments are kept. Adds automated checks and a translation template. No action needed.
