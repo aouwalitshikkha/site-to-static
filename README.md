@@ -118,6 +118,7 @@ The export includes, when enabled in Settings, a `_redirects` file (`/index.php`
 - Forms need an external endpoint (e.g. Formspree, Web3Forms); server-side WordPress forms will not function.
 - Server-side search and comments are removed by default; both can be kept from Settings.
 - Cloudflare Pages cannot redirect by query string (`/?p=123`); use pretty permalinks.
+- Archive pagination is only exported with pretty permalinks. With plain permalinks (`?p=123`) page 2 onward would collide with page 1, so it is skipped.
 - `404.html` uses your theme's 404 template only when the site answers a 404 status for unknown URLs. Sites that return the homepage for every path get a generic 404 page instead, with a note in the export log.
 - The DNS-rebinding window between the SSRF guard's lookup and the actual request cannot be closed through the WordPress HTTP API, which does not expose per-request IP pinning. Every redirect hop is validated, which limits the exposure.
 
