@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       Aouwal Static Site Export
+ * Plugin Name:       Aouwal Static Site Export – Static Site Generator
  * Plugin URI:        https://github.com/aouwalitshikkha/site-to-static
- * Description:       Export your WordPress site to a fully static HTML bundle (with localized assets) ready to push to GitHub and deploy on Cloudflare Pages.
+ * Description:       Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, fonts and sitemap.xml for Cloudflare Pages, GitHub Pages or Netlify.
  * Version:           1.4.0
  * Requires at least: 6.0
  * Requires PHP:      7.4

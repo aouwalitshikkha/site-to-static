@@ -126,7 +126,7 @@ class AOUWAL_Admin {
 		echo '<div class="aouwal-brand">';
 		echo '<span class="aouwal-brand-mark" aria-hidden="true">&lt;/&gt;</span>';
 		echo '<span class="aouwal-brand-text">';
-		echo '<span class="aouwal-brand-title">' . esc_html__( 'Aouwal Static Site Export', 'aouwal-static-site-export' ) . '</span>';
+		echo '<span class="aouwal-brand-title">' . esc_html__( 'Aouwal Static Site Export – Static Site Generator', 'aouwal-static-site-export' ) . '</span>';
 		printf(
 			'<span class="aouwal-brand-sub">%1$s <a href="https://abdulaouwal.com" target="_blank" rel="noopener noreferrer">%2$s</a></span>',
 			esc_html__( 'by', 'aouwal-static-site-export' ),

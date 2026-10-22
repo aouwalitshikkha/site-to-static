@@ -12,7 +12,7 @@ $aouwal_zip_available = AOUWAL_Zip::available();
 <div class="aouwal-export">
 	<?php if ( ! $aouwal_zip_available ) : ?>
 		<div class="notice notice-error">
-			<p><?php esc_html_e( 'The PHP zip extension is not available. The export is disabled because Aouwal Static Site Export cannot package the exported files without it. Ask your host to enable the zip extension, then reload this page.', 'aouwal-static-site-export' ); ?></p>
+			<p><?php esc_html_e( 'The PHP zip extension is not available. The export is disabled because Aouwal Static Site Export – Static Site Generator cannot package the exported files without it. Ask your host to enable the zip extension, then reload this page.', 'aouwal-static-site-export' ); ?></p>
 		</div>
 	<?php endif; ?>
 
