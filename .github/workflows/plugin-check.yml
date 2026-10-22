@@ -1,0 +1,41 @@
+name: Plugin Check
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - 'fix/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plugin-check:
+    name: WordPress Plugin Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the plugin
+        uses: actions/checkout@v4
+
+      - name: Run Plugin Check
+        uses: wordpress/plugin-check-action@v1
+        with:
+          # The repository root is the plugin, so the slug has to be pinned:
+          # Plugin Check would otherwise use the repository name and report a
+          # text-domain mismatch.
+          build-dir: './'
+          slug: 'aouwal-static-site-export'
+          exclude-directories: |
+            .git
+            .github
+          exclude-files: |
+            .gitattributes
+            .gitignore
+            phpcs.xml.dist
