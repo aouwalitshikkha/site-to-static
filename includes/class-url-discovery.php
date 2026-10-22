@@ -249,8 +249,8 @@ class AOUWAL_URL_Discovery {
 			$month = str_pad( (string) (int) $row->m, 2, '0', STR_PAD_LEFT );
 			$key   = $year . '-' . $month;
 
-			$counts['year'][ $year ]  = ( isset( $counts['year'][ $year ] ) ? $counts['year'][ $year ] : 0 ) + (int) $row->total;
-			$counts['month'][ $key ]  = (int) $row->total;
+			$counts['year'][ $year ] = ( isset( $counts['year'][ $year ] ) ? $counts['year'][ $year ] : 0 ) + (int) $row->total;
+			$counts['month'][ $key ] = (int) $row->total;
 		}
 
 		return $counts;
@@ -293,7 +293,7 @@ class AOUWAL_URL_Discovery {
 	 * @return string[]
 	 */
 	protected function discover_authors() {
-		$urls = array();
+		$urls  = array();
 		$users = get_users(
 			array(
 				'has_published_posts' => true,

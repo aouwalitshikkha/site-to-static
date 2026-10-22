@@ -163,9 +163,11 @@ class AOUWAL_Exporter {
 		}
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	 * -------------------------------------------------------------------
 	 * Job lifecycle
-	 * ------------------------------------------------------------------ */
+	 * -------------------------------------------------------------------
+	 */
 
 	/**
 	 * Start a new export job.
@@ -352,8 +354,8 @@ class AOUWAL_Exporter {
 			);
 		}
 
-		$job['phase']  = 'done';
-		$job['notice'] = $notices;
+		$job['phase']    = 'done';
+		$job['notice']   = $notices;
 		$job['finished'] = current_time( 'mysql' );
 		$this->save_job( $job );
 
@@ -375,7 +377,7 @@ class AOUWAL_Exporter {
 		global $wpdb;
 		$table = $this->table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); counts change every batch so caching cannot persist across requests. Values are prepared.
-		$rows  = $wpdb->get_results(
+		$rows = $wpdb->get_results(
 			$wpdb->prepare( "SELECT status, COUNT(*) AS n FROM {$table} WHERE job_id = %s GROUP BY status", $job_id ), // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			ARRAY_A
 		);
@@ -397,9 +399,11 @@ class AOUWAL_Exporter {
 		return $counts;
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	 * -------------------------------------------------------------------
 	 * Item processing
-	 * ------------------------------------------------------------------ */
+	 * -------------------------------------------------------------------
+	 */
 
 	/**
 	 * Process a page item.
@@ -539,8 +543,8 @@ class AOUWAL_Exporter {
 	 */
 	protected function flush_insert( array $chunk ) {
 		global $wpdb;
-		$table = $this->table();
-		$sql   = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at) VALUES " . implode( ', ', $chunk );
+		$table  = $this->table();
+		$sql    = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at) VALUES " . implode( ', ', $chunk );
 		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; bulk insert of pre-escaped tuples. No caching applies to writes.
 		return false === $result ? 0 : (int) $result;
 	}
@@ -570,9 +574,11 @@ class AOUWAL_Exporter {
 		);
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	 * -------------------------------------------------------------------
 	 * Job storage
-	 * ------------------------------------------------------------------ */
+	 * -------------------------------------------------------------------
+	 */
 
 	/**
 	 * Save job data.
@@ -663,9 +669,11 @@ class AOUWAL_Exporter {
 		}
 	}
 
-	/* ---------------------------------------------------------------------
+	/*
+	 * -------------------------------------------------------------------
 	 * Static extras
-	 * ------------------------------------------------------------------ */
+	 * -------------------------------------------------------------------
+	 */
 
 	/**
 	 * Whether a response should be stored without HTML processing.
@@ -813,7 +821,7 @@ class AOUWAL_Exporter {
 		$guard     = 0;
 
 		while ( ! empty( $queue ) && $guard < 500 ) {
-			$guard++;
+			++$guard;
 			$url = array_shift( $queue );
 			if ( isset( $seen[ $url ] ) ) {
 				continue;
@@ -843,7 +851,7 @@ class AOUWAL_Exporter {
 		global $wpdb;
 		$table = $this->table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); one-shot export read. Values are prepared.
-		$rows  = $wpdb->get_results(
+		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT source_url FROM {$table} WHERE job_id = %s AND item_type = 'page' AND status IN ('done','skipped')", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$job_id
@@ -882,7 +890,7 @@ class AOUWAL_Exporter {
 		}
 		$urls = array_values( array_unique( $urls ) );
 
-		$xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 		if ( AOUWAL_Brand::should_include() ) {
 			$xml .= AOUWAL_Brand::xml_comment() . "\n";
 		}
@@ -922,7 +930,7 @@ class AOUWAL_Exporter {
 	 * @return string
 	 */
 	protected function build_redirects() {
-		$lines   = array();
+		$lines = array();
 		if ( AOUWAL_Brand::should_include() ) {
 			$lines[] = AOUWAL_Brand::text_comment();
 		}

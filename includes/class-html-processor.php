@@ -25,13 +25,53 @@ class AOUWAL_HTML_Processor {
 	 * @var string[]
 	 */
 	protected $asset_extensions = array(
-		'css', 'js', 'mjs', 'cjs', 'json', 'map', 'wasm',
-		'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'svg', 'ico', 'bmp', 'tif', 'tiff',
-		'woff', 'woff2', 'ttf', 'otf', 'eot',
-		'mp4', 'webm', 'ogv', 'mov', 'mp3', 'wav', 'ogg', 'm4a',
-		'pdf', 'zip', 'gz', 'rar', '7z',
-		'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv',
-		'xml', 'txt', 'vtt', 'srt',
+		'css',
+		'js',
+		'mjs',
+		'cjs',
+		'json',
+		'map',
+		'wasm',
+		'png',
+		'jpg',
+		'jpeg',
+		'gif',
+		'webp',
+		'avif',
+		'svg',
+		'ico',
+		'bmp',
+		'tif',
+		'tiff',
+		'woff',
+		'woff2',
+		'ttf',
+		'otf',
+		'eot',
+		'mp4',
+		'webm',
+		'ogv',
+		'mov',
+		'mp3',
+		'wav',
+		'ogg',
+		'm4a',
+		'pdf',
+		'zip',
+		'gz',
+		'rar',
+		'7z',
+		'doc',
+		'docx',
+		'xls',
+		'xlsx',
+		'ppt',
+		'pptx',
+		'csv',
+		'xml',
+		'txt',
+		'vtt',
+		'srt',
 	);
 
 	/**
@@ -161,7 +201,7 @@ class AOUWAL_HTML_Processor {
 	/**
 	 * Load HTML into a DOMDocument with UTF-8 handling.
 	 *
-	 * libxml2 ships an HTML4 parser, so HTML5 void elements (source, track,
+	 * Libxml2 ships an HTML4 parser, so HTML5 void elements (source, track,
 	 * wbr, embed) are parsed as containers and the elements that follow them
 	 * are nested inside. normalise_void_elements() flattens that before the
 	 * rest of the pipeline runs, and strip_void_end_tags() removes the closing
@@ -203,7 +243,7 @@ class AOUWAL_HTML_Processor {
 	/**
 	 * Swap script bodies that contain closing tags for opaque tokens.
 	 *
-	 * libxml ends a script element at the first closing tag in its body, so
+	 * Libxml ends a script element at the first closing tag in its body, so
 	 * inline JavaScript that builds HTML (`var tpl = "</div>"`) would lose
 	 * everything after it. Only bodies that actually contain a closing tag
 	 * are touched, so the content-based removals in remove_dynamic() keep
@@ -222,7 +262,7 @@ class AOUWAL_HTML_Processor {
 					return $matches[0];
 				}
 
-				$token                          = 'AOUWALSCRIPTBODY' . count( $this->script_bodies ) . 'TOKEN';
+				$token                         = 'AOUWALSCRIPTBODY' . count( $this->script_bodies ) . 'TOKEN';
 				$this->script_bodies[ $token ] = $matches[2];
 
 				return $matches[1] . $token . $matches[3];
@@ -268,15 +308,15 @@ class AOUWAL_HTML_Processor {
 		}
 
 		foreach ( $targets as $node ) {
-			$parent = $node->parentNode; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			$parent = $node->parentNode;
 			if ( ! $parent ) {
 				continue;
 			}
-			while ( $node->firstChild ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-				$child = $node->firstChild; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			while ( $node->firstChild ) {
+				$child = $node->firstChild;
 				$node->removeChild( $child );
-				if ( $node->nextSibling ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-					$parent->insertBefore( $child, $node->nextSibling ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+				if ( $node->nextSibling ) {
+					$parent->insertBefore( $child, $node->nextSibling );
 				} else {
 					$parent->appendChild( $child );
 				}
@@ -539,7 +579,7 @@ class AOUWAL_HTML_Processor {
 	 * @return string "asset", "page" or "skip".
 	 */
 	protected function classify( $tag, $attr, $url, $rel ) {
-		$ext = strtolower( pathinfo( (string) wp_parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
+		$ext          = strtolower( pathinfo( (string) wp_parse_url( $url, PHP_URL_PATH ), PATHINFO_EXTENSION ) );
 		$is_asset_ext = in_array( $ext, $this->asset_extensions, true );
 
 		if ( 'link' === $tag ) {
@@ -595,8 +635,8 @@ class AOUWAL_HTML_Processor {
 			$desc = isset( $bits[1] ) ? $bits[1] : '';
 
 			if ( AOUWAL_Settings::get( 'download_assets' ) && ! preg_match( '~^(?:data:|#)~i', $url ) ) {
-				$resolved  = $this->resolve_url( $source_url, $url );
-				$resolved  = $this->strip_query( $resolved );
+				$resolved = $this->resolve_url( $source_url, $url );
+				$resolved = $this->strip_query( $resolved );
 				if ( ! $crawler->is_url_allowed_for_fetch( $resolved ) ) {
 					$out[] = trim( $url . ' ' . $desc );
 					continue;

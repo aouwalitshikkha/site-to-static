@@ -43,7 +43,7 @@ class AOUWAL_Zip {
 			return new WP_Error( 'aouwal_zip_missing', __( 'The PHP zip extension is not available.', 'aouwal-static-site-export' ) );
 		}
 
-		$source_dir = rtrim( $source_dir, "/\\" );
+		$source_dir = rtrim( $source_dir, '/\\' );
 		if ( ! is_dir( $source_dir ) ) {
 			return new WP_Error( 'aouwal_zip_nodir', __( 'Output directory not found.', 'aouwal-static-site-export' ) );
 		}
@@ -60,7 +60,7 @@ class AOUWAL_Zip {
 			return new WP_Error( 'aouwal_zip_open', __( 'Could not create the ZIP archive.', 'aouwal-static-site-export' ) );
 		}
 
-		$count = 0;
+		$count    = 0;
 		$iterator = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $source_dir, FilesystemIterator::SKIP_DOTS ),
 			RecursiveIteratorIterator::SELF_FIRST
@@ -76,7 +76,7 @@ class AOUWAL_Zip {
 			}
 
 			$zip->addFile( $pathname, $relative );
-			$count++;
+			++$count;
 		}
 
 		$zip->close();
