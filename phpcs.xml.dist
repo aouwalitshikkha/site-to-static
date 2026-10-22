@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="Aouwal Static Site Export">
-	<description>WordPress coding standards for the Aouwal Static Site Export plugin.</description>
+<ruleset name="Aouwal Static Site Export – Static Site Generator">
+	<description>WordPress coding standards for the Aouwal Static Site Export – Static Site Generator plugin.</description>
 
 	<file>.</file>
 

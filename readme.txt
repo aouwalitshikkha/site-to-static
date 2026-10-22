@@ -1,6 +1,6 @@
-=== Aouwal Static Site Export ===
+=== Aouwal Static Site Export – Static Site Generator ===
 Contributors: aouwal
-Tags: static, export, static-site, cloudflare-pages, github
+Tags: static site generator, static html, wordpress export, cloudflare pages, jamstack
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
@@ -8,11 +8,11 @@ Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Export your WordPress site to a static HTML bundle with localized assets, ready to host on GitHub and Cloudflare Pages.
+Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, fonts and sitemap.xml for Cloudflare Pages, GitHub Pages or Netlify.
 
 == Description ==
 
-Aouwal Static Site Export turns your WordPress site into a static HTML site. It crawls every public page, captures the fully rendered HTML, downloads and localizes every asset (CSS, JS, images and fonts), and packages the result into one portable ZIP file.
+Aouwal Static Site Export is a WordPress Static Site Generator that converts dynamic WordPress websites into static HTML websites. Export complete websites including CSS, JavaScript, images, fonts, sitemap.xml and robots.txt for deployment on Cloudflare Pages, GitHub Pages, Netlify or any static web server.
 
 The export is a plain folder of HTML files and assets. You can commit it to GitHub and deploy it on Cloudflare Pages, or host it on any static host or CDN. No WordPress, PHP or database is needed to serve it.
 
@@ -60,7 +60,7 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 
 = What does Aouwal Static Site Export do? =
 
-It converts your WordPress site into a static HTML site. The plugin crawls each public page, saves the rendered HTML, downloads and localizes all assets, and packages the result into a ZIP file. You can then host the site anywhere without WordPress, PHP or a database.
+It is a static site generator for WordPress. It converts your WordPress site into a static HTML site. The plugin crawls each public page, saves the rendered HTML, downloads and localizes all assets, and packages the result into a ZIP file. You can then host the site anywhere without WordPress, PHP or a database.
 
 = Does it work with page builders? =
 
@@ -117,6 +117,7 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 == Changelog ==
 
 = 1.4.0 =
+* New display name: Aouwal Static Site Export – Static Site Generator, with a clearer short description and tags. The plugin directory slug is unchanged, so updates keep working as usual.
 * Archive pagination is now exported. The blog index, category, tag, custom taxonomy, author and date archives include page 2 and later, so older posts stay reachable in the static site.
 * Pagination follows your site settings: posts per page, the pagination base and the permalink style. Sites with plain permalinks skip pagination, because a static file server cannot serve ?paged=2 as its own page.
 * Paginated archive URLs are left out of sitemap.xml, matching WordPress core sitemap behaviour.
@@ -190,7 +191,7 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 == Upgrade Notice ==
 
 = 1.4.0 =
-Archives now export their pagination (page 2 and later), HTML5 markup such as picture, source, track and template survives, and SVG sprite fragments are kept. Adds automated checks and a translation template. No action needed.
+New name: Aouwal Static Site Export – Static Site Generator. Archives now export their pagination (page 2 and later), HTML5 markup such as picture, source, track and template survives, and SVG sprite fragments are kept. Adds automated checks and a translation template. No action needed.
 
 = 1.3.0 =
 Adds a Maximum asset size setting (25 MB default), reports failed file writes instead of marking them done, validates every redirect against the SSRF guard, resolves IPv6, and only uses your theme 404 template for real 404s. No action needed.

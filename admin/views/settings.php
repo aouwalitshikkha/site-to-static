@@ -114,7 +114,7 @@ unset( $aouwal_post_types['attachment'] );
 			<th scope="row"><?php esc_html_e( 'Attribution', 'aouwal-static-site-export' ); ?></th>
 			<td>
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[show_credit]" value="1" <?php checked( $aouwal['show_credit'] ); ?> /> <?php esc_html_e( 'Include an invisible author credit comment in exported files', 'aouwal-static-site-export' ); ?></label>
-				<p class="description"><?php esc_html_e( 'Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export. It never appears in the browser.', 'aouwal-static-site-export' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export – Static Site Generator. It never appears in the browser.', 'aouwal-static-site-export' ); ?></p>
 			</td>
 		</tr>
 		<tr>
