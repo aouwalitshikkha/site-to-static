@@ -18,22 +18,53 @@ The export is a plain folder of HTML files and assets. You can commit it to GitH
 
 Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 
-= What you can export =
+= Export WordPress to static HTML =
 
-* Posts, pages and custom post types.
-* Taxonomy archives, author archives and date archives, including their pagination (page 2 and later).
-* RSS feeds.
-* A `404.html` page, plus `sitemap.xml` and `robots.txt`.
-* Optional Cloudflare Pages `_redirects` and `_headers` files, both on by default.
+The plugin turns your published WordPress pages into plain static HTML files. It works in six steps:
 
-= How the export works =
-
-1. The plugin discovers every public URL on your site.
-2. It fetches the fully rendered HTML of each page through the WordPress HTTP API.
-3. It downloads and localizes assets, including recursive CSS `url()` and `@import` references.
+1. It discovers every public URL on your site.
+2. It requests each URL through the WordPress HTTP API and keeps the fully rendered HTML.
+3. It downloads and localizes every asset, including recursive CSS `url()` and `@import` references.
 4. It rewrites internal links to portable relative or root-absolute URLs, keeping `<picture>`, `<source>`, `<track>`, `<template>` and custom-element markup intact.
 5. It removes server-side features that cannot run on a static host.
-6. It packages everything into a single ZIP file you can download.
+6. It packages everything into one ZIP file you can download.
+
+You can export:
+
+* Posts, pages and custom post types.
+* Category, tag and custom taxonomy archives, author archives and date archives, including page 2 and later.
+* RSS feeds.
+* A `404.html` page, plus `sitemap.xml` and `robots.txt`.
+* Cloudflare Pages `_redirects` and `_headers` files, both on by default.
+
+= WordPress static site generator features =
+
+* Chunked export with a live progress log, so large sites do not hit PHP timeouts.
+* Every page is fetched as WordPress renders it, so theme templates, shortcodes and plugin output are included.
+* Images, CSS, JavaScript and fonts are downloaded and localized, including `srcset` and `<picture>` sources.
+* Internal links become relative or root-absolute URLs, so the static site works on any domain and in any subfolder.
+* HTML5 markup stays valid: `<picture>`, `<source>`, `<video>`, `<track>`, `<template>` and custom elements survive the export.
+* The Maximum asset size setting (25 MB by default) skips oversized files instead of exhausting memory.
+* Every write is checked. Pages or assets that cannot be written are reported in the log instead of being marked as done.
+* The crawler fetches only public URLs. Every redirect hop and both A and AAAA records are validated.
+* Optional WP-CLI command: `wp aouwal-static-export run`.
+* Optional, invisible author credit. It is off by default and can be enabled in Settings.
+
+= Deploy to Cloudflare Pages =
+
+Cloudflare Pages is the fastest path to a live static site. The export already includes the `_redirects` and `_headers` files Cloudflare Pages expects, and the Deploy tab walks you through creating a GitHub repository and connecting it to Cloudflare Pages. Once the repository is connected, every push redeploys the site automatically.
+
+= Export to GitHub Pages =
+
+The same export folder works on GitHub Pages. Commit the exported files to a repository, enable Pages for the branch or folder you pushed, and GitHub serves the static HTML. Relative links work as they are, so no extra configuration is needed.
+
+= Netlify, Jamstack and any static host =
+
+The output is a plain folder of HTML files and assets, which makes it a good fit for any Jamstack workflow. Upload it to Netlify (which also reads `_redirects` and `_headers`), Amazon S3, Vercel, a CDN, or any static hosting account. No WordPress, PHP or database is needed to serve it.
+
+= Why use a static WordPress website =
+
+A static website is faster and safer than a dynamic one. There is no PHP to execute and no database to query, so pages are served as small HTML files, usually from a CDN close to the visitor. There is also much less to attack: no login page, no plugin endpoints and no database on the public server. You keep WordPress for writing and publishing, and export a fresh static copy whenever the content changes.
 
 = What the export cleans up =
 
@@ -42,11 +73,17 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 * Strips WordPress version tags.
 * Strips staging "noindex" robots meta so the exported site stays indexable.
 
-= Key features =
+= Not suitable for =
 
-* Chunked, timeout-safe export with a live progress log.
-* Optional WP-CLI command: `wp aouwal-static-export run`.
-* Optional, invisible author credit. It is off by default and can be enabled in Settings.
+A static site has no PHP and no database, so features that need a server stop working after the export:
+
+* E-commerce stores. Cart, checkout, payment and order confirmation need WooCommerce and a database.
+* Membership sites and sites that require user logins. A static host has no sessions, accounts or password reset.
+* Real-time data, such as live stock levels, prices, dashboards or feeds that change by the minute.
+* Heavy AJAX functionality, including live search, AJAX filtering, infinite scroll endpoints and form submissions.
+* Built-in forms, site search, comments and "add to cart" buttons. They need a server to receive and store the result.
+
+If you need those features, keep the dynamic WordPress site, or replace them with third-party services before you go static: a hosted form service, a static search service, and a hosted checkout. Static export works best for content sites such as blogs, documentation, portfolios, marketing pages and company websites.
 
 == Installation ==
 
@@ -58,13 +95,33 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 
 == Frequently Asked Questions ==
 
+= How do I export WordPress to HTML? =
+
+Install and activate the plugin, open Static Export in the admin menu, choose which post types and archives to include, then run the export. The plugin renders every page, localizes the assets and builds a ZIP file. Download the ZIP, unzip it, and upload the folder to your static host. The Deploy tab has the full walkthrough for GitHub and Cloudflare Pages.
+
 = What does Aouwal Static Site Export do? =
 
 It is a static site generator for WordPress. It converts your WordPress site into a static HTML site. The plugin crawls each public page, saves the rendered HTML, downloads and localizes all assets, and packages the result into a ZIP file. You can then host the site anywhere without WordPress, PHP or a database.
 
-= Does it work with page builders? =
+= Does it support custom post types? =
 
-Standard themes work well. Sites that depend on client-side JavaScript, such as WooCommerce carts and some page builders, may not work fully once they are static. Always test the exported site before you publish it.
+Yes. Every public post type is listed in Settings and you choose which ones to export. Products, portfolio items, documentation pages and other custom post types are exported with the same permalink structure they use on your WordPress site.
+
+= Does it work with Elementor? =
+
+Usually yes. Elementor renders its layout to HTML and CSS on the server, so pages export with their design intact. Widgets that need a server, such as forms, popups with dynamic content and logged-in-only sections, cannot work on a static host and should be tested before you publish.
+
+= Does it work with WooCommerce? =
+
+Product and category pages can be exported, so a product catalog works as a static site. The cart, checkout, my-account and product search pages are dynamic, so they cannot work without WordPress. The plugin does not convert WooCommerce into a static shop.
+
+= Does it export images? =
+
+Yes. Images are downloaded and stored in the uploads structure the HTML expects, including `srcset` and `<picture>` sources. Images served from a CDN or another domain are localized too when they are reachable. Any single asset larger than the Maximum asset size setting (25 MB by default) is skipped and listed in the log.
+
+= Does it export CSS and JavaScript? =
+
+Yes. Stylesheets and scripts are downloaded and rewritten to local paths, including CSS `url()` and `@import` references, so icons, fonts and background images keep working. Inline styles and inline scripts stay in the page. Files are not minified or combined, so the export matches what your site already serves.
 
 = What happens to search and comments? =
 
@@ -74,9 +131,13 @@ Search and comments are server-side features, so they cannot run on a static hos
 
 No, not unless you enable it. In Settings, under Attribution, you can turn on an invisible, source-code-only credit. It is off by default and never appears in the browser or in the exported pages your visitors see.
 
-= Which hosts can I deploy the export to? =
+= Can I deploy to Cloudflare Pages? =
 
-You can host the exported folder on any static host or CDN. The plugin generates files for Cloudflare Pages, and the Deploy tab includes step-by-step GitHub and Cloudflare Pages instructions. Netlify, GitHub Pages and Amazon S3 also work with the same output.
+Yes. The export includes `_redirects` and `_headers` files, which Cloudflare Pages reads automatically, and the Deploy tab gives you the GitHub and Cloudflare Pages steps. Connect the repository once and every new export redeploys the site.
+
+= Can I host the exported site anywhere? =
+
+Yes. The output is plain HTML, CSS, JavaScript and media, so it runs on any static hosting or CDN: Netlify, GitHub Pages, Cloudflare Pages, Amazon S3, Vercel, or a basic web host. No WordPress, PHP or database is required.
 
 = Do I need to know how to code? =
 
