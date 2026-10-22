@@ -65,13 +65,13 @@ class AOUWAL_Settings {
 	/**
 	 * Get a single setting.
 	 *
-	 * @param string $key     Setting key.
-	 * @param mixed  $default Fallback.
+	 * @param string $key      Setting key.
+	 * @param mixed  $fallback Value when the setting is not stored.
 	 * @return mixed
 	 */
-	public static function get( $key, $default = null ) {
+	public static function get( $key, $fallback = null ) {
 		$all = self::all();
-		return array_key_exists( $key, $all ) ? $all[ $key ] : $default;
+		return array_key_exists( $key, $all ) ? $all[ $key ] : $fallback;
 	}
 
 	/**
@@ -81,7 +81,7 @@ class AOUWAL_Settings {
 	 * @return array
 	 */
 	public static function sanitize( array $input ) {
-		$d = self::defaults();
+		$d   = self::defaults();
 		$out = array();
 
 		$post_types = array();
@@ -119,7 +119,7 @@ class AOUWAL_Settings {
 
 		$out['url_style'] = ( isset( $input['url_style'] ) && 'root' === $input['url_style'] ) ? 'root' : 'relative';
 
-		$batch = isset( $input['batch_size'] ) ? absint( $input['batch_size'] ) : $d['batch_size'];
+		$batch             = isset( $input['batch_size'] ) ? absint( $input['batch_size'] ) : $d['batch_size'];
 		$out['batch_size'] = min( 50, max( 1, $batch ) );
 
 		$max_asset_mb        = isset( $input['max_asset_mb'] ) ? absint( $input['max_asset_mb'] ) : $d['max_asset_mb'];

@@ -23,7 +23,8 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 
 ## Features
 
-- Posts, pages, custom post types, categories, tags, custom taxonomies, author archives and date archives.
+- Posts, pages, custom post types, categories, tags, custom taxonomies, author archives and date archives, including archive pagination (`/page/2/` and later) so older posts stay reachable.
+- Keeps HTML5 markup intact: `<picture>`/`<source>`, `<video>`/`<track>`, `<template>` blocks and custom elements survive the parse, and inline scripts that build HTML are not truncated.
 - Downloads and localizes all assets, recursing into CSS `url()` and `@import` references.
 - Rewrites internal links to portable relative (or root-absolute) URLs.
 - Removes server-side features that cannot work statically (search forms, comment forms, comment feeds). Each step can be turned off in Settings.
@@ -117,8 +118,39 @@ The export includes, when enabled in Settings, a `_redirects` file (`/index.php`
 - Forms need an external endpoint (e.g. Formspree, Web3Forms); server-side WordPress forms will not function.
 - Server-side search and comments are removed by default; both can be kept from Settings.
 - Cloudflare Pages cannot redirect by query string (`/?p=123`); use pretty permalinks.
+- Archive pagination is only exported with pretty permalinks. With plain permalinks (`?p=123`) page 2 onward would collide with page 1, so it is skipped.
 - `404.html` uses your theme's 404 template only when the site answers a 404 status for unknown URLs. Sites that return the homepage for every path get a generic 404 page instead, with a note in the export log.
 - The DNS-rebinding window between the SSRF guard's lookup and the actual request cannot be closed through the WordPress HTTP API, which does not expose per-request IP pinning. Every redirect hop is validated, which limits the exposure.
+
+## Development
+
+### Continuous integration
+
+Three GitHub Actions workflows run on every push and pull request:
+
+| Workflow | What it checks |
+|---|---|
+| `.github/workflows/lint.yml` | `php -l` on every PHP file, on PHP 7.4 (minimum), 8.2 and 8.4. |
+| `.github/workflows/phpcs.yml` | PHP_CodeSniffer with the `WordPress` and `WordPress-Extra` rulesets, configured in `phpcs.xml.dist`. |
+| `.github/workflows/plugin-check.yml` | WordPress Plugin Check, which must report no errors. |
+
+To run the coding-standards check locally:
+
+```bash
+composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+composer global require squizlabs/php_codesniffer wp-coding-standards/wpcs phpcompatibility/phpcompatibility-wp dealerdirect/phpcodesniffer-composer-installer
+phpcs
+```
+
+`phpcs.xml.dist` and `.github/` are development-only: they are marked `export-ignore` in `.gitattributes`, so they never ship in a release ZIP or the WordPress.org SVN tree.
+
+### Translations
+
+`languages/aouwal-static-site-export.pot` is the translation template. Regenerate it after changing any translatable string:
+
+```bash
+wp i18n make-pot . languages/aouwal-static-site-export.pot --domain=aouwal-static-site-export --package-name="Aouwal Static Site Export"
+```
 
 ## Project structure
 
@@ -129,6 +161,10 @@ aouwal-static-site-export/
 ├── readme.txt                    # WordPress.org-style readme
 ├── README.md                     # this file
 ├── LICENSE                       # GPL-2.0-or-later
+├── phpcs.xml.dist                # coding-standards config (dev only)
+├── .github/workflows/            # lint, PHPCS and Plugin Check (dev only)
+├── languages/
+│   └── aouwal-static-site-export.pot
 ├── includes/
 │   ├── class-brand.php
 │   ├── class-settings.php

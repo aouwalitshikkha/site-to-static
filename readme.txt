@@ -4,7 +4,7 @@ Tags: static, export, static-site, cloudflare-pages, github
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,7 +21,7 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 = What you can export =
 
 * Posts, pages and custom post types.
-* Taxonomy archives, author archives and date archives.
+* Taxonomy archives, author archives and date archives, including their pagination (page 2 and later).
 * RSS feeds.
 * A `404.html` page, plus `sitemap.xml` and `robots.txt`.
 * Optional Cloudflare Pages `_redirects` and `_headers` files, both on by default.
@@ -31,7 +31,7 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 1. The plugin discovers every public URL on your site.
 2. It fetches the fully rendered HTML of each page through the WordPress HTTP API.
 3. It downloads and localizes assets, including recursive CSS `url()` and `@import` references.
-4. It rewrites internal links to portable relative or root-absolute URLs.
+4. It rewrites internal links to portable relative or root-absolute URLs, keeping `<picture>`, `<source>`, `<track>`, `<template>` and custom-element markup intact.
 5. It removes server-side features that cannot run on a static host.
 6. It packages everything into a single ZIP file you can download.
 
@@ -116,6 +116,17 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 
 == Changelog ==
 
+= 1.4.0 =
+* Archive pagination is now exported. The blog index, category, tag, custom taxonomy, author and date archives include page 2 and later, so older posts stay reachable in the static site.
+* Pagination follows your site settings: posts per page, the pagination base and the permalink style. Sites with plain permalinks skip pagination, because a static file server cannot serve ?paged=2 as its own page.
+* Paginated archive URLs are left out of sitemap.xml, matching WordPress core sitemap behaviour.
+* HTML5 markup is kept intact. `<picture>` and `<source>`, `<video>` and `<track>`, `<template>` blocks and custom elements survive the export without being re-nested.
+* Inline scripts that build HTML are no longer truncated by the parser.
+* SVG sprite references keep their fragment, so `sprite.svg#icon` icons keep working after asset localization.
+* New: automated checks on GitHub Actions for PHP syntax (7.4, 8.2, 8.4), PHP_CodeSniffer with the WordPress and WordPress-Extra rulesets, and Plugin Check.
+* New: the plugin ships a translation template at `languages/aouwal-static-site-export.pot`.
+* The codebase passes PHP_CodeSniffer WordPress and WordPress-Extra with no errors and no warnings.
+
 = 1.3.0 =
 * Files that cannot be written (permissions, full disk, WP_Filesystem unavailable) are now reported. The page or asset is marked as an error instead of "done", the log names the path, and the export finishes with a warning that counts the failures.
 * The generated files (404.html, sitemap.xml, robots.txt, _redirects, _headers) are checked the same way, and the log lists any that could not be written.
@@ -177,6 +188,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.4.0 =
+Archives now export their pagination (page 2 and later), HTML5 markup such as picture, source, track and template survives, and SVG sprite fragments are kept. Adds automated checks and a translation template. No action needed.
 
 = 1.3.0 =
 Adds a Maximum asset size setting (25 MB default), reports failed file writes instead of marking them done, validates every redirect against the SSRF guard, resolves IPv6, and only uses your theme 404 template for real 404s. No action needed.

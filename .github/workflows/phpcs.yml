@@ -1,0 +1,46 @@
+name: PHPCS
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - 'fix/**'
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phpcs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phpcs:
+    name: WordPress coding standards
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the plugin
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer
+
+      - name: Install PHPCS and the WordPress standards
+        run: |
+          composer global config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+          composer global require --no-interaction --no-progress \
+            "squizlabs/php_codesniffer:^3.13" \
+            "wp-coding-standards/wpcs:^3.2" \
+            "phpcompatibility/phpcompatibility-wp:^2.1" \
+            "dealerdirect/phpcodesniffer-composer-installer:^1.0"
+
+      - name: Run PHPCS
+        run: |
+          PHPCS_BIN="$(composer global config bin-dir --absolute)/phpcs"
+          "$PHPCS_BIN" --report=full --report-summary

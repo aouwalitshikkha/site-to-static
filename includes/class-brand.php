@@ -40,16 +40,13 @@ class AOUWAL_Brand {
 	/**
 	 * Whether the export credit should be included.
 	 *
-	 * Forced on when the AOUWAL_FORCE_CREDIT constant is defined and true
-	 * (GitHub distribution). Otherwise it follows the opt-in "show_credit"
-	 * setting, which defaults to off.
+	 * The credit is strictly opt-in: it is added only when the "show_credit"
+	 * setting is enabled, and that setting defaults to off. There is no
+	 * constant or filter that forces it on.
 	 *
 	 * @return bool
 	 */
 	public static function should_include() {
-		if ( defined( 'AOUWAL_FORCE_CREDIT' ) && AOUWAL_FORCE_CREDIT ) {
-			return true;
-		}
 		return (bool) AOUWAL_Settings::get( 'show_credit', 0 );
 	}
 

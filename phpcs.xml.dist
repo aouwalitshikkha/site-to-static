@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<ruleset name="Aouwal Static Site Export">
+	<description>WordPress coding standards for the Aouwal Static Site Export plugin.</description>
+
+	<file>.</file>
+
+	<exclude-pattern>/.git/*</exclude-pattern>
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/node_modules/*</exclude-pattern>
+
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="ps"/>
+	<arg name="parallel" value="8"/>
+
+	<rule ref="WordPress"/>
+	<rule ref="WordPress-Extra"/>
+
+	<!-- The plugin has shipped class-exporter.php, class-crawler.php and friends
+	     since 1.0. Renaming them would change every include and the SVN tree, so
+	     only the class-name part of the file-naming sniff is switched off. -->
+	<rule ref="WordPress.Files.FileName">
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+	</rule>
+
+	<!-- The PHP DOM API exposes camelCase properties ($node->tagName,
+	     $doc->childNodes). Ignoring comments on every DOM call would be noise,
+	     so only the property-name part of this sniff is switched off. -->
+	<rule ref="WordPress.NamingConventions.ValidVariableName">
+		<exclude name="WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase"/>
+	</rule>
+
+	<config name="minimum_supported_wp_version" value="6.0"/>
+	<config name="testVersion" value="7.4-"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="aouwal-static-site-export"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="aouwal"/>
+				<element value="AOUWAL"/>
+			</property>
+		</properties>
+	</rule>
+
+</ruleset>
