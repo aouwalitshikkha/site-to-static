@@ -1,4 +1,4 @@
-# Aouwal Static Site Export
+# Aouwal Static Site Export – Static Site Generator
 
 **By [Abdul Aouwal](https://abdulaouwal.com) — Technical SEO Consultant**
 
@@ -6,7 +6,7 @@
 
 Also available on the WordPress plugin directory: **<https://wordpress.org/plugins/aouwal-static-site-export/>**
 
-Export a WordPress site to a fully static HTML bundle with localized assets — ready to push to GitHub and deploy on Cloudflare Pages (or any static host).
+Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, fonts and sitemap.xml, with every asset localized, ready for Cloudflare Pages, GitHub Pages or Netlify.
 
 The plugin crawls your site over loopback HTTP, captures the fully rendered HTML of every page (theme, plugins and all), downloads and localizes assets, rewrites links to be portable, strips server-side features, and packages everything into a downloadable ZIP.
 
@@ -45,13 +45,13 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 ## Installation
 
 **From the WordPress plugin directory:**
-1. Search for **Aouwal Static Site Export** under *Plugins → Add New*, or install it directly from <https://wordpress.org/plugins/aouwal-static-site-export/>.
+1. Search for **Aouwal Static Site Export – Static Site Generator** under *Plugins → Add New*, or install it directly from <https://wordpress.org/plugins/aouwal-static-site-export/>.
 2. Click *Install Now*, then *Activate*.
 
 **From a ZIP:**
 1. Download/clone this repository.
 2. Copy the `aouwal-static-site-export` folder into `wp-content/plugins/`.
-3. Activate **Aouwal Static Site Export** under *Plugins*.
+3. Activate **Aouwal Static Site Export – Static Site Generator** under *Plugins*.
 
 **With git:**
 ```bash
@@ -149,7 +149,7 @@ phpcs
 `languages/aouwal-static-site-export.pot` is the translation template. Regenerate it after changing any translatable string:
 
 ```bash
-wp i18n make-pot . languages/aouwal-static-site-export.pot --domain=aouwal-static-site-export --package-name="Aouwal Static Site Export"
+wp i18n make-pot . languages/aouwal-static-site-export.pot --domain=aouwal-static-site-export --package-name="Aouwal Static Site Export – Static Site Generator"
 ```
 
 ## Project structure
@@ -191,7 +191,7 @@ aouwal-static-site-export/
 **Abdul Aouwal** — Technical SEO Consultant & Specialist for indexing, crawl & AI visibility.
 
 - Website: [abdulaouwal.com](https://abdulaouwal.com)
-- WordPress.org: [Aouwal Static Site Export](https://wordpress.org/plugins/aouwal-static-site-export/)
+- WordPress.org: [Aouwal Static Site Export – Static Site Generator](https://wordpress.org/plugins/aouwal-static-site-export/)
 - GitHub: [@aouwalitshikkha](https://github.com/aouwalitshikkha)
 - LinkedIn: [aouwalitshikkha](https://www.linkedin.com/in/aouwalitshikkha/)
 - Instagram: [@aouwalcmc](https://www.instagram.com/aouwalcmc)
