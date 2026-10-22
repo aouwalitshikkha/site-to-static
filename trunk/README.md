@@ -10,7 +10,7 @@ Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, font
 
 The plugin crawls your site over loopback HTTP, captures the fully rendered HTML of every page (theme, plugins and all), downloads and localizes assets, rewrites links to be portable, strips server-side features, and packages everything into a downloadable ZIP.
 
-## How it works
+## Export WordPress to static HTML
 
 1. **Discover** — enumerates posts, pages, custom post types, taxonomy archives, author archives, date archives and feeds.
 2. **Crawl** — requests each URL so the exact rendered HTML WordPress serves is captured.
@@ -21,7 +21,7 @@ The plugin crawls your site over loopback HTTP, captures the fully rendered HTML
 
 Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, and includes a live progress log.
 
-## Features
+## WordPress static site generator features
 
 - Posts, pages, custom post types, categories, tags, custom taxonomies, author archives and date archives, including archive pagination (`/page/2/` and later) so older posts stay reachable.
 - Keeps HTML5 markup intact: `<picture>`/`<source>`, `<video>`/`<track>`, `<template>` blocks and custom elements survive the parse, and inline scripts that build HTML are not truncated.
@@ -93,7 +93,7 @@ Runs a full export and prints the resulting ZIP path.
 | Generated files | Toggle `sitemap.xml`, `robots.txt` and the Cloudflare Pages `_redirects` and `_headers` files. |
 | Batch size | URLs processed per request. Lower it if your server times out. |
 
-## Deploy to Cloudflare Pages via GitHub
+## Deploy to Cloudflare Pages
 
 1. Download the export and unzip it into a new folder.
 2. Push the files to a GitHub repository:
@@ -112,9 +112,21 @@ Runs a full export and prints the resulting ZIP path.
 
 The export includes, when enabled in Settings, a `_redirects` file (`/index.php` cleanup plus feed rewrites when RSS feeds are on) and a `_headers` file for caching.
 
+## Not suitable for
+
+A static site has no PHP and no database, so anything that needs a server stops working after the export:
+
+- E-commerce stores: cart, checkout, payment and order confirmation need WooCommerce and a database.
+- Membership sites and sites that require user logins: no sessions, accounts or password reset on a static host.
+- Real-time data: live stock levels, prices, dashboards or feeds that change by the minute.
+- Heavy AJAX functionality: live search, AJAX filtering, infinite scroll endpoints, form submissions.
+- Built-in forms, site search, comments and "add to cart" buttons.
+
+Keep the dynamic WordPress site for those features, or replace them with third-party services (a hosted form endpoint, a static search service, a hosted checkout). Static export fits content sites: blogs, documentation, portfolios, marketing pages and company websites.
+
 ## Known limitations
 
-- Sites that rely heavily on client-side JavaScript (WooCommerce cart, some page builders such as Elementor) may not work fully once static.
+- Sites that depend on client-side JavaScript for core features (WooCommerce cart and checkout, membership areas, heavy AJAX) will not work fully once static.
 - Forms need an external endpoint (e.g. Formspree, Web3Forms); server-side WordPress forms will not function.
 - Server-side search and comments are removed by default; both can be kept from Settings.
 - Cloudflare Pages cannot redirect by query string (`/?p=123`); use pretty permalinks.
