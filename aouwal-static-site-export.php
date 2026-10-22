@@ -24,11 +24,6 @@ define( 'AOUWAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AOUWAL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AOUWAL_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
-// Note: the GitHub distribution defines AOUWAL_FORCE_CREDIT as true so the
-// export credit is always included. This WordPress.org build intentionally
-// omits it, so the credit follows the opt-in "show_credit" setting
-// (default off) instead.
-
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-brand.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-settings.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-writer.php';
