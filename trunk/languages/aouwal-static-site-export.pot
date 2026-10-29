@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.4.0\n"
+"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.5.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/aouwal-static-site-export\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-22T09:25:41+02:00\n"
+"POT-Creation-Date: 2026-10-25T10:32:34+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: aouwal-static-site-export\n"
@@ -321,63 +321,151 @@ msgid "One pattern per line. Plain text matches a substring; wrap in slashes (/r
 msgstr ""
 
 #: admin/views/settings.php:94
-msgid "Cleanup &amp; output"
+msgid "Network"
 msgstr ""
 
 #: admin/views/settings.php:97
-msgid "Remove dynamic features"
-msgstr ""
-
-#: admin/views/settings.php:99
-msgid "Remove comment forms and comment sections"
+msgid "Request timeout"
 msgstr ""
 
 #: admin/views/settings.php:100
-msgid "Remove search forms"
+msgid "seconds"
 msgstr ""
 
 #: admin/views/settings.php:101
-msgid "Server-side search and comments cannot work on a static host, so they are removed."
+msgid "How long one request may take before it is abandoned. Raise it if slow pages or large files time out during export."
 msgstr ""
 
 #: admin/views/settings.php:105
-msgid "Generated files"
-msgstr ""
-
-#: admin/views/settings.php:107
-msgid "sitemap.xml"
+msgid "Delay between requests"
 msgstr ""
 
 #: admin/views/settings.php:108
-msgid "robots.txt"
+msgid "milliseconds"
 msgstr ""
 
 #: admin/views/settings.php:109
-msgid "Cloudflare Pages _redirects file"
+msgid "Pause between two crawl requests. Use it on shared hosting or when the export triggers rate limiting. Zero means no pause."
 msgstr ""
 
-#: admin/views/settings.php:110
-msgid "Cloudflare Pages _headers file"
-msgstr ""
-
-#: admin/views/settings.php:114
-msgid "Attribution"
+#: admin/views/settings.php:113
+msgid "Batch size (concurrency)"
 msgstr ""
 
 #: admin/views/settings.php:116
+msgid "URLs processed per request. This is the crawl concurrency: lower it if your server limits PHP execution time or the origin rate-limits the export."
+msgstr ""
+
+#: admin/views/settings.php:120
+msgid "Custom crawl origin"
+msgstr ""
+
+#: admin/views/settings.php:123
+msgid "Optional. Send crawl requests to this URL instead of the site URL, for example an internal container name or a reverse-proxied host. Links in the export still use the site URL. The host is trusted like the site host, but link-local and cloud metadata addresses are refused."
+msgstr ""
+
+#: admin/views/settings.php:127
+msgid "TLS verification"
+msgstr ""
+
+#: admin/views/settings.php:130
+msgid "Verify, except on local hosts (default)"
+msgstr ""
+
+#: admin/views/settings.php:131
+msgid "Always verify certificates"
+msgstr ""
+
+#: admin/views/settings.php:132
+msgid "Verify against a custom CA bundle"
+msgstr ""
+
+#: admin/views/settings.php:137
+msgid "CA bundle path"
+msgstr ""
+
+#: admin/views/settings.php:140
+msgid "Absolute path on the server to a PEM bundle with one or more CA certificates. Only used when \"Verify against a custom CA bundle\" is selected; an unreadable path falls back to the system bundle."
+msgstr ""
+
+#: admin/views/settings.php:144
+msgid "HTTP Basic Auth"
+msgstr ""
+
+#: admin/views/settings.php:147
+msgid "Username"
+msgstr ""
+
+#: admin/views/settings.php:151
+msgid "Password"
+msgstr ""
+
+#: admin/views/settings.php:152
+msgid "Saved"
+msgstr ""
+
+#: admin/views/settings.php:154
+msgid "Sent only to this site's own hosts, never to external asset hosts or after a redirect to another domain. The password is stored encrypted and never shown again; leave it blank to keep the saved one."
+msgstr ""
+
+#: admin/views/settings.php:157
+msgid "Remove stored credentials"
+msgstr ""
+
+#: admin/views/settings.php:160
+msgid "Basic Auth only. Cookie-based protection and WordPress \"site password\" plugins are not supported."
+msgstr ""
+
+#: admin/views/settings.php:165
+msgid "Cleanup &amp; output"
+msgstr ""
+
+#: admin/views/settings.php:168
+msgid "Remove dynamic features"
+msgstr ""
+
+#: admin/views/settings.php:170
+msgid "Remove comment forms and comment sections"
+msgstr ""
+
+#: admin/views/settings.php:171
+msgid "Remove search forms"
+msgstr ""
+
+#: admin/views/settings.php:172
+msgid "Server-side search and comments cannot work on a static host, so they are removed."
+msgstr ""
+
+#: admin/views/settings.php:176
+msgid "Generated files"
+msgstr ""
+
+#: admin/views/settings.php:178
+msgid "sitemap.xml"
+msgstr ""
+
+#: admin/views/settings.php:179
+msgid "robots.txt"
+msgstr ""
+
+#: admin/views/settings.php:180
+msgid "Cloudflare Pages _redirects file"
+msgstr ""
+
+#: admin/views/settings.php:181
+msgid "Cloudflare Pages _headers file"
+msgstr ""
+
+#: admin/views/settings.php:185
+msgid "Attribution"
+msgstr ""
+
+#: admin/views/settings.php:187
 msgid "Include an invisible author credit comment in exported files"
 msgstr ""
 
-#: admin/views/settings.php:117
+#: admin/views/settings.php:188
 msgid "Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export – Static Site Generator. It never appears in the browser."
-msgstr ""
-
-#: admin/views/settings.php:121
-msgid "Batch size"
-msgstr ""
-
-#: admin/views/settings.php:124
-msgid "URLs processed per request. Lower this if your server times out during export."
 msgstr ""
 
 #. translators: %s: local file path.
@@ -388,46 +476,50 @@ msgid "Could not write %s"
 msgstr ""
 
 #. translators: %s: URL.
-#: includes/class-crawler.php:72
+#: includes/class-crawler.php:79
 #, php-format
 msgid "Redirect blocked: %1$s (%2$s)"
 msgstr ""
 
-#: includes/class-crawler.php:102
+#: includes/class-crawler.php:115
 msgid "Too many redirects."
 msgstr ""
 
-#: includes/class-crawler.php:150
+#: includes/class-crawler.php:290
 msgid "URL is not allowed."
 msgstr ""
 
 #. translators: %s: size limit in megabytes.
-#: includes/class-crawler.php:182
+#: includes/class-crawler.php:322
 #, php-format
 msgid "File is larger than the %s MB asset limit. Raise the limit in Settings or exclude this URL."
 msgstr ""
 
-#: includes/class-crawler.php:214
+#: includes/class-crawler.php:360
 msgid "The URL has no host."
 msgstr ""
 
-#: includes/class-crawler.php:219
+#: includes/class-crawler.php:365
 msgid "Only http and https URLs can be fetched."
 msgstr ""
 
-#: includes/class-crawler.php:223
+#: includes/class-crawler.php:369
 msgid "URLs with embedded credentials are not fetched."
 msgstr ""
 
-#: includes/class-crawler.php:235
+#: includes/class-crawler.php:384
+msgid "The custom crawl origin points to a link-local or cloud metadata address."
+msgstr ""
+
+#: includes/class-crawler.php:393
 msgid "The address is private, reserved or loopback."
 msgstr ""
 
-#: includes/class-crawler.php:243
+#: includes/class-crawler.php:401
 msgid "The host name could not be resolved (DNS lookup failed)."
 msgstr ""
 
-#: includes/class-crawler.php:249
+#: includes/class-crawler.php:407
 msgid "The host name resolves to a private, reserved or loopback address."
 msgstr ""
 
@@ -464,6 +556,23 @@ msgstr ""
 
 #: includes/class-exporter.php:773
 msgid "The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template."
+msgstr ""
+
+#: includes/class-network.php:277
+#: includes/class-network.php:287
+msgid "Could not generate a random value to encrypt the password."
+msgstr ""
+
+#: includes/class-network.php:299
+msgid "The password cannot be stored securely because this server has neither the sodium extension nor OpenSSL support."
+msgstr ""
+
+#: includes/class-settings.php:164
+msgid "The custom crawl origin was ignored. Use an http:// or https:// URL with a host, without credentials, a query string or a fragment."
+msgstr ""
+
+#: includes/class-settings.php:177
+msgid "The CA bundle path is empty or not readable, so certificates are verified against the system bundle instead."
 msgstr ""
 
 #: includes/class-zip.php:48
