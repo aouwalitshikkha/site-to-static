@@ -24,6 +24,15 @@ $aouwal_zip_available = AOUWAL_Zip::available();
 		<button type="button" class="button button-primary button-hero" id="aouwal-start" <?php disabled( ! $aouwal_zip_available ); ?>>
 			<?php esc_html_e( 'Start static export', 'aouwal-static-site-export' ); ?>
 		</button>
+		<button type="button" class="button" id="aouwal-pause" hidden>
+			<?php esc_html_e( 'Pause export', 'aouwal-static-site-export' ); ?>
+		</button>
+		<button type="button" class="button" id="aouwal-resume" hidden>
+			<?php esc_html_e( 'Resume export', 'aouwal-static-site-export' ); ?>
+		</button>
+		<button type="button" class="button" id="aouwal-cancel" hidden>
+			<?php esc_html_e( 'Cancel export', 'aouwal-static-site-export' ); ?>
+		</button>
 		<span class="spinner aouwal-spinner" id="aouwal-spinner"></span>
 	</p>
 

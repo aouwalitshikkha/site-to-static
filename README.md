@@ -35,7 +35,8 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Caps single assets (25 MB by default) so one large video or archive cannot exhaust PHP memory, and reports any page or asset that could not be written instead of marking it done.
 - Fetches only public URLs: the SSRF guard validates every redirect hop and both A and AAAA records.
 - Chunked, timeout-safe export with a live progress log.
-- Optional WP-CLI command: `wp aouwal-static-export run`. It exits non-zero when items fail, so CI catches incomplete exports.
+- Pause, Resume and Cancel controls. Pause keeps every file already written, Cancel deletes the partial output and the ZIP, and the log records the last processed URL.
+- Optional WP-CLI command: `wp aouwal-static-export run`. It exits non-zero when items fail, so CI catches incomplete exports. `status`, `cancel` and `resume` cover a crawl that is already running.
 
 ## Requirements
 
@@ -67,7 +68,7 @@ Then activate the plugin in the WordPress admin.
 Open **Static Export** in the WordPress admin menu. Three tabs:
 
 - **Settings** — choose post types, archives, asset handling, URL style, cleanup and generated files.
-- **Export** — click *Start static export*, watch the live progress bar and log, then download the ZIP.
+- **Export** — click *Start static export*, watch the live progress bar and log, then download the ZIP. While an export runs, *Pause* stops it at the next batch boundary and keeps the files already written, *Resume* continues from the next pending URL, and *Cancel* stops it and deletes the partial output folder and ZIP. The state is stored on the server, so a reload brings the paused export back with its Resume and Cancel buttons.
 - **Deploy** — download the latest ZIP and follow the GitHub + Cloudflare Pages guide.
 
 ### WP-CLI
@@ -76,6 +77,13 @@ Open **Static Export** in the WordPress admin menu. Three tabs:
 wp aouwal-static-export run --batch=10
 ```
 Runs a full export and prints the resulting ZIP path.
+
+```bash
+wp aouwal-static-export status          # phase, processed/pending counts, last URL
+wp aouwal-static-export cancel          # stop the newest export and delete its files
+wp aouwal-static-export resume --batch=10
+```
+`status` is useful in a cron log, and `cancel` exits with 1 so a script stops before pushing a partial build.
 
 ## Settings reference
 
@@ -131,6 +139,7 @@ Keep the dynamic WordPress site for those features, or replace them with third-p
 - Server-side search and comments are removed by default; both can be kept from Settings.
 - Cloudflare Pages cannot redirect by query string (`/?p=123`); use pretty permalinks.
 - Archive pagination is only exported with pretty permalinks. With plain permalinks (`?p=123`) page 2 onward would collide with page 1, so it is skipped.
+- Pause and Cancel take effect between batches, because one batch is one PHP request. A batch that is already running finishes first, so on a slow host a cancel can take a few seconds to report back. Nothing is left behind: the next request repeats the cleanup.
 - `404.html` uses your theme's 404 template only when the site answers a 404 status for unknown URLs. Sites that return the homepage for every path get a generic 404 page instead, with a note in the export log.
 - The DNS-rebinding window between the SSRF guard's lookup and the actual request cannot be closed through the WordPress HTTP API, which does not expose per-request IP pinning. Every redirect hop is validated, which limits the exposure.
 
@@ -186,6 +195,7 @@ aouwal-static-site-export/
 │   ├── class-html-processor.php  # link rewriting + markup cleanup
 │   ├── class-asset-processor.php # asset download + CSS recursion
 │   ├── class-exporter.php        # chunked job state machine + extras
+│   ├── class-network.php         # timeout, delay, origin, TLS and Basic Auth
 │   └── class-zip.php
 ├── admin/
 │   ├── class-admin.php

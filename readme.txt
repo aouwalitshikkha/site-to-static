@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,7 @@ You can export:
 * Every write is checked. Pages or assets that cannot be written are reported in the log instead of being marked as done.
 * The crawler fetches only public URLs. Every redirect hop and both A and AAAA records are validated.
 * Network controls for awkward hosting: request timeout, delay between requests, custom crawl origin, TLS verification modes and optional HTTP Basic Auth.
+* Pause, resume and cancel controls, so a long export can be stopped without losing progress and a wrong export can be aborted and cleaned up.
 * Optional WP-CLI command: `wp aouwal-static-export run`.
 * Optional, invisible author credit. It is off by default and can be enabled in Settings.
 
@@ -79,6 +80,26 @@ Aouwal Static Site Export writes a ZIP and a local folder. It does not schedule 
 3. Cloudflare Pages, Netlify and Vercel redeploy on every push, so the new static site is live a few minutes after the cron job runs.
 
 The command exits with 0 on a clean run, or 1 when some items failed, so your script can stop before pushing a broken build. The ZIP keeps the site structure (`path/index.html`), so unzip it as a folder, not as a flat file list. Machine-readable output and a custom output path are planned.
+
+= Pause, resume or cancel an export =
+
+The Export screen has three controls next to the Start button, so a long crawl no longer has to be left running or killed by closing the tab.
+
+* **Pause** stops the export at the end of the current batch. Every page and asset already exported stays on disk, and the queue keeps its place.
+* **Resume** continues from the next pending URL and finishes the export with the pages written before the pause still in place.
+* **Cancel** stops the export and deletes the partial output folder and any ZIP, so a failed or wrong export leaves nothing behind. The log keeps a line naming the last URL that was processed.
+
+Pausing and cancelling take effect between batches, which is one request. A batch that is already running finishes first, so a cancel can take a few seconds to report back on a slow host. Nothing is lost in the meantime: the next request repeats the cleanup.
+
+The state is stored on the server, so reloading the screen shows a paused export with its Resume and Cancel buttons. The loop never restarts on its own, because two open tabs would both drive the same queue.
+
+WP-CLI has the same controls for a crawl started from the command line:
+
+    wp aouwal-static-export status
+    wp aouwal-static-export cancel
+    wp aouwal-static-export resume --batch=10
+
+`status` prints the phase, the processed and pending counts and the last URL, which is handy in a cron log. `cancel` exits with 1 so a script stops before pushing a partial build.
 
 = Crawl through proxies, staging sites and Basic Auth =
 
@@ -232,6 +253,24 @@ The origin host is trusted like the site host, so it does not have to be publicl
 
 Yes. The export keeps your page URLs, titles and content, generates a `sitemap.xml` and `robots.txt`, and strips version tags and staging "noindex" meta. Because the pages are static HTML, they load quickly and are easy for search engines and AI systems to crawl.
 
+= Can I pause or cancel an export that is already running? =
+
+Yes. The Export screen shows Pause and Cancel buttons while an export runs. Pause stops at the end of the current batch and keeps every page and asset already written, so Resume can continue from the next pending URL. Cancel stops the export and deletes the partial output folder and any ZIP, so a wrong or failed export leaves nothing on disk.
+
+Both actions are recorded in the log. A cancel adds a line naming the last URL that was processed and how many items had been exported, and the same line is still there after a page reload.
+
+= Can I resume an export after closing the browser? =
+
+Yes, if you paused it first. The state lives in the database, so reopening the Export screen shows the paused export with its Resume and Cancel buttons and the counts it reached. The crawl does not restart on its own, because two open tabs would otherwise drive the same queue at the same time.
+
+An export that was never paused and whose tab was simply closed stays in the "crawling" phase. The screen detects that no batch has touched the output folder for five minutes, marks it as interrupted, and offers Resume or Cancel. From the command line, `wp aouwal-static-export status` shows the same state.
+
+= What happens to the files when an export is cancelled? =
+
+They are deleted. Cancel removes the job's output folder and its ZIP, plus the remaining queue rows, so a cancelled export cannot be downloaded or resumed by mistake. Other completed exports are untouched and stay downloadable.
+
+The last processed URL is kept in the job log, which is the quick way to see where the crawl stopped. If you cancel because the settings were wrong, fix the settings and start a new export; it begins from a clean folder.
+
 == Screenshots ==
 
 1. Configure what to export: post types, archives, asset handling, URL style, cleanup options and generated files.
@@ -239,6 +278,17 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.6.0 =
+* New: Pause, Resume and Cancel controls on the Export screen. A long export can be stopped at a batch boundary without losing progress, and a wrong export can be aborted.
+* Pause keeps the output folder, the ZIP is not built, and Resume continues from the next pending URL. Pages exported before the pause stay in the final site.
+* Cancel deletes the partial output folder, the ZIP and the remaining queue rows, records the last processed URL in the log, and leaves the Start button ready for a new export.
+* The export phase is stored on the server (`crawl`, `paused`, `done`, `cancelled`), so reloading the screen restores the paused export with its Resume and Cancel buttons. The loop never resumes on its own.
+* A job that stopped making progress is marked as interrupted after five minutes without a written file, and the screen offers Resume or Cancel instead of showing a stalled crawl.
+* A batch or a finalize request that reaches the server after a cancel repeats the cleanup, so no file written by the in-flight batch survives.
+* New AJAX actions for pause, resume, cancel and status, so the controls act without reloading the screen.
+* New WP-CLI commands: `wp aouwal-static-export status`, `cancel` and `resume --batch=<n>`. `cancel` exits with 1 so a cron script stops before pushing a partial build.
+* The `_redirects`, `_headers`, `robots.txt` and `sitemap.xml` files are only written by a completed export, never by a paused or cancelled one.
 
 = 1.5.0 =
 * New Network settings section: request timeout, delay between requests, crawl concurrency, custom crawl origin, TLS verification and HTTP Basic Auth.
@@ -329,6 +379,9 @@ Yes. The export keeps your page URLs, titles and content, generates a `sitemap.x
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.6.0 =
+Adds Pause, Resume and Cancel to the Export screen, so a long crawl can be stopped and continued without losing progress and a wrong export can be cleaned up. New WP-CLI status, cancel and resume commands. No action needed.
 
 = 1.5.0 =
 Adds a Network settings section: request timeout, delay, concurrency, custom crawl origin, TLS verification and HTTP Basic Auth for staging sites. Defaults keep the previous crawl behavior, so nothing changes until you edit the settings.
