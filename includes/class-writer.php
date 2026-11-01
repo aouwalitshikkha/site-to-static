@@ -161,6 +161,43 @@ class AOUWAL_Writer {
 	}
 
 	/**
+	 * Rewrite the WordPress uploads folder in an output-relative path.
+	 *
+	 * Only internal asset paths that start with wp-content/uploads/ are
+	 * affected, and only when the rewrite_uploads_path setting is on. The
+	 * mapping is applied on the relative path (after the site base is
+	 * stripped), so subdirectory installs keep working.
+	 *
+	 * @param string $rel Output-relative path.
+	 * @return string
+	 */
+	protected function rewrite_uploads_path( $rel ) {
+		$rel = ltrim( (string) $rel, '/' );
+		if ( '' === $rel ) {
+			return $rel;
+		}
+
+		$enabled = (bool) AOUWAL_Settings::get( 'rewrite_uploads_path', 0 );
+		if ( ! $enabled ) {
+			return $rel;
+		}
+
+		$target = (string) AOUWAL_Settings::get( 'uploads_path', 'uploads' );
+		$target = trim( str_replace( '\\', '/', $target ), '/' );
+		if ( '' === $target || 'wp-content/uploads' === $target ) {
+			return $rel;
+		}
+
+		$source = 'wp-content/uploads/';
+		if ( 0 === strpos( $rel, $source ) ) {
+			$rel = $target . '/' . substr( $rel, strlen( $source ) );
+		} elseif ( 'wp-content/uploads' === $rel ) {
+			$rel = $target;
+		}
+
+		return $rel;
+	}
+	/**
 	 * Map a URL to an output-relative local path.
 	 *
 	 * @param string $url  Absolute URL.
@@ -177,6 +214,7 @@ class AOUWAL_Writer {
 
 		if ( 'asset' === $type ) {
 			$rel = $this->strip_base( $path );
+			$rel = $this->rewrite_uploads_path( $rel );
 			if ( ! $internal ) {
 				$host = isset( $parts['host'] ) ? strtolower( $parts['host'] ) : 'external';
 				if ( ! empty( $parts['port'] ) ) {
@@ -191,6 +229,7 @@ class AOUWAL_Writer {
 
 		// Page.
 		$rel = $this->strip_base( $path );
+		$rel = $this->rewrite_uploads_path( $rel );
 
 		if ( '' === $rel ) {
 			if ( '' !== $query ) {

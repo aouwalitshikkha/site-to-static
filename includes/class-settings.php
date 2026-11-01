@@ -26,33 +26,35 @@ class AOUWAL_Settings {
 	 */
 	public static function defaults() {
 		return array(
-			'post_types'          => array( 'post', 'page' ),
-			'include_taxonomies'  => 1,
-			'include_authors'     => 1,
-			'include_dates'       => 0,
-			'include_feeds'       => 1,
-			'include_attachments' => 0,
-			'download_assets'     => 1,
-			'max_asset_mb'        => 25,
-			'url_style'           => 'relative',
-			'strip_comments'      => 1,
-			'strip_search'        => 1,
-			'batch_size'          => 5,
-			'public_url'          => '',
-			'additional_urls'     => '',
-			'exclude_urls'        => '',
-			'request_timeout'     => 60,
-			'request_delay'       => 0,
-			'crawl_origin'        => '',
-			'tls_mode'            => 'auto',
-			'tls_ca_file'         => '',
-			'auth_user'           => '',
-			'auth_pass'           => '',
-			'preserve_redirects'  => 1,
-			'generate_sitemap'    => 1,
-			'generate_robots'     => 1,
-			'generate_headers'    => 1,
-			'show_credit'         => 0,
+			'post_types'           => array( 'post', 'page' ),
+			'include_taxonomies'   => 1,
+			'include_authors'      => 1,
+			'include_dates'        => 0,
+			'include_feeds'        => 1,
+			'include_attachments'  => 0,
+			'download_assets'      => 1,
+			'max_asset_mb'         => 25,
+			'url_style'            => 'relative',
+			'rewrite_uploads_path' => 0,
+			'uploads_path'         => 'uploads',
+			'strip_comments'       => 1,
+			'strip_search'         => 1,
+			'batch_size'           => 5,
+			'public_url'           => '',
+			'additional_urls'      => '',
+			'exclude_urls'         => '',
+			'request_timeout'      => 60,
+			'request_delay'        => 0,
+			'crawl_origin'         => '',
+			'tls_mode'             => 'auto',
+			'tls_ca_file'          => '',
+			'auth_user'            => '',
+			'auth_pass'            => '',
+			'preserve_redirects'   => 1,
+			'generate_sitemap'     => 1,
+			'generate_robots'      => 1,
+			'generate_headers'     => 1,
+			'show_credit'          => 0,
 		);
 	}
 
@@ -137,12 +139,24 @@ class AOUWAL_Settings {
 			'generate_robots',
 			'generate_headers',
 			'show_credit',
+			'rewrite_uploads_path',
 		);
 		foreach ( $booleans as $key ) {
 			$out[ $key ] = ! empty( $input[ $key ] ) ? 1 : 0;
 		}
 
 		$out['url_style'] = ( isset( $input['url_style'] ) && 'root' === $input['url_style'] ) ? 'root' : 'relative';
+
+		// Path rewrite (opt-in). Sanitize to a safe, relative, single-segment-or-
+		// nested folder name with no traversal, backslashes or leading slash.
+		$uploads_path = isset( $input['uploads_path'] ) ? (string) $input['uploads_path'] : $d['uploads_path'];
+		$uploads_path = str_replace( '\\', '/', $uploads_path );
+		$uploads_path = trim( $uploads_path, '/' );
+		$uploads_path = preg_replace( '#/{2,}#', '/', $uploads_path );
+		if ( '' === $uploads_path || preg_match( '#(^|/)\.\.(/|$)#', $uploads_path ) || preg_match( '#[^a-zA-Z0-9_./-]#', $uploads_path ) ) {
+			$uploads_path = $d['uploads_path'];
+		}
+		$out['uploads_path'] = $uploads_path;
 
 		$batch             = isset( $input['batch_size'] ) ? absint( $input['batch_size'] ) : $d['batch_size'];
 		$out['batch_size'] = min( 50, max( 1, $batch ) );

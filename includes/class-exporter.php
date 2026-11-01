@@ -1402,7 +1402,15 @@ class AOUWAL_Exporter {
 		$lines[] = '  Cache-Control: public, max-age=2592000';
 		$lines[] = '/*.js';
 		$lines[] = '  Cache-Control: public, max-age=2592000';
-		$lines[] = '/wp-content/uploads/*';
+		if ( AOUWAL_Settings::get( 'rewrite_uploads_path' ) ) {
+			$target = trim( str_replace( '\\', '/', (string) AOUWAL_Settings::get( 'uploads_path', 'uploads' ) ), '/' );
+			if ( '' === $target ) {
+				$target = 'uploads';
+			}
+			$lines[] = '/' . $target . '/*';
+		} else {
+			$lines[] = '/wp-content/uploads/*';
+		}
 		$lines[] = '  Cache-Control: public, max-age=31536000, immutable';
 		$lines[] = '/assets/*';
 		$lines[] = '  Cache-Control: public, max-age=31536000, immutable';
