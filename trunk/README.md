@@ -33,6 +33,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Generates `404.html` and, when enabled, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
 - Stores exports in a protected uploads subfolder and serves the ZIP only through a signed, expiring admin link. Use the `aouwal_export_dir` filter to relocate exports outside the web root.
 - Caps single assets (25 MB by default) so one large video or archive cannot exhaust PHP memory, and reports any page or asset that could not be written instead of marking it done.
+- Optional path rewrite: move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default; when enabled, every reference and file uses the new path. Does not remove other WordPress fingerprints.
 - Fetches only public URLs: the SSRF guard validates every redirect hop and both A and AAAA records.
 - Chunked, timeout-safe export with a live progress log.
 - Pause, Resume and Cancel controls. Pause keeps every file already written, Cancel deletes the partial output and the ZIP, and the log records the last processed URL.
@@ -100,6 +101,8 @@ wp aouwal-static-export resume --batch=10
 | Remove dynamic features | Strip comment sections/forms and search forms (both on by default). |
 | Generated files | Toggle `sitemap.xml`, `robots.txt` and the Cloudflare Pages `_redirects` and `_headers` files. |
 | Batch size | URLs processed per request. Lower it if your server times out. |
+| Rewrite uploads path | Off by default. When on, /wp-content/uploads/ is written and linked as /<folder>/ (default "uploads"). Changes URLs only; old /wp-content/uploads/ links stop working unless you add redirects. |
+| Uploads folder | Target folder used when "Rewrite uploads path" is on. Safe relative path; defaults to "uploads". |
 
 ## Deploy to Cloudflare Pages
 
@@ -139,6 +142,7 @@ Keep the dynamic WordPress site for those features, or replace them with third-p
 - Server-side search and comments are removed by default; both can be kept from Settings.
 - Cloudflare Pages cannot redirect by query string (`/?p=123`); use pretty permalinks.
 - Archive pagination is only exported with pretty permalinks. With plain permalinks (`?p=123`) page 2 onward would collide with page 1, so it is skipped.
+- The path rewrite only affects /wp-content/uploads/. Other WordPress paths (themes, plugins, wp-includes) are not relocated, and old /wp-content/uploads/ links stop working unless you add redirects.
 - Pause and Cancel take effect between batches, because one batch is one PHP request. A batch that is already running finishes first, so on a slow host a cancel can take a few seconds to report back. Nothing is left behind: the next request repeats the cleanup.
 - `404.html` uses your theme's 404 template only when the site answers a 404 status for unknown URLs. Sites that return the homepage for every path get a generic 404 page instead, with a note in the export log.
 - The DNS-rebinding window between the SSRF guard's lookup and the actual request cannot be closed through the WordPress HTTP API, which does not expose per-request IP pinning. Every redirect hop is validated, which limits the exposure.
