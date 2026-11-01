@@ -20,6 +20,34 @@ class AOUWAL_Exporter {
 	const JOBS_OPTION = 'aouwal_jobs';
 
 	/**
+	 * Job phase while the queue is being processed.
+	 *
+	 * @var string
+	 */
+	const PHASE_CRAWL = 'crawl';
+
+	/**
+	 * Job phase while the queue is paused but resumable.
+	 *
+	 * @var string
+	 */
+	const PHASE_PAUSED = 'paused';
+
+	/**
+	 * Job phase when the ZIP was built.
+	 *
+	 * @var string
+	 */
+	const PHASE_DONE = 'done';
+
+	/**
+	 * Job phase when the user stopped the export.
+	 *
+	 * @var string
+	 */
+	const PHASE_CANCELLED = 'cancelled';
+
+	/**
 	 * Writer.
 	 *
 	 * @var AOUWAL_Writer
@@ -206,7 +234,7 @@ class AOUWAL_Exporter {
 		$job = array(
 			'id'         => $job_id,
 			'started'    => current_time( 'mysql' ),
-			'phase'      => 'crawl',
+			'phase'      => self::PHASE_CRAWL,
 			'output_dir' => $output,
 			'zip_path'   => $zip_path,
 			'notice'     => array(),
@@ -235,6 +263,27 @@ class AOUWAL_Exporter {
 		$job = $this->get_job( $job_id );
 		if ( ! $job ) {
 			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
+		}
+
+		// A pause or cancel arrives in a different request. Honour it before
+		// touching the queue, then check again after the batch below.
+		if ( self::PHASE_CANCELLED === $job['phase'] ) {
+			$counts = $this->counts( $job_id );
+			$this->cleanup_output( $job );
+			$this->delete_queue( $job_id );
+			return array(
+				'done'      => true,
+				'cancelled' => true,
+				'counts'    => $counts,
+			);
+		}
+
+		if ( self::PHASE_PAUSED === $job['phase'] ) {
+			return array(
+				'done'   => false,
+				'paused' => true,
+				'counts' => $this->counts( $job_id ),
+			);
 		}
 
 		global $wpdb;
@@ -269,6 +318,32 @@ class AOUWAL_Exporter {
 
 		$counts = $this->counts( $job_id );
 
+		// The pause or cancel may have landed while this batch was running.
+		// The jobs option was read earlier in this request, so drop the cached
+		// copy to observe the other request's write. Without this an in-flight
+		// batch could recreate the output that cancel() just deleted.
+		wp_cache_delete( 'alloptions', 'options' );
+		$fresh = $this->get_job( $job_id );
+
+		if ( $fresh && self::PHASE_CANCELLED === $fresh['phase'] ) {
+			$this->cleanup_output( $fresh );
+			$this->delete_queue( $job_id );
+			return array(
+				'done'      => true,
+				'cancelled' => true,
+				'counts'    => $counts,
+			);
+		}
+
+		if ( $fresh && self::PHASE_PAUSED === $fresh['phase'] ) {
+			return array(
+				'done'   => false,
+				'paused' => true,
+				'counts' => $counts,
+				'log'    => array_values( array_filter( $log ) ),
+			);
+		}
+
 		return array(
 			'done'   => ( $counts['pending'] < 1 ),
 			'counts' => $counts,
@@ -286,6 +361,27 @@ class AOUWAL_Exporter {
 		$job = $this->get_job( $job_id );
 		if ( ! $job ) {
 			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
+		}
+
+		// Never package a stopped job. A paused export still has pending rows
+		// and a cancelled one has no output left to zip.
+		if ( self::PHASE_CANCELLED === $job['phase'] ) {
+			$counts = $this->counts( $job_id );
+			$this->cleanup_output( $job );
+			$this->delete_queue( $job_id );
+			return array(
+				'done'      => true,
+				'cancelled' => true,
+				'counts'    => $counts,
+			);
+		}
+
+		if ( self::PHASE_PAUSED === $job['phase'] ) {
+			return array(
+				'done'   => false,
+				'paused' => true,
+				'counts' => $this->counts( $job_id ),
+			);
 		}
 
 		$this->writer->set_output_dir( $job['output_dir'] );
@@ -354,7 +450,7 @@ class AOUWAL_Exporter {
 			);
 		}
 
-		$job['phase']    = 'done';
+		$job['phase']    = self::PHASE_DONE;
 		$job['notice']   = $notices;
 		$job['finished'] = current_time( 'mysql' );
 		$this->save_job( $job );
@@ -382,13 +478,7 @@ class AOUWAL_Exporter {
 			ARRAY_A
 		);
 
-		$counts = array(
-			'pending' => 0,
-			'done'    => 0,
-			'error'   => 0,
-			'skipped' => 0,
-			'total'   => 0,
-		);
+		$counts = $this->empty_counts();
 		foreach ( (array) $rows as $row ) {
 			$status = $row['status'];
 			if ( isset( $counts[ $status ] ) ) {
@@ -397,6 +487,350 @@ class AOUWAL_Exporter {
 			$counts['total'] += (int) $row['n'];
 		}
 		return $counts;
+	}
+
+	/**
+	 * Counts with every bucket at zero.
+	 *
+	 * @return array
+	 */
+	protected function empty_counts() {
+		return array(
+			'pending' => 0,
+			'done'    => 0,
+			'error'   => 0,
+			'skipped' => 0,
+			'total'   => 0,
+		);
+	}
+
+	/*
+	 * -------------------------------------------------------------------
+	 * Run control: cancel, pause, resume, status
+	 * -------------------------------------------------------------------
+	 */
+
+	/**
+	 * Cancel a running or paused export.
+	 *
+	 * The queue runs one batch per request, so this cannot abort a batch that
+	 * is already in flight. It flips the phase instead, and the next request
+	 * acts on it: process_batch() and finalize() both refuse a cancelled job
+	 * and repeat the cleanup, which also catches files an in-flight batch
+	 * wrote after the first delete.
+	 *
+	 * Partial output is removed. The job row stays, with a log line naming the
+	 * last processed URL, so the reason survives a page reload.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array|WP_Error
+	 */
+	public function cancel( $job_id ) {
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
+		}
+
+		// Count before the queue is deleted so the response can still show how
+		// far the export got.
+		$counts = $this->counts( $job_id );
+
+		if ( self::PHASE_CANCELLED === $job['phase'] ) {
+			return array(
+				'cancelled' => true,
+				'phase'     => self::PHASE_CANCELLED,
+				'counts'    => $counts,
+				'log'       => array(),
+			);
+		}
+
+		if ( self::PHASE_DONE === $job['phase'] ) {
+			return new WP_Error( 'aouwal_job_finished', __( 'This export already finished, so there is nothing to cancel.', 'aouwal-static-site-export' ) );
+		}
+
+		$last = $this->last_processed_url( $job_id );
+		$line = '' !== $last
+			? sprintf(
+				/* translators: 1: last processed URL, 2: number of processed items, 3: total number of items. */
+				__( 'Export cancelled after %1$s (%2$s of %3$s items processed).', 'aouwal-static-site-export' ),
+				$last,
+				number_format_i18n( $counts['done'] + $counts['error'] ),
+				number_format_i18n( $counts['total'] )
+			)
+			: __( 'Export cancelled before any item was processed.', 'aouwal-static-site-export' );
+
+		$this->cleanup_output( $job );
+		$this->delete_queue( $job_id );
+
+		$job['phase']    = self::PHASE_CANCELLED;
+		$job['zip_path'] = '';
+		$job['notice']   = array( $line );
+		$job['finished'] = current_time( 'mysql' );
+		$this->save_job( $job );
+
+		return array(
+			'cancelled' => true,
+			'phase'     => self::PHASE_CANCELLED,
+			'counts'    => $counts,
+			'log'       => array( $line ),
+		);
+	}
+
+	/**
+	 * Pause a running export without losing progress.
+	 *
+	 * Queue rows and the output directory are kept, so resume() continues where
+	 * this stopped and finalize() can still package the complete site.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array|WP_Error
+	 */
+	public function pause( $job_id ) {
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
+		}
+
+		if ( self::PHASE_CANCELLED === $job['phase'] ) {
+			return new WP_Error( 'aouwal_job_cancelled', __( 'This export was cancelled. Start a new export.', 'aouwal-static-site-export' ) );
+		}
+
+		if ( self::PHASE_DONE === $job['phase'] ) {
+			return new WP_Error( 'aouwal_job_finished', __( 'This export already finished.', 'aouwal-static-site-export' ) );
+		}
+
+		if ( self::PHASE_PAUSED !== $job['phase'] ) {
+			$job['phase']     = self::PHASE_PAUSED;
+			$job['paused_at'] = current_time( 'mysql' );
+			$this->save_job( $job );
+		}
+
+		return array(
+			'paused' => true,
+			'phase'  => self::PHASE_PAUSED,
+			'counts' => $this->counts( $job_id ),
+		);
+	}
+
+	/**
+	 * Resume a paused export.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array|WP_Error
+	 */
+	public function resume( $job_id ) {
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
+		}
+
+		if ( self::PHASE_CANCELLED === $job['phase'] ) {
+			return new WP_Error( 'aouwal_job_cancelled', __( 'This export was cancelled. Start a new export.', 'aouwal-static-site-export' ) );
+		}
+
+		if ( self::PHASE_DONE === $job['phase'] ) {
+			return new WP_Error( 'aouwal_job_finished', __( 'This export already finished.', 'aouwal-static-site-export' ) );
+		}
+
+		if ( self::PHASE_PAUSED === $job['phase'] ) {
+			$job['phase'] = self::PHASE_CRAWL;
+			unset( $job['paused_at'] );
+			$this->save_job( $job );
+		}
+
+		$counts = $this->counts( $job_id );
+
+		return array(
+			'paused' => false,
+			'phase'  => self::PHASE_CRAWL,
+			'counts' => $counts,
+			'total'  => $counts['total'],
+		);
+	}
+
+	/**
+	 * Current export state, for the admin screen and WP-CLI.
+	 *
+	 * Only the newest job is reported: the UI runs one export at a time and
+	 * start() always creates a new job id.
+	 *
+	 * @return array
+	 */
+	public function status() {
+		$jobs = get_option( self::JOBS_OPTION, array() );
+		if ( ! is_array( $jobs ) || empty( $jobs ) ) {
+			return array(
+				'job_id'      => '',
+				'phase'       => '',
+				'running'     => false,
+				'paused'      => false,
+				'stale'       => false,
+				'counts'      => $this->empty_counts(),
+				'current_url' => '',
+				'zip'         => '',
+				'notice'      => array(),
+				'started'     => '',
+				'finished'    => '',
+			);
+		}
+
+		$key    = array_key_last( $jobs );
+		$job    = ( is_array( $jobs[ $key ] ) ) ? $jobs[ $key ] : array();
+		$job_id = isset( $job['id'] ) ? (string) $job['id'] : (string) $key;
+		$phase  = isset( $job['phase'] ) ? (string) $job['phase'] : '';
+		$counts = $this->counts( $job_id );
+
+		$running = ( self::PHASE_CRAWL === $phase );
+		$paused  = ( self::PHASE_PAUSED === $phase );
+
+		return array(
+			'job_id'      => $job_id,
+			'phase'       => $phase,
+			'running'     => $running,
+			'paused'      => $paused,
+			'stale'       => $running && $this->is_stale( $job ),
+			'counts'      => $counts,
+			'current_url' => ( $running || $paused ) ? $this->last_processed_url( $job_id ) : '',
+			'zip'         => ( self::PHASE_DONE === $phase && ! empty( $job['zip_path'] ) ) ? $this->get_download_url( $job_id ) : '',
+			'notice'      => isset( $job['notice'] ) ? (array) $job['notice'] : array(),
+			'started'     => isset( $job['started'] ) ? (string) $job['started'] : '',
+			'finished'    => isset( $job['finished'] ) ? (string) $job['finished'] : '',
+		);
+	}
+
+	/**
+	 * Whether a running job stopped making progress.
+	 *
+	 * A closed browser tab leaves a job in the crawl phase forever. Every
+	 * written page touches the output directory, so its mtime is a free
+	 * heartbeat: no extra option write per batch.
+	 *
+	 * @param array $job Job data.
+	 * @return bool
+	 */
+	protected function is_stale( array $job ) {
+		if ( empty( $job['output_dir'] ) ) {
+			return true;
+		}
+		$dir = (string) $job['output_dir'];
+		if ( ! is_dir( $dir ) ) {
+			return true;
+		}
+		$touched = filemtime( $dir );
+		if ( false === $touched ) {
+			return true;
+		}
+		return ( time() - (int) $touched ) > 300;
+	}
+
+	/**
+	 * Delete the partial output directory and ZIP of a stopped job.
+	 *
+	 * Paths come from the stored job, never from the request, and each one is
+	 * checked against storage_dirs() before anything is removed. Deletion goes
+	 * through WP_Filesystem like every other write in the plugin.
+	 *
+	 * @param array $job Job data.
+	 * @return bool True when every path that existed was removed.
+	 */
+	protected function cleanup_output( array $job ) {
+		$paths = array();
+		if ( ! empty( $job['output_dir'] ) ) {
+			// Remove the job folder too, so no empty shell is left behind.
+			$paths[] = dirname( (string) $job['output_dir'] );
+			$paths[] = (string) $job['output_dir'];
+		}
+		if ( ! empty( $job['zip_path'] ) ) {
+			$paths[] = (string) $job['zip_path'];
+		}
+
+		$fs = AOUWAL_Writer::filesystem_instance();
+		if ( ! $fs ) {
+			return false;
+		}
+
+		$ok = true;
+		foreach ( $paths as $path ) {
+			$path = wp_normalize_path( $path );
+			if ( '' === $path || ! $this->is_inside_storage( $path ) ) {
+				continue;
+			}
+			if ( $fs->is_dir( $path ) ) {
+				if ( ! $fs->rmdir( $path, true ) ) {
+					$ok = false;
+				}
+				continue;
+			}
+			if ( $fs->exists( $path ) && ! $fs->delete( $path ) ) {
+				$ok = false;
+			}
+		}
+		return $ok;
+	}
+
+	/**
+	 * Whether an absolute path sits inside an export storage directory.
+	 *
+	 * @param string $path Absolute path.
+	 * @return bool
+	 */
+	protected function is_inside_storage( $path ) {
+		$path = wp_normalize_path( $path );
+		foreach ( self::storage_dirs() as $dir ) {
+			$dir = untrailingslashit( wp_normalize_path( $dir ) );
+			if ( '' !== $dir && 0 === strpos( $path, $dir . '/' ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Delete every queue row of a job.
+	 *
+	 * A cancelled job never resumes, so its rows have no further use and would
+	 * otherwise stay in the table.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return void
+	 */
+	protected function delete_queue( $job_id ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM ' . $this->table() . ' WHERE job_id = %s', $job_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); values are prepared.
+	}
+
+	/**
+	 * Last processed page URL, or an empty string.
+	 *
+	 * Pages are queued before assets and the table has no processed timestamp,
+	 * so the highest row id is the most recent item.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return string
+	 */
+	protected function last_processed_url( $job_id ) {
+		global $wpdb;
+		$table = $this->table();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); values are prepared.
+		$url = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT source_url FROM {$table} WHERE job_id = %s AND item_type = 'page' AND status IN ('done', 'error') ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$job_id
+			)
+		);
+
+		if ( null === $url || '' === $url ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); values are prepared.
+			$url = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT source_url FROM {$table} WHERE job_id = %s AND status IN ('done', 'error') ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$job_id
+				)
+			);
+		}
+
+		return (string) $url;
 	}
 
 	/*
@@ -627,6 +1061,12 @@ class AOUWAL_Exporter {
 		}
 		$keep = array( $job_id );
 		foreach ( $jobs as $id => $stored ) {
+			// A cancelled job keeps its row for the log but owns no files.
+			// Skipping it means a batch that was still in flight when the user
+			// cancelled cannot leave a directory that is then kept forever.
+			if ( isset( $stored['phase'] ) && self::PHASE_CANCELLED === $stored['phase'] ) {
+				continue;
+			}
 			$keep[] = (string) $id;
 		}
 

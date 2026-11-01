@@ -119,6 +119,16 @@
 	margin-left: 10px;
 }
 
+/* Run controls. The hidden attribute must beat the wp-admin .button display
+   rule, otherwise the Pause and Cancel buttons show before an export starts. */
+.aouwal-export [hidden] {
+	display: none !important;
+}
+
+.aouwal-export .button {
+	margin-right: 6px;
+}
+
 .aouwal-progress {
 	max-width: 760px;
 	margin: 18px 0;

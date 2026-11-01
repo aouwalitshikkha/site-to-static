@@ -30,6 +30,10 @@ class AOUWAL_Admin {
 		add_action( 'wp_ajax_aouwal_start', array( $this, 'ajax_start' ) );
 		add_action( 'wp_ajax_aouwal_batch', array( $this, 'ajax_batch' ) );
 		add_action( 'wp_ajax_aouwal_finalize', array( $this, 'ajax_finalize' ) );
+		add_action( 'wp_ajax_aouwal_pause', array( $this, 'ajax_pause' ) );
+		add_action( 'wp_ajax_aouwal_resume', array( $this, 'ajax_resume' ) );
+		add_action( 'wp_ajax_aouwal_cancel', array( $this, 'ajax_cancel' ) );
+		add_action( 'wp_ajax_aouwal_status', array( $this, 'ajax_status' ) );
 		add_action( 'admin_post_aouwal_download', array( $this, 'download_zip' ) );
 	}
 
@@ -87,16 +91,28 @@ class AOUWAL_Admin {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'aouwal_ajax' ),
 				'i18n'    => array(
-					'starting'         => __( 'Discovering URLs…', 'aouwal-static-site-export' ),
-					'crawling'         => __( 'Processing', 'aouwal-static-site-export' ),
-					'finalizing'       => __( 'Packaging export…', 'aouwal-static-site-export' ),
-					'done'             => __( 'Export complete.', 'aouwal-static-site-export' ),
-					'done_with_errors' => __( 'Export finished with errors.', 'aouwal-static-site-export' ),
-					'error'            => __( 'An error occurred.', 'aouwal-static-site-export' ),
-					'confirm'          => __( 'Start a new static export?', 'aouwal-static-site-export' ),
-					'download'         => __( 'Download export ZIP', 'aouwal-static-site-export' ),
+					'starting'          => __( 'Discovering URLs…', 'aouwal-static-site-export' ),
+					'crawling'          => __( 'Processing', 'aouwal-static-site-export' ),
+					'finalizing'        => __( 'Packaging export…', 'aouwal-static-site-export' ),
+					'done'              => __( 'Export complete.', 'aouwal-static-site-export' ),
+					'done_with_errors'  => __( 'Export finished with errors.', 'aouwal-static-site-export' ),
+					'error'             => __( 'An error occurred.', 'aouwal-static-site-export' ),
+					'confirm'           => __( 'Start a new static export?', 'aouwal-static-site-export' ),
+					'download'          => __( 'Download export ZIP', 'aouwal-static-site-export' ),
 					/* translators: %s: number of discovered URLs. */
-					'discovered'       => __( 'Discovered %s URLs.', 'aouwal-static-site-export' ),
+					'discovered'        => __( 'Discovered %s URLs.', 'aouwal-static-site-export' ),
+					'pause'             => __( 'Pause export', 'aouwal-static-site-export' ),
+					'resume'            => __( 'Resume export', 'aouwal-static-site-export' ),
+					'cancel'            => __( 'Cancel export', 'aouwal-static-site-export' ),
+					'cancel_confirm'    => __( 'Cancel this export? Partial files will be deleted.', 'aouwal-static-site-export' ),
+					'cancelling'        => __( 'Cancelling…', 'aouwal-static-site-export' ),
+					'cancelled'         => __( 'Export cancelled.', 'aouwal-static-site-export' ),
+					'cancel_failed'     => __( 'The cancel request did not reach the server. Try again.', 'aouwal-static-site-export' ),
+					'paused'            => __( 'Export paused.', 'aouwal-static-site-export' ),
+					'resuming'          => __( 'Resuming…', 'aouwal-static-site-export' ),
+					'running_elsewhere' => __( 'An export is running in another tab.', 'aouwal-static-site-export' ),
+					'interrupted'       => __( 'The previous export was interrupted.', 'aouwal-static-site-export' ),
+					'download_last'     => __( 'Download the last export', 'aouwal-static-site-export' ),
 				),
 			)
 		);
@@ -226,6 +242,90 @@ class AOUWAL_Admin {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: pause a running export.
+	 *
+	 * @return void
+	 */
+	public function ajax_pause() {
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
+		}
+		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+		if ( 1 !== preg_match( '/^[a-f0-9]{20}$/', $job_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Export job not found.', 'aouwal-static-site-export' ) ), 404 );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		$result   = $exporter->pause( $job_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: resume a paused export.
+	 *
+	 * @return void
+	 */
+	public function ajax_resume() {
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
+		}
+		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+		if ( 1 !== preg_match( '/^[a-f0-9]{20}$/', $job_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Export job not found.', 'aouwal-static-site-export' ) ), 404 );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		$result   = $exporter->resume( $job_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: cancel a running or paused export.
+	 *
+	 * @return void
+	 */
+	public function ajax_cancel() {
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
+		}
+		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+		if ( 1 !== preg_match( '/^[a-f0-9]{20}$/', $job_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Export job not found.', 'aouwal-static-site-export' ) ), 404 );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		$result   = $exporter->cancel( $job_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: current export state.
+	 *
+	 * @return void
+	 */
+	public function ajax_status() {
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		wp_send_json_success( $exporter->status() );
 	}
 
 	/**
