@@ -91,6 +91,24 @@ unset( $aouwal_post_types['attachment'] );
 		</tr>
 	</table>
 
+	<h2><?php esc_html_e( 'Paths', 'aouwal-static-site-export' ); ?></h2>
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Rewrite uploads path', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[rewrite_uploads_path]" value="1" <?php checked( $aouwal['rewrite_uploads_path'] ); ?> /> <?php esc_html_e( 'Move /wp-content/uploads/ to a shorter folder in the export', 'aouwal-static-site-export' ); ?></label>
+				<p class="description"><?php esc_html_e( 'Off by default: the export keeps the live /wp-content/uploads/ structure. When enabled, every reference and file is written under the folder below instead. This changes URLs only and does not remove other WordPress fingerprints. Old /wp-content/uploads/ links stop working unless you add redirects.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="aouwal_uploads_path"><?php esc_html_e( 'Uploads folder', 'aouwal-static-site-export' ); ?></label></th>
+			<td>
+				<input type="text" class="regular-text code" id="aouwal_uploads_path" name="aouwal_settings[uploads_path]" value="<?php echo esc_attr( $aouwal['uploads_path'] ); ?>" placeholder="uploads" />
+				<p class="description"><?php esc_html_e( 'Target folder for uploaded media, relative to the export root (for example "uploads" or "media"). Letters, numbers, dashes, underscores and slashes only. Leave as "wp-content/uploads" to keep the original path.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+	</table>
+
 	<h2><?php esc_html_e( 'Network', 'aouwal-static-site-export' ); ?></h2>
 	<table class="form-table" role="presentation">
 		<tr>

@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,6 +48,7 @@ You can export:
 * Every write is checked. Pages or assets that cannot be written are reported in the log instead of being marked as done.
 * The crawler fetches only public URLs. Every redirect hop and both A and AAAA records are validated.
 * Network controls for awkward hosting: request timeout, delay between requests, custom crawl origin, TLS verification modes and optional HTTP Basic Auth.
+* Optional path rewrite: move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default; changes URLs only and does not remove other WordPress fingerprints.
 * Pause, resume and cancel controls, so a long export can be stopped without losing progress and a wrong export can be aborted and cleaned up.
 * Optional WP-CLI command: `wp aouwal-static-export run`.
 * Optional, invisible author credit. It is off by default and can be enabled in Settings.
@@ -253,6 +254,14 @@ The origin host is trusted like the site host, so it does not have to be publicl
 
 Yes. The export keeps your page URLs, titles and content, generates a `sitemap.xml` and `robots.txt`, and strips version tags and staging "noindex" meta. Because the pages are static HTML, they load quickly and are easy for search engines and AI systems to crawl.
 
+= Can I move or remove /wp-content/uploads/ from the exported URLs? =
+
+Yes, optionally. In Settings > Paths, turn on "Rewrite uploads path" and choose a target folder such as "uploads" or "media". When enabled, every reference and file uses the new folder: /wp-content/uploads/2026/01/photo.jpg becomes /uploads/2026/01/photo.jpg, including HTML attributes, CSS url() and @import references, srcset variants and manifest icons.
+
+The setting is off by default, so the export keeps the live /wp-content/uploads/ structure byte for byte when it is disabled. It changes URLs only and does not remove other WordPress fingerprints such as generator meta tags or already-localized script paths.
+
+Trade-off: old /wp-content/uploads/ links stop working unless you add redirects. The _headers cache rule follows the configured folder. A path that collides with an existing page is reported as an error and is not overwritten.
+
 = Can I pause or cancel an export that is already running? =
 
 Yes. The Export screen shows Pause and Cancel buttons while an export runs. Pause stops at the end of the current batch and keeps every page and asset already written, so Resume can continue from the next pending URL. Cancel stops the export and deletes the partial output folder and any ZIP, so a wrong or failed export leaves nothing on disk.
@@ -278,6 +287,14 @@ The last processed URL is kept in the job log, which is the quick way to see whe
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.7.0 =
+* New: optional path rewrite for uploaded media. Settings > Paths can move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export.
+* When enabled, every reference and file uses the new folder: HTML attributes, CSS url() and @import, srcset variants, manifest icons, the file layout and the ZIP, plus the _headers cache rule.
+* Off by default, so the export keeps the live /wp-content/uploads/ structure byte for byte when it is disabled.
+* The change is URL-only: it does not remove other WordPress fingerprints such as generator meta tags or already-localized script paths.
+* Trade-off: old /wp-content/uploads/ links stop working unless you add redirects.
+* Sanitizes the target folder to a safe relative path and ignores an empty or invalid value.
 
 = 1.6.0 =
 * New: Pause, Resume and Cancel controls on the Export screen. A long export can be stopped at a batch boundary without losing progress, and a wrong export can be aborted.
@@ -379,6 +396,9 @@ The last processed URL is kept in the job log, which is the quick way to see whe
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.7.0 =
+Adds an optional path rewrite that moves /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default; existing exports are unchanged. No action needed.
 
 = 1.6.0 =
 Adds Pause, Resume and Cancel to the Export screen, so a long crawl can be stopped and continued without losing progress and a wrong export can be cleaned up. New WP-CLI status, cancel and resume commands. No action needed.
