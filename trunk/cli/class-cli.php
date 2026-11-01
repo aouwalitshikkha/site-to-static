@@ -78,13 +78,41 @@ class AOUWAL_CLI {
 		$job_id = $start['job_id'];
 		WP_CLI::log( sprintf( 'Discovered %d URLs (job %s).', $start['total'], $job_id ) );
 
-		$progress = \WP_CLI\Utils\make_progress_bar( 'Exporting', max( 1, $start['total'] ) );
+		$this->run_batches( $exporter, $job_id, $batch, (int) $start['total'] );
+	}
+
+	/**
+	 * Process the queue until it is empty, then package the export.
+	 *
+	 * Stops early and explains why when the export is paused or cancelled from
+	 * the admin screen while this command runs.
+	 *
+	 * @param AOUWAL_Exporter $exporter Exporter instance.
+	 * @param string          $job_id   Job ID.
+	 * @param int             $batch    URLs per loop iteration.
+	 * @param int             $total    Total number of queued items.
+	 * @return void
+	 */
+	protected function run_batches( $exporter, $job_id, $batch, $total ) {
+		$progress = \WP_CLI\Utils\make_progress_bar( 'Exporting', max( 1, $total ) );
 		$done     = 0;
 
 		while ( true ) {
 			$result = $exporter->process_batch( $job_id, $batch );
 			if ( is_wp_error( $result ) ) {
+				$progress->finish();
 				WP_CLI::error( $result->get_error_message() );
+			}
+
+			if ( ! empty( $result['cancelled'] ) ) {
+				$progress->finish();
+				$this->report_cancelled( $exporter, $job_id );
+			}
+
+			if ( ! empty( $result['paused'] ) ) {
+				$progress->finish();
+				WP_CLI::warning( sprintf( 'Export paused. Continue it with: wp aouwal-static-export resume --job=%s', $job_id ) );
+				WP_CLI::halt( 0 );
 			}
 
 			$counts  = $result['counts'];
@@ -105,7 +133,14 @@ class AOUWAL_CLI {
 
 		$final = $exporter->finalize( $job_id );
 		if ( is_wp_error( $final ) ) {
+			$progress->finish();
 			WP_CLI::error( $final->get_error_message() );
+		}
+
+		// A cancel can land between the last batch and this call.
+		if ( ! empty( $final['cancelled'] ) ) {
+			$progress->finish();
+			$this->report_cancelled( $exporter, $job_id );
 		}
 
 		$progress->finish();
@@ -119,6 +154,124 @@ class AOUWAL_CLI {
 			}
 			WP_CLI::halt( 1 );
 		}
+	}
+
+	/**
+	 * Print the stored cancel reason and exit with a failure code.
+	 *
+	 * @param AOUWAL_Exporter $exporter Exporter instance.
+	 * @param string          $job_id   Job ID.
+	 * @return void
+	 */
+	protected function report_cancelled( $exporter, $job_id ) {
+		$job = $exporter->get_job( $job_id );
+		if ( $job && ! empty( $job['notice'] ) ) {
+			foreach ( (array) $job['notice'] as $line ) {
+				WP_CLI::log( $line );
+			}
+		}
+		WP_CLI::warning( 'Export cancelled. Partial files were removed.' );
+		WP_CLI::halt( 1 );
+	}
+
+	/**
+	 * Show the state of the newest export.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp aouwal-static-export status
+	 *
+	 * @return void
+	 */
+	public function status() {
+		$exporter = new AOUWAL_Exporter();
+		$state    = $exporter->status();
+
+		if ( '' === $state['job_id'] ) {
+			WP_CLI::log( 'No export has run yet.' );
+			return;
+		}
+
+		$counts = $state['counts'];
+		WP_CLI::log( sprintf( 'Job:       %s', $state['job_id'] ) );
+		WP_CLI::log( sprintf( 'Phase:     %s', $state['phase'] ) );
+		WP_CLI::log( sprintf( 'Processed: %d of %d', $counts['done'] + $counts['error'], $counts['total'] ) );
+		WP_CLI::log( sprintf( 'Pending:   %d', $counts['pending'] ) );
+		WP_CLI::log( sprintf( 'Errors:    %d', $counts['error'] ) );
+
+		if ( '' !== $state['current_url'] ) {
+			WP_CLI::log( sprintf( 'Last URL:  %s', $state['current_url'] ) );
+		}
+
+		foreach ( (array) $state['notice'] as $line ) {
+			WP_CLI::log( 'Notice:    ' . $line );
+		}
+	}
+
+	/**
+	 * Cancel the newest export and delete its partial files.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp aouwal-static-export cancel
+	 *
+	 * @return void
+	 */
+	public function cancel() {
+		$exporter = new AOUWAL_Exporter();
+		$state    = $exporter->status();
+
+		if ( '' === $state['job_id'] ) {
+			WP_CLI::error( 'No export to cancel.' );
+		}
+
+		$result = $exporter->cancel( $state['job_id'] );
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
+		}
+
+		foreach ( (array) $result['log'] as $line ) {
+			WP_CLI::log( $line );
+		}
+		WP_CLI::success( 'Export cancelled.' );
+	}
+
+	/**
+	 * Resume the newest paused export.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--batch=<n>]
+	 * : Number of URLs processed per loop iteration.
+	 * ---
+	 * default: 10
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp aouwal-static-export resume --batch=5
+	 *
+	 * @param array $args       Positional args.
+	 * @param array $assoc_args Associative args.
+	 * @return void
+	 */
+	public function resume( $args, $assoc_args ) {
+		$batch    = isset( $assoc_args['batch'] ) ? max( 1, (int) $assoc_args['batch'] ) : 10;
+		$exporter = new AOUWAL_Exporter();
+		$state    = $exporter->status();
+
+		if ( '' === $state['job_id'] ) {
+			WP_CLI::error( 'No export to resume.' );
+		}
+
+		$result = $exporter->resume( $state['job_id'] );
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
+		}
+
+		WP_CLI::log( sprintf( 'Resuming job %s at %d of %d.', $state['job_id'], $result['counts']['done'] + $result['counts']['error'], $result['total'] ) );
+
+		$this->run_batches( $exporter, $state['job_id'], $batch, (int) $result['total'] );
 	}
 }
 
