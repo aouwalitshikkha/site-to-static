@@ -3,7 +3,7 @@
  * Plugin Name:       Aouwal Static Site Export – Static Site Generator
  * Plugin URI:        https://github.com/aouwalitshikkha/site-to-static
  * Description:       Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, fonts and sitemap.xml for Cloudflare Pages, GitHub Pages or Netlify.
- * Version:           1.7.0
+ * Version:           1.8.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Abdul Aouwal
@@ -18,7 +18,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AOUWAL_VERSION', '1.7.0' );
+define( 'AOUWAL_VERSION', '1.8.0' );
+define( 'AOUWAL_DB_VERSION', '2' );
 define( 'AOUWAL_PLUGIN_FILE', __FILE__ );
 define( 'AOUWAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AOUWAL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -44,17 +45,20 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 }
 
 /**
- * Activation: create the job items table.
+ * Schema for the job items table.
  *
- * @return void
+ * The dbDelta function is picky about formatting (two spaces after PRIMARY
+ * KEY, one field per line), so the statement lives in one place and both
+ * activation and upgrades use it.
+ *
+ * @return string
  */
-function aouwal_activate() {
+function aouwal_job_items_schema() {
 	global $wpdb;
-
 	$table_name      = $wpdb->prefix . 'aouwal_job_items';
 	$charset_collate = $wpdb->get_charset_collate();
 
-	$sql = "CREATE TABLE {$table_name} (
+	return "CREATE TABLE {$table_name} (
 		id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 		job_id VARCHAR(32) NOT NULL,
 		item_type VARCHAR(10) NOT NULL DEFAULT 'page',
@@ -64,14 +68,24 @@ function aouwal_activate() {
 		status VARCHAR(10) NOT NULL DEFAULT 'pending',
 		http_status SMALLINT NOT NULL DEFAULT 0,
 		message TEXT NULL,
+		origin_url TEXT NULL,
+		attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
 		created_at DATETIME NOT NULL,
 		PRIMARY KEY  (id),
 		KEY job_status (job_id, status),
 		UNIQUE KEY job_url (job_id, url_hash)
 	) {$charset_collate};";
+}
 
+/**
+ * Activation: create the job items table.
+ *
+ * @return void
+ */
+function aouwal_activate() {
 	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-	dbDelta( $sql );
+	dbDelta( aouwal_job_items_schema() );
+	update_option( 'aouwal_db_version', AOUWAL_DB_VERSION );
 
 	if ( false === get_option( 'aouwal_settings', false ) ) {
 		$migrated = get_option( 'sts_settings', null );
@@ -95,6 +109,26 @@ function aouwal_activate() {
 	aouwal_remove_legacy_data();
 }
 register_activation_hook( __FILE__, 'aouwal_activate' );
+
+/**
+ * Apply schema upgrades after a plugin update.
+ *
+ * Activation hooks do not fire when plugin files are replaced, so a site
+ * updating from an older version would keep the old columns. The version
+ * check makes this a no-op on every normal request.
+ *
+ * @return void
+ */
+function aouwal_maybe_upgrade() {
+	if ( AOUWAL_DB_VERSION === get_option( 'aouwal_db_version' ) ) {
+		return;
+	}
+
+	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	dbDelta( aouwal_job_items_schema() );
+	update_option( 'aouwal_db_version', AOUWAL_DB_VERSION );
+}
+add_action( 'plugins_loaded', 'aouwal_maybe_upgrade' );
 
 /**
  * Rename the job items table left by "Site to Static" (sts_) builds, if present.

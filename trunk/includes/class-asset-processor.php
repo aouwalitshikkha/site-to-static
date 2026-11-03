@@ -42,16 +42,18 @@ class AOUWAL_Asset_Processor {
 	 *
 	 * @param string $url        Absolute asset URL.
 	 * @param string $local_path Output-relative path.
-	 * @return array{assets:string[],status:int,error:string}
+	 * @return array{assets:string[],status:int,error:string,attempts:int,retries:string[]}
 	 */
 	public function process( $url, $local_path ) {
-		$result = $this->crawler->fetch( $url, true );
+		$result = $this->crawler->fetch_with_retry( $url, true );
 
-		if ( '' !== $result['error'] || '' === $result['body'] ) {
+		if ( '' !== $result['error'] || $result['status'] >= 400 || '' === $result['body'] ) {
 			return array(
-				'assets' => array(),
-				'status' => $result['status'],
-				'error'  => '' !== $result['error'] ? $result['error'] : 'empty response',
+				'assets'   => array(),
+				'status'   => $result['status'],
+				'error'    => '' !== $result['error'] ? $result['error'] : 'HTTP ' . $result['status'],
+				'attempts' => $result['attempts'],
+				'retries'  => $result['retries'],
 			);
 		}
 
@@ -79,17 +81,21 @@ class AOUWAL_Asset_Processor {
 
 		if ( ! $this->writer->write( $local_path, $body ) ) {
 			return array(
-				'assets' => array(),
-				'status' => $result['status'],
+				'assets'   => array(),
+				'status'   => $result['status'],
 				/* translators: %s: local file path. */
-				'error'  => sprintf( __( 'Could not write %s', 'aouwal-static-site-export' ), $local_path ),
+				'error'    => sprintf( __( 'Could not write %s', 'aouwal-static-site-export' ), $local_path ),
+				'attempts' => $result['attempts'],
+				'retries'  => $result['retries'],
 			);
 		}
 
 		return array(
-			'assets' => $discovered,
-			'status' => $result['status'],
-			'error'  => '',
+			'assets'   => $discovered,
+			'status'   => $result['status'],
+			'error'    => '',
+			'attempts' => $result['attempts'],
+			'retries'  => $result['retries'],
 		);
 	}
 
