@@ -82,6 +82,48 @@ class AOUWAL_CLI {
 	}
 
 	/**
+	 * Retry only the failed items of the newest finished export.
+	 *
+	 * Already-written files and the output directory are reused, and the ZIP
+	 * is rebuilt in place when the retry run finishes. Transient failures
+	 * (timeouts, 429, 5xx) normally succeed on the next attempt.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--batch=<n>]
+	 * : Number of URLs processed per loop iteration.
+	 * ---
+	 * default: 10
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp aouwal-static-export retry
+	 *     wp aouwal-static-export retry --batch=5
+	 *
+	 * @param array $args       Positional args.
+	 * @param array $assoc_args Associative args.
+	 * @return void
+	 */
+	public function retry( $args, $assoc_args ) {
+		$batch    = isset( $assoc_args['batch'] ) ? max( 1, (int) $assoc_args['batch'] ) : 10;
+		$exporter = new AOUWAL_Exporter();
+		$state    = $exporter->status();
+
+		if ( '' === $state['job_id'] ) {
+			WP_CLI::error( 'No export to retry.' );
+		}
+
+		$result = $exporter->retry_failed( $state['job_id'] );
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
+		}
+
+		WP_CLI::log( sprintf( 'Requeued %d failed item(s) from job %s.', (int) $result['retried'], $state['job_id'] ) );
+		$this->run_batches( $exporter, $state['job_id'], $batch, (int) $result['total'] );
+	}
+
+	/**
 	 * Process the queue until it is empty, then package the export.
 	 *
 	 * Stops early and explains why when the export is paused or cancelled from
@@ -205,6 +247,17 @@ class AOUWAL_CLI {
 
 		foreach ( (array) $state['notice'] as $line ) {
 			WP_CLI::log( 'Notice:    ' . $line );
+		}
+
+		if ( $counts['error'] > 0 ) {
+			$health = $exporter->health( $state['job_id'] );
+			foreach ( $health['reasons'] as $reason => $number ) {
+				WP_CLI::log( sprintf( 'Reason:    %d× %s', (int) $number, $reason ) );
+			}
+			foreach ( $health['failed'] as $failure ) {
+				$origin = '' !== $failure['origin'] ? ' found on ' . $failure['origin'] : '';
+				WP_CLI::log( sprintf( 'Failed:    %s (%s)%s', $failure['url'], $failure['reason'], $origin ) );
+			}
 		}
 	}
 

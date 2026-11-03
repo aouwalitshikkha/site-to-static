@@ -128,6 +128,13 @@ unset( $aouwal_post_types['attachment'] );
 			</td>
 		</tr>
 		<tr>
+			<th scope="row"><label for="aouwal_retry_count"><?php esc_html_e( 'Retries for transient failures', 'aouwal-static-site-export' ); ?></label></th>
+			<td>
+				<input type="number" min="0" max="5" step="1" id="aouwal_retry_count" name="aouwal_settings[retry_count]" value="<?php echo esc_attr( $aouwal['retry_count'] ); ?>" class="small-text" />
+				<p class="description"><?php esc_html_e( 'How many times a request is retried after a timeout, an HTTP 429 or a server error (5xx). Backoff is short (0.25 s, 0.5 s, 1 s…), and permanent errors such as 404 or 401 are never retried. Zero disables retries.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
 			<th scope="row"><label for="aouwal_batch_size"><?php esc_html_e( 'Batch size (concurrency)', 'aouwal-static-site-export' ); ?></label></th>
 			<td>
 				<input type="number" min="1" max="50" id="aouwal_batch_size" name="aouwal_settings[batch_size]" value="<?php echo esc_attr( $aouwal['batch_size'] ); ?>" class="small-text" />

@@ -141,6 +141,129 @@ class AOUWAL_Crawler {
 	}
 
 	/**
+	 * Maximum time spent sleeping between retries for one item.
+	 *
+	 * @var int
+	 */
+	const RETRY_SLEEP_CAP_MS = 5000;
+
+	/**
+	 * Fetch a URL, retrying transient failures.
+	 *
+	 * 408, 425, 429 and 5xx responses plus transport errors (timeouts,
+	 * connection resets) are retried with a short exponential backoff.
+	 * Permanent failures are returned immediately: every other 4xx, and any
+	 * refusal produced by the SSRF or redirect guard, which must never be
+	 * retried.
+	 *
+	 * @param string $url      URL to fetch.
+	 * @param bool   $is_asset Whether this is a binary asset.
+	 * @return array{body:string,status:int,error:string,headers:array,attempts:int,retries:string[]}
+	 */
+	public function fetch_with_retry( $url, $is_asset = false ) {
+		$max     = self::retry_limit();
+		$attempt = 0;
+		$retries = array();
+		$slept   = 0;
+
+		while ( true ) {
+			++$attempt;
+			$result             = $this->fetch( $url, $is_asset );
+			$result['attempts'] = $attempt;
+			$result['retries']  = $retries;
+
+			if ( $attempt > $max || ! self::is_transient_failure( $result ) ) {
+				return $result;
+			}
+
+			$delay = self::retry_delay_ms( $result, $attempt );
+			if ( $slept + $delay > self::RETRY_SLEEP_CAP_MS ) {
+				return $result;
+			}
+			$slept    += $delay;
+			$retries[] = sprintf(
+				/* translators: 1: attempt number, 2: maximum attempts, 3: failure label, 4: URL, 5: delay in milliseconds. */
+				__( '[retry %1$d/%2$d] %3$s %4$s (%5$d ms)', 'aouwal-static-site-export' ),
+				$attempt,
+				$max,
+				self::failure_label( $result ),
+				$url,
+				$delay
+			);
+			usleep( $delay * 1000 );
+		}
+	}
+
+	/**
+	 * Configured retry count, clamped to the supported range.
+	 *
+	 * @return int
+	 */
+	public static function retry_limit() {
+		return min( 5, max( 0, (int) AOUWAL_Settings::get( 'retry_count', 2 ) ) );
+	}
+
+	/**
+	 * Whether a fetch result is worth retrying.
+	 *
+	 * @param array $result Fetch result.
+	 * @return bool
+	 */
+	public static function is_transient_failure( array $result ) {
+		$status = (int) $result['status'];
+		$error  = (string) $result['error'];
+
+		// "Blocked" refusals come from the SSRF guard or the redirect guard.
+		// Retrying would only repeat the refusal.
+		if ( '' !== $error && false !== stripos( $error, 'blocked' ) ) {
+			return false;
+		}
+
+		if ( 0 === $status ) {
+			return '' !== $error;
+		}
+
+		return in_array( $status, array( 408, 425, 429 ), true ) || $status >= 500;
+	}
+
+	/**
+	 * Backoff before the next attempt, in milliseconds.
+	 *
+	 * @param array $result  Fetch result.
+	 * @param int   $attempt Attempt number that just failed.
+	 * @return int
+	 */
+	public static function retry_delay_ms( array $result, $attempt ) {
+		$delay = 250 * ( 1 << max( 0, (int) $attempt - 1 ) );
+
+		if ( in_array( (int) $result['status'], array( 429, 503 ), true ) ) {
+			$after = isset( $result['headers']['retry-after'] ) ? $result['headers']['retry-after'] : '';
+			if ( is_array( $after ) ) {
+				$after = reset( $after );
+			}
+			if ( is_numeric( $after ) ) {
+				$delay = max( $delay, (int) $after * 1000 );
+			}
+		}
+
+		return (int) min( 5000, max( 0, $delay ) );
+	}
+
+	/**
+	 * Human-readable failure label used in retry log lines and reports.
+	 *
+	 * @param array $result Fetch result.
+	 * @return string
+	 */
+	public static function failure_label( array $result ) {
+		$status = (int) $result['status'];
+		if ( $status > 0 ) {
+			return 'HTTP ' . $status;
+		}
+		return '' !== (string) $result['error'] ? (string) $result['error'] : __( 'network error', 'aouwal-static-site-export' );
+	}
+
+	/**
 	 * Request headers for one hop.
 	 *
 	 * @param string $url      Request URL.

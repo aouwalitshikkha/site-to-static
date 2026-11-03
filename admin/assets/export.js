@@ -348,6 +348,36 @@
 				} );
 		} );
 
+		$( '#aouwal-retry' ).on( 'click', function () {
+			var $button = $( this );
+			var id      = $button.data( 'job' );
+			if ( ! id ) {
+				return;
+			}
+			stopped = false;
+			jobId   = id;
+			$button.prop( 'disabled', true );
+			$( '#aouwal-progress' ).removeAttr( 'hidden' );
+			$( '#aouwal-result' ).attr( 'hidden', 'hidden' ).empty();
+			setButtons( 'running' );
+			setCounts( {} );
+			phase( AOUWAL.i18n.retrying );
+			log( AOUWAL.i18n.retrying );
+
+			$.post( AOUWAL.ajaxUrl, { action: 'aouwal_retry', nonce: AOUWAL.nonce, job_id: jobId } )
+				.done( function ( res ) {
+					if ( ! res || ! res.success ) {
+						fail( res );
+						return;
+					}
+					setCounts( res.data.counts );
+					runBatch();
+				} )
+				.fail( function () {
+					fail();
+				} );
+		} );
+
 		$.post( AOUWAL.ajaxUrl, { action: 'aouwal_status', nonce: AOUWAL.nonce } )
 			.done( function ( res ) {
 				if ( res && res.success && res.data && res.data.job_id ) {

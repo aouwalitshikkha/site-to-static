@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -280,6 +280,18 @@ They are deleted. Cancel removes the job's output folder and its ZIP, plus the r
 
 The last processed URL is kept in the job log, which is the quick way to see where the crawl stopped. If you cancel because the settings were wrong, fix the settings and start a new export; it begins from a clean folder.
 
+= What happens when a page fails to export? =
+
+The export retries transient failures automatically. A timeout, an HTTP 429 or a 5xx response is tried again up to two times by default, with a short backoff and respect for the Retry-After header. Permanent errors such as 401, 403 or 404 are not retried, because a second attempt would fail the same way.
+
+After the run, the Crawl health section on the Export screen lists every failed URL with its HTTP status or error text, the number of attempts, and the page that linked to a failed asset. The final log line lists the failure reasons too.
+
+= Can I retry only the pages that failed? =
+
+Yes. When the last export finished with failures, the Export screen shows a "Retry failed" button. It requeues only the errored items, keeps every file that was already written, and rebuilds the ZIP in place, so a single timeout does not force a full re-crawl.
+
+From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to lower the concurrency. The command exits with 1 if failures remain, so a cron job can stop before deploying a partial build.
+
 == Screenshots ==
 
 1. Configure what to export: post types, archives, asset handling, URL style, cleanup options and generated files.
@@ -287,6 +299,16 @@ The last processed URL is kept in the job log, which is the quick way to see whe
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.8.0 =
+* New: transient crawl failures are retried automatically. Timeouts, HTTP 408, 425, 429 and 5xx responses are retried with a short backoff (0.25 s, 0.5 s, 1 s), honouring Retry-After when the server sends it.
+* The retry count is configurable in Settings > Network (0 to 5, default 2). Zero restores the old single-attempt behaviour.
+* Permanent errors such as 401, 403 or 404 are never retried, and a URL refused by the safety checks is not retried either.
+* New Crawl health report on the Export screen: exported, skipped and failed counts, the reason for each failure, the number of attempts, and the page or stylesheet that referenced a failed asset.
+* New "Retry failed" button reprocesses only the failed items of the last export, reuses the files already written and rebuilds the ZIP in place.
+* New WP-CLI command `wp aouwal-static-export retry [--batch=<n>]`. `status` now prints failure reasons and the failed URLs.
+* Retry attempts appear in the log, and the final notice lists the failure reasons.
+* Database: job items now store the origin URL and the attempt count, with an automatic schema upgrade on update.
 
 = 1.7.0 =
 * New: optional path rewrite for uploaded media. Settings > Paths can move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export.
@@ -396,6 +418,9 @@ The last processed URL is kept in the job log, which is the quick way to see whe
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.8.0 =
+Adds automatic retries for transient crawl failures, a crawl health report naming every failed URL and its reason, and a "Retry failed" action plus a WP-CLI retry command. No action needed.
 
 = 1.7.0 =
 Adds an optional path rewrite that moves /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default; existing exports are unchanged. No action needed.

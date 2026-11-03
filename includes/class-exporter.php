@@ -310,9 +310,9 @@ class AOUWAL_Exporter {
 		$log = array();
 		foreach ( $items as $item ) {
 			if ( 'page' === $item->item_type ) {
-				$log[] = $this->process_page_item( $job_id, $item );
+				$this->process_page_item( $job_id, $item, $log );
 			} else {
-				$log[] = $this->process_asset_item( $job_id, $item );
+				$this->process_asset_item( $job_id, $item, $log );
 			}
 		}
 
@@ -429,16 +429,24 @@ class AOUWAL_Exporter {
 			$notices[] = __( 'No pages were exported. Check your post type settings.', 'aouwal-static-site-export' );
 		}
 
+		$health = $this->health( $job_id );
+
 		if ( $counts['error'] > 0 ) {
+			$reasons = array();
+			foreach ( $health['reasons'] as $reason => $number ) {
+				/* translators: 1: number of failed items, 2: failure reason such as "HTTP 503" or "timeout". */
+				$reasons[] = sprintf( __( '%1$d× %2$s', 'aouwal-static-site-export' ), (int) $number, (string) $reason );
+			}
 			$notices[] = sprintf(
-				/* translators: %s: number of failed pages or assets. */
+				/* translators: 1: number of failed pages or assets, 2: comma-separated list of failure reasons. */
 				_n(
-					'%s item could not be exported. See the log above for the reason.',
-					'%s items could not be exported. See the log above for the reason.',
+					'%1$s item could not be exported (%2$s). See the health report on the Export screen for each URL.',
+					'%1$s items could not be exported (%2$s). See the health report on the Export screen for each URL.',
 					$counts['error'],
 					'aouwal-static-site-export'
 				),
-				number_format_i18n( $counts['error'] )
+				number_format_i18n( $counts['error'] ),
+				implode( ', ', $reasons )
 			);
 		}
 
@@ -460,6 +468,7 @@ class AOUWAL_Exporter {
 			'counts' => $counts,
 			'zip'    => $this->get_download_url( $job_id ),
 			'log'    => $notices,
+			'health' => $health,
 		);
 	}
 
@@ -646,6 +655,136 @@ class AOUWAL_Exporter {
 			'counts' => $counts,
 			'total'  => $counts['total'],
 		);
+	}
+
+	/**
+	 * Requeue only the failed items of a finished export.
+	 *
+	 * Already-written files are kept: the same job and output directory are
+	 * reused, and finalize() rebuilds the ZIP in place. Transient failures
+	 * (timeouts, 429, 5xx) usually succeed on the next attempt.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array|WP_Error
+	 */
+	public function retry_failed( $job_id ) {
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
+		}
+
+		if ( self::PHASE_DONE !== $job['phase'] ) {
+			return new WP_Error( 'aouwal_retry_phase', __( 'Only a finished export can retry its failed items.', 'aouwal-static-site-export' ) );
+		}
+
+		$counts = $this->counts( $job_id );
+		if ( $counts['error'] < 1 ) {
+			return new WP_Error( 'aouwal_retry_nothing', __( 'There are no failed items to retry.', 'aouwal-static-site-export' ) );
+		}
+
+		global $wpdb;
+		$table = $this->table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); values are prepared. No caching applies to writes.
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET status = 'pending', http_status = 0, message = '', attempts = 0 WHERE job_id = %s AND status = 'error'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$job_id
+			)
+		);
+
+		$job['phase'] = self::PHASE_CRAWL;
+		unset( $job['finished'] );
+		$job['notice'] = array();
+		$this->save_job( $job );
+
+		$fresh = $this->counts( $job_id );
+
+		return array(
+			'phase'   => self::PHASE_CRAWL,
+			'counts'  => $fresh,
+			'total'   => $fresh['total'],
+			'retried' => $counts['error'],
+		);
+	}
+
+	/**
+	 * Crawl health for one job: summary, failure reasons and each failed URL.
+	 *
+	 * Reads the queue rows the export already stores, so no extra tracking is
+	 * needed. The origin URL is the page or stylesheet that referenced an
+	 * asset, which is what makes a 404 or 403 actionable.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array{summary:array,reasons:array,failed:array}
+	 */
+	public function health( $job_id ) {
+		global $wpdb;
+		$table = $this->table();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; one-shot report read. Values are prepared.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT item_type, source_url, http_status, message, attempts, origin_url FROM {$table} WHERE job_id = %s AND status = 'error' ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$job_id
+			)
+		);
+
+		$counts  = $this->counts( $job_id );
+		$reasons = array();
+		$failed  = array();
+
+		foreach ( (array) $rows as $row ) {
+			$reason = $this->failure_reason( (int) $row->http_status, (string) $row->message );
+
+			if ( ! isset( $reasons[ $reason ] ) ) {
+				$reasons[ $reason ] = 0;
+			}
+			++$reasons[ $reason ];
+
+			$failed[] = array(
+				'url'      => (string) $row->source_url,
+				'type'     => (string) $row->item_type,
+				'status'   => (int) $row->http_status,
+				'reason'   => $reason,
+				'message'  => (string) $row->message,
+				'attempts' => (int) $row->attempts,
+				'origin'   => (string) $row->origin_url,
+			);
+		}
+
+		arsort( $reasons );
+
+		return array(
+			'summary' => array(
+				'exported' => $counts['done'],
+				'skipped'  => $counts['skipped'],
+				'failed'   => $counts['error'],
+				'total'    => $counts['total'],
+			),
+			'reasons' => $reasons,
+			'failed'  => $failed,
+		);
+	}
+
+	/**
+	 * Normalize a failure to a short, human-readable reason.
+	 *
+	 * @param int    $status  HTTP status, 0 for transport errors.
+	 * @param string $message Stored error message.
+	 * @return string
+	 */
+	protected function failure_reason( $status, $message ) {
+		$text = strtolower( $message );
+		if ( '' !== $text && ( false !== strpos( $text, 'timed out' ) || false !== strpos( $text, 'timeout' ) ) ) {
+			return __( 'timeout', 'aouwal-static-site-export' );
+		}
+		if ( $status > 0 ) {
+			return 'HTTP ' . (int) $status;
+		}
+		if ( '' !== $text ) {
+			return __( 'network error', 'aouwal-static-site-export' );
+		}
+		return __( 'failed', 'aouwal-static-site-export' );
 	}
 
 	/**
@@ -842,17 +981,26 @@ class AOUWAL_Exporter {
 	/**
 	 * Process a page item.
 	 *
+	 * Transient failures are retried by the crawler and the attempt count is
+	 * stored so the crawl health report can show how many tries a URL needed.
+	 *
 	 * @param string $job_id Job ID.
 	 * @param object $item   Row.
-	 * @return string Log line.
+	 * @param array  $log    Log lines, appended by reference.
+	 * @return void
 	 */
-	protected function process_page_item( $job_id, $item ) {
+	protected function process_page_item( $job_id, $item, array &$log ) {
 		$crawler = new AOUWAL_Crawler();
-		$result  = $crawler->fetch( $item->source_url, false );
+		$result  = $crawler->fetch_with_retry( $item->source_url, false );
+
+		foreach ( (array) $result['retries'] as $line ) {
+			$log[] = $line;
+		}
 
 		if ( '' !== $result['error'] || $result['status'] >= 400 || '' === $result['body'] ) {
-			$this->mark( $item->id, 'error', $result['status'], '' !== $result['error'] ? $result['error'] : 'HTTP ' . $result['status'] );
-			return sprintf( '[error] %s (%s)', $item->source_url, $result['status'] );
+			$this->mark( $item->id, 'error', $result['status'], '' !== $result['error'] ? $result['error'] : 'HTTP ' . $result['status'], $result['attempts'] );
+			$log[] = sprintf( '[error] %s (%s)', $item->source_url, $result['status'] );
+			return;
 		}
 
 		$processor = new AOUWAL_HTML_Processor( $this->writer );
@@ -863,24 +1011,27 @@ class AOUWAL_Exporter {
 				$body = $this->inject_xml_comment( $body );
 			}
 			if ( ! $this->writer->write( $item->local_path, $body ) ) {
-				return $this->write_failure( $item, $result['status'] );
+				$log[] = $this->write_failure( $item, $result['status'], $result['attempts'] );
+				return;
 			}
-			$this->mark( $item->id, 'done', $result['status'], '' );
-			return sprintf( '[feed] %s -> %s', $item->source_url, $item->local_path );
+			$this->mark( $item->id, 'done', $result['status'], '', $result['attempts'] );
+			$log[] = sprintf( '[feed] %s -> %s', $item->source_url, $item->local_path );
+			return;
 		}
 
 		$processed = $processor->process( $result['body'], $item->source_url, $item->local_path, $job_id );
 
 		if ( ! $this->writer->write( $item->local_path, $processed['html'] ) ) {
-			return $this->write_failure( $item, $result['status'] );
+			$log[] = $this->write_failure( $item, $result['status'], $result['attempts'] );
+			return;
 		}
 
 		if ( ! empty( $processed['assets'] ) ) {
-			$this->insert_items( $job_id, $processed['assets'], 'asset' );
+			$this->insert_items( $job_id, $processed['assets'], 'asset', $item->source_url );
 		}
 
-		$this->mark( $item->id, 'done', $result['status'], '' );
-		return sprintf( '[page] %s -> %s', $item->source_url, $item->local_path );
+		$this->mark( $item->id, 'done', $result['status'], '', $result['attempts'] );
+		$log[] = sprintf( '[page] %s -> %s', $item->source_url, $item->local_path );
 	}
 
 	/**
@@ -891,12 +1042,13 @@ class AOUWAL_Exporter {
 	 *
 	 * @param object $item        Row.
 	 * @param int    $http_status HTTP status of the fetched response.
+	 * @param int    $attempts    Number of fetch attempts made.
 	 * @return string Log line.
 	 */
-	protected function write_failure( $item, $http_status ) {
+	protected function write_failure( $item, $http_status, $attempts = 1 ) {
 		/* translators: %s: local file path. */
 		$message = sprintf( __( 'Could not write %s', 'aouwal-static-site-export' ), $item->local_path );
-		$this->mark( $item->id, 'error', $http_status, $message );
+		$this->mark( $item->id, 'error', $http_status, $message, $attempts );
 		return sprintf( '[error] %s (%s)', $item->source_url, $message );
 	}
 
@@ -905,28 +1057,34 @@ class AOUWAL_Exporter {
 	 *
 	 * @param string $job_id Job ID.
 	 * @param object $item   Row.
-	 * @return string Log line.
+	 * @param array  $log    Log lines, appended by reference.
+	 * @return void
 	 */
-	protected function process_asset_item( $job_id, $item ) {
+	protected function process_asset_item( $job_id, $item, array &$log ) {
 		if ( $this->writer->exists( $item->local_path ) ) {
 			$this->mark( $item->id, 'skipped', 0, 'already downloaded' );
-			return '';
+			return;
 		}
 
 		$processor = new AOUWAL_Asset_Processor( $this->writer, new AOUWAL_Crawler() );
 		$result    = $processor->process( $item->source_url, $item->local_path );
 
+		foreach ( (array) $result['retries'] as $line ) {
+			$log[] = $line;
+		}
+
 		if ( '' !== $result['error'] ) {
-			$this->mark( $item->id, 'error', $result['status'], $result['error'] );
-			return sprintf( '[asset error] %s (%s)', $item->source_url, $result['error'] );
+			$this->mark( $item->id, 'error', $result['status'], $result['error'], $result['attempts'] );
+			$log[] = sprintf( '[asset error] %s (%s)', $item->source_url, $result['error'] );
+			return;
 		}
 
 		if ( ! empty( $result['assets'] ) ) {
-			$this->insert_items( $job_id, $result['assets'], 'asset' );
+			$this->insert_items( $job_id, $result['assets'], 'asset', $item->source_url );
 		}
 
-		$this->mark( $item->id, 'done', $result['status'], '' );
-		return sprintf( '[asset] %s', $item->source_url );
+		$this->mark( $item->id, 'done', $result['status'], '', $result['attempts'] );
+		$log[] = sprintf( '[asset] %s', $item->source_url );
 	}
 
 	/**
@@ -935,9 +1093,10 @@ class AOUWAL_Exporter {
 	 * @param string   $job_id Job ID.
 	 * @param string[] $urls   URLs.
 	 * @param string   $type   "page" or "asset".
+	 * @param string   $origin URL of the page or stylesheet that referenced the item.
 	 * @return int
 	 */
-	protected function insert_items( $job_id, $urls, $type ) {
+	protected function insert_items( $job_id, $urls, $type, $origin = '' ) {
 		global $wpdb;
 		$table = $this->table();
 		$now   = current_time( 'mysql' );
@@ -954,7 +1113,7 @@ class AOUWAL_Exporter {
 				? $this->writer->url_to_local_path( $url, 'page' )
 				: $this->writer->url_to_local_path( $url, 'asset' );
 
-			$chunk[] = $wpdb->prepare( '(%s, %s, %s, %s, %s, %s, %s)', $job_id, $type, $url, $hash, $path, 'pending', $now );
+			$chunk[] = $wpdb->prepare( '(%s, %s, %s, %s, %s, %s, %s, %s)', $job_id, $type, $url, $hash, $path, 'pending', $now, (string) $origin );
 
 			if ( count( $chunk ) >= 100 ) {
 				$count += $this->flush_insert( $chunk );
@@ -978,7 +1137,7 @@ class AOUWAL_Exporter {
 	protected function flush_insert( array $chunk ) {
 		global $wpdb;
 		$table  = $this->table();
-		$sql    = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at) VALUES " . implode( ', ', $chunk );
+		$sql    = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at, origin_url) VALUES " . implode( ', ', $chunk );
 		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; bulk insert of pre-escaped tuples. No caching applies to writes.
 		return false === $result ? 0 : (int) $result;
 	}
@@ -990,9 +1149,10 @@ class AOUWAL_Exporter {
 	 * @param string $status      Status.
 	 * @param int    $http_status HTTP status.
 	 * @param string $message     Message.
+	 * @param int    $attempts    Number of fetch attempts made.
 	 * @return void
 	 */
-	protected function mark( $id, $status, $http_status, $message ) {
+	protected function mark( $id, $status, $http_status, $message, $attempts = 0 ) {
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; $wpdb->update() escapes values via format arrays. No caching applies to writes.
 		$wpdb->update(
@@ -1001,9 +1161,10 @@ class AOUWAL_Exporter {
 				'status'      => $status,
 				'http_status' => (int) $http_status,
 				'message'     => $message,
+				'attempts'    => max( 0, (int) $attempts ),
 			),
 			array( 'id' => (int) $id ),
-			array( '%s', '%d', '%s' ),
+			array( '%s', '%d', '%s', '%d' ),
 			array( '%d' )
 		);
 	}
