@@ -45,6 +45,7 @@ class AOUWAL_Settings {
 			'exclude_urls'         => '',
 			'request_timeout'      => 60,
 			'request_delay'        => 0,
+			'retry_count'          => 2,
 			'crawl_origin'         => '',
 			'tls_mode'             => 'auto',
 			'tls_ca_file'          => '',
@@ -170,6 +171,7 @@ class AOUWAL_Settings {
 
 		$out['request_timeout'] = min( 120, max( 1, isset( $input['request_timeout'] ) ? (int) $input['request_timeout'] : $d['request_timeout'] ) );
 		$out['request_delay']   = min( 3000, max( 0, isset( $input['request_delay'] ) ? (int) $input['request_delay'] : $d['request_delay'] ) );
+		$out['retry_count']     = min( 5, max( 0, isset( $input['retry_count'] ) ? (int) $input['retry_count'] : $d['retry_count'] ) );
 
 		$origin_input        = isset( $input['crawl_origin'] ) ? trim( (string) $input['crawl_origin'] ) : '';
 		$out['crawl_origin'] = AOUWAL_Network::sanitize_origin( $origin_input );

@@ -34,6 +34,7 @@ class AOUWAL_Admin {
 		add_action( 'wp_ajax_aouwal_resume', array( $this, 'ajax_resume' ) );
 		add_action( 'wp_ajax_aouwal_cancel', array( $this, 'ajax_cancel' ) );
 		add_action( 'wp_ajax_aouwal_status', array( $this, 'ajax_status' ) );
+		add_action( 'wp_ajax_aouwal_retry', array( $this, 'ajax_retry' ) );
 		add_action( 'admin_post_aouwal_download', array( $this, 'download_zip' ) );
 	}
 
@@ -113,6 +114,8 @@ class AOUWAL_Admin {
 					'running_elsewhere' => __( 'An export is running in another tab.', 'aouwal-static-site-export' ),
 					'interrupted'       => __( 'The previous export was interrupted.', 'aouwal-static-site-export' ),
 					'download_last'     => __( 'Download the last export', 'aouwal-static-site-export' ),
+					'retrying'          => __( 'Retrying failed items…', 'aouwal-static-site-export' ),
+					'retry'             => __( 'Retry failed', 'aouwal-static-site-export' ),
 				),
 			)
 		);
@@ -326,6 +329,29 @@ class AOUWAL_Admin {
 
 		$exporter = new AOUWAL_Exporter();
 		wp_send_json_success( $exporter->status() );
+	}
+
+	/**
+	 * AJAX: retry the failed items of the last finished export.
+	 *
+	 * @return void
+	 */
+	public function ajax_retry() {
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
+		}
+		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+		if ( 1 !== preg_match( '/^[a-f0-9]{20}$/', $job_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Export job not found.', 'aouwal-static-site-export' ) ), 404 );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		$result   = $exporter->retry_failed( $job_id );
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+		wp_send_json_success( $result );
 	}
 
 	/**
