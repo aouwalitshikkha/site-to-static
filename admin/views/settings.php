@@ -15,6 +15,20 @@ unset( $aouwal_post_types['attachment'] );
 <form method="post" action="options.php" class="aouwal-settings">
 	<?php settings_fields( 'aouwal_settings_group' ); ?>
 
+	<h2><?php esc_html_e( 'Export mode', 'aouwal-static-site-export' ); ?></h2>
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row"><?php esc_html_e( 'What to export', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<fieldset>
+					<label class="aouwal-inline"><input type="radio" name="aouwal_settings[export_mode]" value="full" <?php checked( $aouwal['export_mode'], 'full' ); ?> /> <?php esc_html_e( 'Full export (every page and asset, every run)', 'aouwal-static-site-export' ); ?></label><br />
+					<label class="aouwal-inline"><input type="radio" name="aouwal_settings[export_mode]" value="changed" <?php checked( $aouwal['export_mode'], 'changed' ); ?> /> <?php esc_html_e( 'Changed-only export (reuse the previous export, re-export what changed)', 'aouwal-static-site-export' ); ?></label>
+				</fieldset>
+				<p class="description"><?php esc_html_e( 'A changed-only export starts from the last export and re-exports edited posts, the archives that contain them, the homepage, and assets whose ETag or Last-Modified changed. It falls back to a full export automatically after a plugin or WordPress update, a theme change, a permalink change, or any setting that affects the output.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+	</table>
+
 	<h2><?php esc_html_e( 'Content', 'aouwal-static-site-export' ); ?></h2>
 	<table class="form-table" role="presentation">
 		<tr>

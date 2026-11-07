@@ -3,7 +3,7 @@
  * Plugin Name:       Aouwal Static Site Export – Static Site Generator
  * Plugin URI:        https://github.com/aouwalitshikkha/site-to-static
  * Description:       Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, fonts and sitemap.xml for Cloudflare Pages, GitHub Pages or Netlify.
- * Version:           1.8.0
+ * Version:           1.9.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Abdul Aouwal
@@ -18,8 +18,8 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AOUWAL_VERSION', '1.8.0' );
-define( 'AOUWAL_DB_VERSION', '2' );
+define( 'AOUWAL_VERSION', '1.9.0' );
+define( 'AOUWAL_DB_VERSION', '3' );
 define( 'AOUWAL_PLUGIN_FILE', __FILE__ );
 define( 'AOUWAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AOUWAL_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -29,6 +29,7 @@ require_once AOUWAL_PLUGIN_DIR . 'includes/class-brand.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-settings.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-network.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-writer.php';
+require_once AOUWAL_PLUGIN_DIR . 'includes/class-export-state.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-url-discovery.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-crawler.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-html-processor.php';
@@ -70,6 +71,7 @@ function aouwal_job_items_schema() {
 		message TEXT NULL,
 		origin_url TEXT NULL,
 		attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+		fingerprint VARCHAR(64) NOT NULL DEFAULT '',
 		created_at DATETIME NOT NULL,
 		PRIMARY KEY  (id),
 		KEY job_status (job_id, status),
@@ -78,14 +80,56 @@ function aouwal_job_items_schema() {
 }
 
 /**
+ * Schema for the cross-run export state table.
+ *
+ * One row per page or asset URL, keyed by md5(type|url). The job_id column
+ * records the last export that confirmed the row, which is what makes the
+ * orphan cleanup in a changed-only run precise.
+ *
+ * @return string
+ */
+function aouwal_export_state_schema() {
+	global $wpdb;
+	$table_name      = $wpdb->prefix . 'aouwal_export_state';
+	$charset_collate = $wpdb->get_charset_collate();
+
+	return "CREATE TABLE {$table_name} (
+		id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+		url_hash CHAR(32) NOT NULL,
+		job_id VARCHAR(32) NOT NULL DEFAULT '',
+		item_type VARCHAR(10) NOT NULL DEFAULT 'page',
+		source_url TEXT NOT NULL,
+		local_path TEXT NOT NULL,
+		fingerprint VARCHAR(64) NOT NULL DEFAULT '',
+		etag VARCHAR(255) NOT NULL DEFAULT '',
+		last_modified VARCHAR(64) NOT NULL DEFAULT '',
+		bytes BIGINT UNSIGNED NOT NULL DEFAULT 0,
+		updated_at DATETIME NOT NULL,
+		PRIMARY KEY  (id),
+		UNIQUE KEY url_hash (url_hash),
+		KEY job_type (job_id, item_type)
+	) {$charset_collate};";
+}
+
+/**
+ * Create or upgrade both tables.
+ *
+ * @return void
+ */
+function aouwal_install_schema() {
+	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	dbDelta( aouwal_job_items_schema() );
+	dbDelta( aouwal_export_state_schema() );
+	update_option( 'aouwal_db_version', AOUWAL_DB_VERSION );
+}
+
+/**
  * Activation: create the job items table.
  *
  * @return void
  */
 function aouwal_activate() {
-	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-	dbDelta( aouwal_job_items_schema() );
-	update_option( 'aouwal_db_version', AOUWAL_DB_VERSION );
+	aouwal_install_schema();
 
 	if ( false === get_option( 'aouwal_settings', false ) ) {
 		$migrated = get_option( 'sts_settings', null );
@@ -124,9 +168,7 @@ function aouwal_maybe_upgrade() {
 		return;
 	}
 
-	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-	dbDelta( aouwal_job_items_schema() );
-	update_option( 'aouwal_db_version', AOUWAL_DB_VERSION );
+	aouwal_install_schema();
 }
 add_action( 'plugins_loaded', 'aouwal_maybe_upgrade' );
 
