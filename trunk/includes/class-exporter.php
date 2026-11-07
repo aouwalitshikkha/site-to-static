@@ -72,6 +72,15 @@ class AOUWAL_Exporter {
 	}
 
 	/**
+	 * Export mode for this run.
+	 *
+	 * @return string "full" or "changed".
+	 */
+	public function mode() {
+		return ( 'changed' === AOUWAL_Settings::get( 'export_mode', 'full' ) ) ? 'changed' : 'full';
+	}
+
+	/**
 	 * Absolute base directory for all export artifacts.
 	 *
 	 * Defaults to a subdirectory of the WordPress uploads directory, in line
@@ -226,18 +235,78 @@ class AOUWAL_Exporter {
 
 		$this->writer->set_output_dir( $output );
 
-		$discovery = new AOUWAL_URL_Discovery();
-		$urls      = $discovery->discover();
+		$mode      = $this->mode();
+		$signature = AOUWAL_Export_State::signature();
+		$baseline  = ( 'changed' === $mode ) ? AOUWAL_Export_State::baseline() : null;
+		$reuse     = false;
 
-		$inserted = $this->insert_items( $job_id, $urls, 'page' );
+		// Start from the previous export when it is still valid for this
+		// site. A failed copy falls back to a full export, so the result is
+		// never a half-populated directory.
+		if ( $baseline && $baseline['signature'] === $signature && is_dir( $baseline['output_dir'] ) ) {
+			$reuse = $this->writer->copy_dir( $baseline['output_dir'], $output );
+		}
+
+		$discovery = new AOUWAL_URL_Discovery();
+		$items     = $discovery->discover_items();
+
+		$states = $reuse ? AOUWAL_Export_State::get_many( 'page', array_keys( $items ) ) : array();
+
+		$pages = array();
+		$meta  = array();
+		foreach ( $items as $url => $item ) {
+			$pages[]      = $url;
+			$meta[ $url ] = array(
+				'fingerprint' => $item['fingerprint'],
+				'skip'        => false,
+			);
+
+			if ( ! $reuse || '' === $item['fingerprint'] || ! isset( $states[ $url ] ) ) {
+				continue;
+			}
+			if ( (string) $states[ $url ]->fingerprint !== (string) $item['fingerprint'] ) {
+				continue;
+			}
+			// The fingerprint matches and the copied file is in place, so
+			// this page does not need a request at all.
+			if ( $this->writer->exists( $this->writer->url_to_local_path( $url, 'page' ) ) ) {
+				$meta[ $url ]['skip'] = true;
+			}
+		}
+
+		$this->insert_items( $job_id, $pages, 'page', '', $meta );
+
+		// Assets already in the export are revalidated with a conditional
+		// request even when no page was re-exported, so a replaced image with
+		// an unchanged URL is still picked up.
+		if ( $reuse ) {
+			$assets = array();
+			foreach ( AOUWAL_Export_State::rows_for_job( $baseline['job_id'] ) as $row ) {
+				if ( 'asset' === $row->item_type ) {
+					$assets[] = (string) $row->source_url;
+				}
+			}
+
+			// An asset that failed last time has no state row, and no
+			// unchanged page re-discovers it, so it is queued again here.
+			foreach ( $this->errored_assets( (string) $baseline['job_id'] ) as $url ) {
+				$assets[] = $url;
+			}
+
+			$this->insert_items( $job_id, $assets, 'asset' );
+		}
 
 		$job = array(
-			'id'         => $job_id,
-			'started'    => current_time( 'mysql' ),
-			'phase'      => self::PHASE_CRAWL,
-			'output_dir' => $output,
-			'zip_path'   => $zip_path,
-			'notice'     => array(),
+			'id'           => $job_id,
+			'started'      => current_time( 'mysql' ),
+			'phase'        => self::PHASE_CRAWL,
+			'output_dir'   => $output,
+			'zip_path'     => $zip_path,
+			'notice'       => array(),
+			'mode'         => $mode,
+			'signature'    => $signature,
+			'baseline_job' => $reuse ? (string) $baseline['job_id'] : '',
+			'reused'       => $reuse ? 1 : 0,
 		);
 		$this->save_job( $job );
 		$this->prune_old_jobs( $base, $job_id );
@@ -250,6 +319,27 @@ class AOUWAL_Exporter {
 			'total'  => $counts['total'],
 			'counts' => $counts,
 		);
+	}
+
+	/**
+	 * Asset URLs that failed in a finished job.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return string[]
+	 */
+	protected function errored_assets( $job_id ) {
+		global $wpdb;
+		$table = $this->table();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; one indexed read per changed-only run. Values are prepared.
+		$urls = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT source_url FROM {$table} WHERE job_id = %s AND item_type = 'asset' AND status = 'error'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$job_id
+			)
+		);
+
+		return array_map( 'strval', (array) $urls );
 	}
 
 	/**
@@ -457,6 +547,32 @@ class AOUWAL_Exporter {
 				implode( ', ', $failed )
 			);
 		}
+
+		// A changed-only run may have carried files for pages that no longer
+		// exist. Removing them here keeps the export a mirror of the site.
+		$removed = $this->cleanup_orphans( $job_id, $job );
+		if ( $removed > 0 ) {
+			$notices[] = sprintf(
+				/* translators: %s: number of removed files. */
+				_n(
+					'%s file from the previous export is no longer part of the site and was removed.',
+					'%s files from the previous export are no longer part of the site and were removed.',
+					$removed,
+					'aouwal-static-site-export'
+				),
+				number_format_i18n( $removed )
+			);
+		}
+
+		// Promote the rows this run confirmed, then remember the export as
+		// the baseline for the next changed-only run. Both modes do this so a
+		// full export always seeds the next incremental one.
+		AOUWAL_Export_State::adopt( $job_id, $this->table() );
+		AOUWAL_Export_State::set_baseline(
+			$job_id,
+			$job['output_dir'],
+			isset( $job['signature'] ) ? (string) $job['signature'] : AOUWAL_Export_State::signature()
+		);
 
 		$job['phase']    = self::PHASE_DONE;
 		$job['notice']   = $notices;
@@ -810,6 +926,8 @@ class AOUWAL_Exporter {
 				'notice'      => array(),
 				'started'     => '',
 				'finished'    => '',
+				'mode'        => 'full',
+				'reused'      => false,
 			);
 		}
 
@@ -834,6 +952,8 @@ class AOUWAL_Exporter {
 			'notice'      => isset( $job['notice'] ) ? (array) $job['notice'] : array(),
 			'started'     => isset( $job['started'] ) ? (string) $job['started'] : '',
 			'finished'    => isset( $job['finished'] ) ? (string) $job['finished'] : '',
+			'mode'        => isset( $job['mode'] ) ? (string) $job['mode'] : 'full',
+			'reused'      => ! empty( $job['reused'] ),
 		);
 	}
 
@@ -925,6 +1045,55 @@ class AOUWAL_Exporter {
 	}
 
 	/**
+	 * Delete files a changed-only export carried forward for removed URLs.
+	 *
+	 * A row is an orphan when the state table knows it but the current job
+	 * never queued it, in any status. A URL that merely failed is still in
+	 * the queue, so its previous file is kept and the next run retries it.
+	 *
+	 * Only runs when the job actually reused a previous export: a full export
+	 * starts from an empty directory, so it cannot leave stale files behind.
+	 *
+	 * @param string $job_id Job ID.
+	 * @param array  $job    Job data.
+	 * @return int Number of removed files.
+	 */
+	protected function cleanup_orphans( $job_id, array $job ) {
+		if ( empty( $job['reused'] ) || 'changed' !== ( isset( $job['mode'] ) ? $job['mode'] : '' ) ) {
+			return 0;
+		}
+
+		global $wpdb;
+		$state = AOUWAL_Export_State::table();
+		$items = $this->table();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom tables; one set-based read per changed-only run. Values are prepared.
+		$orphans = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT s.url_hash, s.local_path FROM {$state} s LEFT JOIN {$items} i ON i.url_hash = s.url_hash AND i.job_id = %s WHERE i.id IS NULL", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$job_id
+			)
+		);
+
+		if ( empty( $orphans ) ) {
+			return 0;
+		}
+
+		$hashes  = array();
+		$removed = 0;
+		foreach ( $orphans as $orphan ) {
+			$hashes[] = (string) $orphan->url_hash;
+			if ( '' !== (string) $orphan->local_path && $this->writer->delete_local( (string) $orphan->local_path ) ) {
+				++$removed;
+			}
+		}
+
+		AOUWAL_Export_State::delete( $hashes );
+
+		return $removed;
+	}
+
+	/**
 	 * Delete every queue row of a job.
 	 *
 	 * A cancelled job never resumes, so its rows have no further use and would
@@ -991,10 +1160,22 @@ class AOUWAL_Exporter {
 	 */
 	protected function process_page_item( $job_id, $item, array &$log ) {
 		$crawler = new AOUWAL_Crawler();
-		$result  = $crawler->fetch_with_retry( $item->source_url, false );
+
+		// Pages are not revalidated with a conditional request: a page whose
+		// fingerprint changed must be rebuilt from a real response, and a
+		// cached 304 from a stale Last-Modified would keep old markup. Only
+		// static assets, whose validators describe the file exactly, use
+		// conditional GET.
+		$result = $crawler->fetch_with_retry( $item->source_url, false );
 
 		foreach ( (array) $result['retries'] as $line ) {
 			$log[] = $line;
+		}
+
+		if ( ! empty( $result['not_modified'] ) && $this->writer->exists( $item->local_path ) ) {
+			$this->mark( $item->id, 'skipped', 304, '', $result['attempts'] );
+			$log[] = sprintf( '[page skipped] %s (not modified)', $item->source_url );
+			return;
 		}
 
 		if ( '' !== $result['error'] || $result['status'] >= 400 || '' === $result['body'] ) {
@@ -1015,6 +1196,7 @@ class AOUWAL_Exporter {
 				return;
 			}
 			$this->mark( $item->id, 'done', $result['status'], '', $result['attempts'] );
+			$this->save_state( $job_id, 'page', $item, $result );
 			$log[] = sprintf( '[feed] %s -> %s', $item->source_url, $item->local_path );
 			return;
 		}
@@ -1031,7 +1213,55 @@ class AOUWAL_Exporter {
 		}
 
 		$this->mark( $item->id, 'done', $result['status'], '', $result['attempts'] );
+		$this->save_state( $job_id, 'page', $item, $result );
 		$log[] = sprintf( '[page] %s -> %s', $item->source_url, $item->local_path );
+	}
+
+	/**
+	 * Store the fingerprint and validators for a fetched item.
+	 *
+	 * The fingerprint comes from the queue row, which carries what discovery
+	 * computed. It is what the next changed-only run compares against.
+	 *
+	 * @param string $job_id Job ID.
+	 * @param string $type   "page" or "asset".
+	 * @param object $item   Queue row.
+	 * @param array  $result Fetch result.
+	 * @return void
+	 */
+	protected function save_state( $job_id, $type, $item, array $result ) {
+		$headers = isset( $result['headers'] ) && is_array( $result['headers'] ) ? $result['headers'] : array();
+
+		AOUWAL_Export_State::save(
+			$job_id,
+			$type,
+			$item->source_url,
+			$item->local_path,
+			array(
+				'fingerprint'   => isset( $item->fingerprint ) ? (string) $item->fingerprint : '',
+				'etag'          => $this->header_value( $headers, 'etag' ),
+				'last_modified' => $this->header_value( $headers, 'last-modified' ),
+				'bytes'         => isset( $result['bytes'] ) ? (int) $result['bytes'] : ( isset( $result['body'] ) ? strlen( (string) $result['body'] ) : 0 ),
+			)
+		);
+	}
+
+	/**
+	 * Read a response header as a string.
+	 *
+	 * @param array  $headers Lower-cased header map.
+	 * @param string $key     Header name.
+	 * @return string
+	 */
+	protected function header_value( array $headers, $key ) {
+		if ( ! isset( $headers[ $key ] ) ) {
+			return '';
+		}
+		$value = $headers[ $key ];
+		if ( is_array( $value ) ) {
+			$value = reset( $value );
+		}
+		return trim( (string) $value );
 	}
 
 	/**
@@ -1061,16 +1291,35 @@ class AOUWAL_Exporter {
 	 * @return void
 	 */
 	protected function process_asset_item( $job_id, $item, array &$log ) {
-		if ( $this->writer->exists( $item->local_path ) ) {
+		$state  = AOUWAL_Export_State::get( 'asset', $item->source_url );
+		$exists = $this->writer->exists( $item->local_path );
+
+		// With stored validators a copied-forward file can be revalidated
+		// instead of downloaded again. Without them the old "already there"
+		// shortcut still applies.
+		$conditional = ( $state && $exists )
+			? array(
+				'etag'          => (string) $state->etag,
+				'last_modified' => (string) $state->last_modified,
+			)
+			: array();
+
+		if ( empty( $conditional ) && $exists ) {
 			$this->mark( $item->id, 'skipped', 0, 'already downloaded' );
 			return;
 		}
 
 		$processor = new AOUWAL_Asset_Processor( $this->writer, new AOUWAL_Crawler() );
-		$result    = $processor->process( $item->source_url, $item->local_path );
+		$result    = $processor->process( $item->source_url, $item->local_path, $conditional );
 
 		foreach ( (array) $result['retries'] as $line ) {
 			$log[] = $line;
+		}
+
+		if ( ! empty( $result['not_modified'] ) && $exists ) {
+			$this->mark( $item->id, 'skipped', 304, 'not modified', $result['attempts'] );
+			$log[] = sprintf( '[asset skipped] %s (not modified)', $item->source_url );
+			return;
 		}
 
 		if ( '' !== $result['error'] ) {
@@ -1084,6 +1333,7 @@ class AOUWAL_Exporter {
 		}
 
 		$this->mark( $item->id, 'done', $result['status'], '', $result['attempts'] );
+		$this->save_state( $job_id, 'asset', $item, $result );
 		$log[] = sprintf( '[asset] %s', $item->source_url );
 	}
 
@@ -1094,9 +1344,10 @@ class AOUWAL_Exporter {
 	 * @param string[] $urls   URLs.
 	 * @param string   $type   "page" or "asset".
 	 * @param string   $origin URL of the page or stylesheet that referenced the item.
+	 * @param array    $meta   Per-URL fingerprint and skip flag, keyed by URL.
 	 * @return int
 	 */
-	protected function insert_items( $job_id, $urls, $type, $origin = '' ) {
+	protected function insert_items( $job_id, $urls, $type, $origin = '', array $meta = array() ) {
 		global $wpdb;
 		$table = $this->table();
 		$now   = current_time( 'mysql' );
@@ -1113,7 +1364,11 @@ class AOUWAL_Exporter {
 				? $this->writer->url_to_local_path( $url, 'page' )
 				: $this->writer->url_to_local_path( $url, 'asset' );
 
-			$chunk[] = $wpdb->prepare( '(%s, %s, %s, %s, %s, %s, %s, %s)', $job_id, $type, $url, $hash, $path, 'pending', $now, (string) $origin );
+			$info        = isset( $meta[ $url ] ) ? (array) $meta[ $url ] : array();
+			$status      = ! empty( $info['skip'] ) ? 'skipped' : 'pending';
+			$fingerprint = isset( $info['fingerprint'] ) ? substr( (string) $info['fingerprint'], 0, 64 ) : '';
+
+			$chunk[] = $wpdb->prepare( '(%s, %s, %s, %s, %s, %s, %s, %s, %s)', $job_id, $type, $url, $hash, $path, $status, $now, (string) $origin, $fingerprint );
 
 			if ( count( $chunk ) >= 100 ) {
 				$count += $this->flush_insert( $chunk );
@@ -1137,7 +1392,7 @@ class AOUWAL_Exporter {
 	protected function flush_insert( array $chunk ) {
 		global $wpdb;
 		$table  = $this->table();
-		$sql    = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at, origin_url) VALUES " . implode( ', ', $chunk );
+		$sql    = "INSERT IGNORE INTO {$table} (job_id, item_type, source_url, url_hash, local_path, status, created_at, origin_url, fingerprint) VALUES " . implode( ', ', $chunk );
 		$result = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table; bulk insert of pre-escaped tuples. No caching applies to writes.
 		return false === $result ? 0 : (int) $result;
 	}
@@ -1221,6 +1476,14 @@ class AOUWAL_Exporter {
 			$jobs = array();
 		}
 		$keep = array( $job_id );
+
+		// The copy-forward baseline is read by the next changed-only run even
+		// after its job row has been pruned from the option list.
+		$baseline = AOUWAL_Export_State::baseline();
+		if ( $baseline ) {
+			$keep[] = (string) $baseline['job_id'];
+		}
+
 		foreach ( $jobs as $id => $stored ) {
 			// A cancelled job keeps its row for the log but owns no files.
 			// Skipping it means a batch that was still in flight when the user

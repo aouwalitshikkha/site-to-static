@@ -36,6 +36,14 @@ $aouwal_is_done  = ( 'done' === $aouwal_state['phase'] );
 		<?php esc_html_e( 'Generate a static copy of your site. The plugin crawls every page, downloads and localizes all assets, then packages everything into a ZIP you can push to GitHub and deploy on Cloudflare Pages.', 'aouwal-static-site-export' ); ?>
 	</p>
 
+	<p class="description">
+		<?php if ( 'changed' === AOUWAL_Settings::get( 'export_mode', 'full' ) ) : ?>
+			<?php esc_html_e( 'Changed-only export is on: the next export starts from the last one and re-exports only what changed.', 'aouwal-static-site-export' ); ?>
+		<?php else : ?>
+			<?php esc_html_e( 'Full export is on: every page and asset is crawled again on each run.', 'aouwal-static-site-export' ); ?>
+		<?php endif; ?>
+	</p>
+
 	<p>
 		<button type="button" class="button button-primary button-hero" id="aouwal-start" <?php disabled( ! $aouwal_zip_available ); ?>>
 			<?php esc_html_e( 'Start static export', 'aouwal-static-site-export' ); ?>

@@ -11,12 +11,15 @@ global $wpdb;
 
 delete_option( 'aouwal_settings' );
 delete_option( 'aouwal_jobs' );
+delete_option( 'aouwal_db_version' );
+delete_option( 'aouwal_export_baseline' );
 delete_option( 'sts_settings' );
 delete_option( 'sts_jobs' );
 delete_option( 'wse_settings' );
 delete_option( 'wse_jobs' );
 
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}aouwal_job_items" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup of this plugin's own table.
+$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}aouwal_export_state" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup of this plugin's own table.
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}sts_job_items" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup of this plugin's previous slug table.
 $wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}wpstatic_job_items" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange -- Uninstall cleanup of this plugin's pre-release table.
 

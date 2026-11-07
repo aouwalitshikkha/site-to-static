@@ -20,6 +20,26 @@ class AOUWAL_Settings {
 	const OPTION = 'aouwal_settings';
 
 	/**
+	 * Per-request setting overrides (WP-CLI flags).
+	 *
+	 * Nothing here is written to the database: it only changes what get()
+	 * returns for the current request.
+	 *
+	 * @var array
+	 */
+	protected static $runtime = array();
+
+	/**
+	 * Override settings for the current request.
+	 *
+	 * @param array $overrides Key => value.
+	 * @return void
+	 */
+	public static function set_runtime( array $overrides ) {
+		self::$runtime = $overrides;
+	}
+
+	/**
 	 * Default settings.
 	 *
 	 * @return array
@@ -34,6 +54,7 @@ class AOUWAL_Settings {
 			'include_attachments'  => 0,
 			'download_assets'      => 1,
 			'max_asset_mb'         => 25,
+			'export_mode'          => 'full',
 			'url_style'            => 'relative',
 			'rewrite_uploads_path' => 0,
 			'uploads_path'         => 'uploads',
@@ -80,6 +101,9 @@ class AOUWAL_Settings {
 	 * @return mixed
 	 */
 	public static function get( $key, $fallback = null ) {
+		if ( array_key_exists( $key, self::$runtime ) ) {
+			return self::$runtime[ $key ];
+		}
 		$all = self::all();
 		return array_key_exists( $key, $all ) ? $all[ $key ] : $fallback;
 	}
@@ -147,6 +171,8 @@ class AOUWAL_Settings {
 		}
 
 		$out['url_style'] = ( isset( $input['url_style'] ) && 'root' === $input['url_style'] ) ? 'root' : 'relative';
+
+		$out['export_mode'] = ( isset( $input['export_mode'] ) && 'changed' === $input['export_mode'] ) ? 'changed' : 'full';
 
 		// Path rewrite (opt-in). Sanitize to a safe, relative, single-segment-or-
 		// nested folder name with no traversal, backslashes or leading slash.

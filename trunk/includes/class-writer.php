@@ -547,4 +547,107 @@ class AOUWAL_Writer {
 	public function exists( $local ) {
 		return file_exists( $this->abs_path( $local ) );
 	}
+
+	/**
+	 * Copy a whole directory tree into the output directory.
+	 *
+	 * Used by a changed-only export to start from the previous export instead
+	 * of an empty directory, so unchanged files are already in place. Every
+	 * path is handled by WP_Filesystem, like every other file operation.
+	 *
+	 * @param string $source      Absolute source directory.
+	 * @param string $destination Absolute destination directory.
+	 * @return bool True when every entry was copied.
+	 */
+	public function copy_dir( $source, $destination ) {
+		$source      = rtrim( str_replace( '\\', '/', (string) $source ), '/' );
+		$destination = rtrim( str_replace( '\\', '/', (string) $destination ), '/' );
+
+		if ( '' === $source || '' === $destination || $source === $destination ) {
+			return false;
+		}
+		if ( ! is_dir( $source ) ) {
+			return false;
+		}
+		if ( ! $this->is_within_output_dir( $destination ) ) {
+			return false;
+		}
+
+		$fs = $this->filesystem();
+		if ( ! $fs ) {
+			return false;
+		}
+
+		if ( ! is_dir( $destination ) && ! wp_mkdir_p( $destination ) ) {
+			return false;
+		}
+
+		return $this->copy_tree( $fs, $source, $destination );
+	}
+
+	/**
+	 * Recursive helper for copy_dir().
+	 *
+	 * @param WP_Filesystem_Base $fs   Filesystem.
+	 * @param string             $from Absolute source directory.
+	 * @param string             $to   Absolute destination directory.
+	 * @return bool
+	 */
+	protected function copy_tree( $fs, $from, $to ) {
+		$entries = $fs->dirlist( $from, false );
+		if ( ! is_array( $entries ) ) {
+			return false;
+		}
+
+		$ok = true;
+		foreach ( $entries as $name => $info ) {
+			$name = (string) $name;
+			if ( '' === $name || '.' === $name || '..' === $name ) {
+				continue;
+			}
+
+			$src = trailingslashit( $from ) . $name;
+			$dst = trailingslashit( $to ) . $name;
+
+			if ( isset( $info['type'] ) && 'd' === $info['type'] ) {
+				if ( ! is_dir( $dst ) && ! wp_mkdir_p( $dst ) ) {
+					$ok = false;
+					continue;
+				}
+				$ok = $this->copy_tree( $fs, $src, $dst ) && $ok;
+				continue;
+			}
+
+			if ( ! is_dir( dirname( $dst ) ) && ! wp_mkdir_p( dirname( $dst ) ) ) {
+				$ok = false;
+				continue;
+			}
+			$ok = (bool) $fs->copy( $src, $dst, true ) && $ok;
+		}
+
+		return $ok;
+	}
+
+	/**
+	 * Delete one output-relative file.
+	 *
+	 * Refuses any path outside the output directory, so an orphan cleanup can
+	 * never remove a file the export did not create.
+	 *
+	 * @param string $local Local path.
+	 * @return bool
+	 */
+	public function delete_local( $local ) {
+		$abs = $this->abs_path( $local );
+		if ( ! $this->is_within_output_dir( $abs ) || '' === (string) $local ) {
+			return false;
+		}
+
+		$fs = $this->filesystem();
+		if ( ! $fs || ! $fs->exists( $abs ) ) {
+			return false;
+		}
+
+		return (bool) $fs->delete( $abs );
+	}
 }

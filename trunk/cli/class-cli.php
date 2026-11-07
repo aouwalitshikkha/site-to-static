@@ -17,7 +17,7 @@ if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
 class AOUWAL_CLI {
 
 	/**
-	 * Run a full static export.
+	 * Run a static export.
 	 *
 	 * ## OPTIONS
 	 *
@@ -26,6 +26,14 @@ class AOUWAL_CLI {
 	 * ---
 	 * default: 10
 	 * ---
+	 *
+	 * [--changed-only]
+	 * : Reuse the last export and re-export only pages and assets that
+	 * changed, overriding the saved export mode for this run.
+	 *
+	 * [--full]
+	 * : Re-crawl every page and asset, overriding the saved export mode for
+	 * this run.
 	 *
 	 * [--timeout=<seconds>]
 	 * : Request timeout for this run, overriding the saved setting (1-120).
@@ -42,6 +50,7 @@ class AOUWAL_CLI {
 	 *
 	 *     wp aouwal-static-export run --timeout=90 --delay=250
 	 *     wp aouwal-static-export run --origin=http://wordpress:8080
+	 *     wp aouwal-static-export run --changed-only
 	 *
 	 * @param array $args       Positional args.
 	 * @param array $assoc_args Associative args.
@@ -68,6 +77,19 @@ class AOUWAL_CLI {
 			AOUWAL_Network::set_overrides( $overrides );
 		}
 
+		// The mode flags never write the setting, so a one-off changed-only
+		// cron run cannot change what the admin screen does next time.
+		$runtime = array();
+		if ( isset( $assoc_args['changed-only'] ) ) {
+			$runtime['export_mode'] = 'changed';
+		}
+		if ( isset( $assoc_args['full'] ) ) {
+			$runtime['export_mode'] = 'full';
+		}
+		if ( ! empty( $runtime ) ) {
+			AOUWAL_Settings::set_runtime( $runtime );
+		}
+
 		$exporter = new AOUWAL_Exporter();
 		$start    = $exporter->start();
 
@@ -76,7 +98,11 @@ class AOUWAL_CLI {
 		}
 
 		$job_id = $start['job_id'];
-		WP_CLI::log( sprintf( 'Discovered %d URLs (job %s).', $start['total'], $job_id ) );
+		$job    = $exporter->get_job( $job_id );
+		$mode   = ( $job && isset( $job['mode'] ) ) ? $job['mode'] : 'full';
+		$reused = ( $job && ! empty( $job['reused'] ) ) ? ' from the previous export' : '';
+
+		WP_CLI::log( sprintf( 'Discovered %d URLs%s (job %s, %s export).', $start['total'], $reused, $job_id, $mode ) );
 
 		$this->run_batches( $exporter, $job_id, $batch, (int) $start['total'] );
 	}
@@ -235,7 +261,9 @@ class AOUWAL_CLI {
 		}
 
 		$counts = $state['counts'];
+		$job    = $exporter->get_job( $state['job_id'] );
 		WP_CLI::log( sprintf( 'Job:       %s', $state['job_id'] ) );
+		WP_CLI::log( sprintf( 'Mode:      %s', ( $job && isset( $job['mode'] ) ) ? $job['mode'] : 'full' ) );
 		WP_CLI::log( sprintf( 'Phase:     %s', $state['phase'] ) );
 		WP_CLI::log( sprintf( 'Processed: %d of %d', $counts['done'] + $counts['error'], $counts['total'] ) );
 		WP_CLI::log( sprintf( 'Pending:   %d', $counts['pending'] ) );
