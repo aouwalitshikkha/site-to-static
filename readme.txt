@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -50,6 +50,7 @@ You can export:
 * Network controls for awkward hosting: request timeout, delay between requests, custom crawl origin, TLS verification modes and optional HTTP Basic Auth.
 * Optional path rewrite: move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default; changes URLs only and does not remove other WordPress fingerprints.
 * Pause, resume and cancel controls, so a long export can be stopped without losing progress and a wrong export can be aborted and cleaned up.
+* Optional changed-only export: reuse the last export and re-export only pages, archives and assets that changed. Full export stays the default.
 * Optional WP-CLI command: `wp aouwal-static-export run`.
 * Optional, invisible author credit. It is off by default and can be enabled in Settings.
 
@@ -101,6 +102,32 @@ WP-CLI has the same controls for a crawl started from the command line:
     wp aouwal-static-export resume --batch=10
 
 `status` prints the phase, the processed and pending counts and the last URL, which is handy in a cron log. `cancel` exits with 1 so a script stops before pushing a partial build.
+
+= Changed-only export for large sites =
+
+By default every export re-crawls every page and re-downloads every asset. Settings > Export mode adds a second mode for sites where that takes too long.
+
+* **Full export** is the default and the previous behavior: every URL is fetched and rewritten on every run.
+* **Changed-only export** starts from the last export, copies its files into the new output folder, and then re-exports only what changed.
+
+What a changed-only run re-exports:
+
+* A post or page whose `post_modified` time changed, plus every taxonomy, author and date archive that contains it, plus the homepage, the posts page and their pagination.
+* Assets whose `ETag` or `Last-Modified` response header no longer matches the stored value. The plugin sends a conditional request (`If-None-Match` / `If-Modified-Since`) and keeps the copied file when the server answers 304 Not Modified.
+* Feeds, additional URLs, the sitemap, robots.txt, `_redirects`, `_headers` and 404.html are always rebuilt.
+
+Unchanged pages are not even requested: their stored fingerprint matches, so the copied file is kept as is.
+
+The mode falls back to a full export on its own when the previous files cannot be trusted: a different plugin or WordPress version, a different theme, a different permalink structure or site URL, or any setting that changes the output (post types, archive toggles, URL style, uploads path, stripping options, credit). It also falls back when the previous output folder is missing, or when copying it fails.
+
+Files for content that was deleted are removed from the new export, and the log names how many were dropped. A URL that failed keeps its old file and is retried on the next run.
+
+Run it once from the command line without changing the saved setting:
+
+    wp aouwal-static-export run --changed-only --batch=10
+    wp aouwal-static-export run --full
+
+Data stored: one row per page and asset in a custom table (`{prefix}aouwal_export_state`) holding the URL hash, fingerprint, ETag, Last-Modified, size and the last export that confirmed it. The table is removed when the plugin is uninstalled.
 
 = Crawl through proxies, staging sites and Basic Auth =
 
@@ -220,6 +247,16 @@ The plugin requires WordPress 6.0 or later and PHP 7.4 or later. It is tested up
 
 Yes. Run a new export to create a fresh ZIP, then push the updated files. On Cloudflare Pages, every push to your connected repository redeploys the site automatically, so updates take only a few minutes.
 
+= Can I export only the pages that changed? =
+
+Yes. Set Settings > Export mode to "Changed-only export", or run `wp aouwal-static-export run --changed-only`. The export starts from the last one, keeps every file whose page or asset did not change, and re-exports edited posts, the archives that contain them, the homepage, the posts page and any asset whose ETag or Last-Modified changed.
+
+A changed-only run is much faster on a large site because unchanged pages are not requested at all and unchanged assets answer 304 Not Modified. The mode falls back to a full export automatically after a plugin, WordPress or theme update, a permalink or site URL change, or any setting that affects the output. Full export stays the default.
+
+= Does a changed-only export upload the whole site again? =
+
+Yes, the ZIP still contains the complete site, because the export is a static snapshot rather than a patch. The saving is in the crawl: only changed URLs are fetched and rewritten, and unchanged files are copied from the previous export. If you deploy with rsync or Git, your sync tool still transfers only the files that differ.
+
 = Does the plugin work on large sites? =
 
 Yes. The crawl runs in batches, and each batch is one request, so a PHP timeout applies to a batch, not to the whole site or to a single page.
@@ -299,6 +336,17 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.9.0 =
+* New: changed-only export. Settings > Export mode adds a second mode that starts from the last export and re-exports only what changed, while full export stays the default.
+* Posts and pages are tracked by `post_modified`, so an unchanged page is not requested at all and its copied file is kept.
+* Taxonomy, author and date archives use a count plus modification-time sum, so editing, adding or removing a post re-exports every archive that contains it. The homepage, the posts page, feeds and additional URLs are always rebuilt.
+* Assets are revalidated with a conditional request (`If-None-Match` / `If-Modified-Since`). A 304 Not Modified keeps the copied file, so a replaced image with an unchanged URL is still picked up.
+* Files for deleted posts are removed from the new export and the log reports how many were dropped.
+* A run falls back to a full export automatically when the previous files cannot be trusted: a plugin, WordPress or theme update, a permalink or site URL change, or any output setting change. A missing or unreadable previous folder also forces a full export.
+* New WP-CLI flags `--changed-only` and `--full` for a single run without changing the saved setting. `status` now prints the export mode.
+* New database table `{prefix}aouwal_export_state` storing one fingerprint row per page and asset, with an automatic schema upgrade on update. The table is dropped on uninstall.
+* Fix: response headers are now read correctly, so content-type detection and asset validators see the real header values.
 
 = 1.8.0 =
 * New: transient crawl failures are retried automatically. Timeouts, HTTP 408, 425, 429 and 5xx responses are retried with a short backoff (0.25 s, 0.5 s, 1 s), honouring Retry-After when the server sends it.
@@ -418,6 +466,9 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.9.0 =
+Adds a changed-only export mode that reuses the previous export and re-exports only changed pages and assets, plus WP-CLI --changed-only and --full flags. Full export stays the default, so nothing changes until you switch modes. The database upgrade runs automatically.
 
 = 1.8.0 =
 Adds automatic retries for transient crawl failures, a crawl health report naming every failed URL and its reason, and a "Retry failed" action plus a WP-CLI retry command. No action needed.

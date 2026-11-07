@@ -37,6 +37,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Fetches only public URLs: the SSRF guard validates every redirect hop and both A and AAAA records.
 - Chunked, timeout-safe export with a live progress log.
 - Pause, Resume and Cancel controls. Pause keeps every file already written, Cancel deletes the partial output and the ZIP, and the log records the last processed URL.
+- Optional changed-only export: start from the last export, keep every unchanged file, and re-export only edited posts, the archives that contain them, the homepage and assets whose ETag or Last-Modified changed. Full export stays the default.
 - Optional WP-CLI command: `wp aouwal-static-export run`. It exits non-zero when items fail, so CI catches incomplete exports. `status`, `cancel` and `resume` cover a crawl that is already running.
 
 ## Requirements
@@ -77,10 +78,10 @@ Open **Static Export** in the WordPress admin menu. Three tabs:
 ```bash
 wp aouwal-static-export run --batch=10
 ```
-Runs a full export and prints the resulting ZIP path.
+Runs a full export and prints the resulting ZIP path. Add `--changed-only` to reuse the last export and re-export only what changed, or `--full` to force a full crawl for one run without touching the saved setting.
 
 ```bash
-wp aouwal-static-export status          # phase, processed/pending counts, last URL
+wp aouwal-static-export status          # phase, mode, processed/pending counts, last URL
 wp aouwal-static-export cancel          # stop the newest export and delete its files
 wp aouwal-static-export resume --batch=10
 ```
@@ -90,6 +91,7 @@ wp aouwal-static-export resume --batch=10
 
 | Setting | Description |
 |---|---|
+| Export mode | `Full export` (default) re-crawls every URL. `Changed-only export` starts from the last export and re-exports only changed pages, archives and assets. Falls back to a full export after a plugin, WordPress, theme, permalink or output-setting change. |
 | Post types | Which post types to export (posts, pages, CPTs). |
 | Archives | Include taxonomy, author and/or date archives and RSS feeds. Turning RSS feeds off also removes the feed rules from `_redirects`. |
 | Asset handling | Download and localize assets. Query strings are always stripped, because a static file server cannot serve `style.css?ver=1.2` differently from `style.css`. |
@@ -194,6 +196,7 @@ aouwal-static-site-export/
 │   ├── class-brand.php
 │   ├── class-settings.php
 │   ├── class-writer.php          # permalink → path mapping, relative links
+│   ├── class-export-state.php    # cross-run fingerprints for changed-only exports
 │   ├── class-url-discovery.php   # URL enumeration
 │   ├── class-crawler.php         # loopback HTTP fetch
 │   ├── class-html-processor.php  # link rewriting + markup cleanup

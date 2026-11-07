@@ -26,17 +26,21 @@ class AOUWAL_Crawler {
 	 * SSRF guard; a public URL must not be able to bounce the request to a
 	 * private address.
 	 *
-	 * @param string $url     URL to fetch.
-	 * @param bool   $is_asset Whether this is a binary asset.
-	 * @return array{body:string,status:int,error:string,headers:array}
+	 * @param string $url         URL to fetch.
+	 * @param bool   $is_asset    Whether this is a binary asset.
+	 * @param array  $conditional Optional `etag` and `last_modified` validators
+	 *                            for a conditional request. A 304 answer
+	 *                            returns an empty body with `not_modified`.
+	 * @return array{body:string,status:int,error:string,headers:array,not_modified:bool}
 	 */
-	public function fetch( $url, $is_asset = false ) {
+	public function fetch( $url, $is_asset = false, $conditional = array() ) {
 		if ( ! $this->is_url_allowed_for_fetch( $url ) ) {
 			return array(
-				'body'    => '',
-				'status'  => 0,
-				'error'   => $this->last_error(),
-				'headers' => array(),
+				'body'         => '',
+				'status'       => 0,
+				'error'        => $this->last_error(),
+				'headers'      => array(),
+				'not_modified' => false,
 			);
 		}
 
@@ -65,11 +69,12 @@ class AOUWAL_Crawler {
 		for ( $hop = 0; $hop <= 5; $hop++ ) {
 			if ( ! $this->is_url_allowed_for_fetch( $current ) ) {
 				return array(
-					'body'    => '',
-					'status'  => 0,
+					'body'         => '',
+					'status'       => 0,
 					/* translators: %s: URL. */
-					'error'   => sprintf( __( 'Redirect blocked: %1$s (%2$s)', 'aouwal-static-site-export' ), $current, $this->last_error() ),
-					'headers' => array(),
+					'error'        => sprintf( __( 'Redirect blocked: %1$s (%2$s)', 'aouwal-static-site-export' ), $current, $this->last_error() ),
+					'headers'      => array(),
+					'not_modified' => false,
 				);
 			}
 
@@ -78,6 +83,16 @@ class AOUWAL_Crawler {
 			// Headers are rebuilt for every hop: a redirect to another host must
 			// not inherit this site's credentials.
 			$args['headers'] = $this->request_headers( $current, $is_asset );
+
+			// Conditional validators only save a download. They are sent to
+			// every hop for the same reason the credentials are rebuilt: the
+			// request that matters is the last one.
+			if ( ! empty( $conditional['etag'] ) ) {
+				$args['headers']['If-None-Match'] = (string) $conditional['etag'];
+			}
+			if ( ! empty( $conditional['last_modified'] ) ) {
+				$args['headers']['If-Modified-Since'] = (string) $conditional['last_modified'];
+			}
 
 			// TLS policy is per hop as well, so a local origin is judged on its
 			// own host rather than on the site URL that was mapped to it.
@@ -91,10 +106,11 @@ class AOUWAL_Crawler {
 					$message = $this->too_large_message( $limit );
 				}
 				return array(
-					'body'    => '',
-					'status'  => 0,
-					'error'   => $message,
-					'headers' => array(),
+					'body'         => '',
+					'status'       => 0,
+					'error'        => $message,
+					'headers'      => array(),
+					'not_modified' => false,
 				);
 			}
 
@@ -106,10 +122,11 @@ class AOUWAL_Crawler {
 			}
 			if ( 5 === $hop ) {
 				return array(
-					'body'    => '',
-					'status'  => $status,
-					'error'   => __( 'Too many redirects.', 'aouwal-static-site-export' ),
-					'headers' => array(),
+					'body'         => '',
+					'status'       => $status,
+					'error'        => __( 'Too many redirects.', 'aouwal-static-site-export' ),
+					'headers'      => array(),
+					'not_modified' => false,
 				);
 			}
 
@@ -117,26 +134,44 @@ class AOUWAL_Crawler {
 		}
 
 		$headers = array();
-		foreach ( (array) wp_remote_retrieve_headers( $response ) as $key => $value ) {
+		$raw     = wp_remote_retrieve_headers( $response );
+		if ( is_object( $raw ) && method_exists( $raw, 'getAll' ) ) {
+			$raw = $raw->getAll();
+		}
+		foreach ( (array) $raw as $key => $value ) {
 			$headers[ strtolower( $key ) ] = $value;
 		}
 
 		$body = (string) wp_remote_retrieve_body( $response );
 
+		// A conditional request answered "not modified": the caller keeps the
+		// file it already has. No body is expected and none is returned.
+		if ( 304 === (int) wp_remote_retrieve_response_code( $response ) ) {
+			return array(
+				'body'         => '',
+				'status'       => 304,
+				'error'        => '',
+				'headers'      => $headers,
+				'not_modified' => true,
+			);
+		}
+
 		if ( $limit > 0 && strlen( $body ) > $limit ) {
 			return array(
-				'body'    => '',
-				'status'  => (int) wp_remote_retrieve_response_code( $response ),
-				'error'   => $this->too_large_message( $limit ),
-				'headers' => $headers,
+				'body'         => '',
+				'status'       => (int) wp_remote_retrieve_response_code( $response ),
+				'error'        => $this->too_large_message( $limit ),
+				'headers'      => $headers,
+				'not_modified' => false,
 			);
 		}
 
 		return array(
-			'body'    => $body,
-			'status'  => (int) wp_remote_retrieve_response_code( $response ),
-			'error'   => '',
-			'headers' => $headers,
+			'body'         => $body,
+			'status'       => (int) wp_remote_retrieve_response_code( $response ),
+			'error'        => '',
+			'headers'      => $headers,
+			'not_modified' => false,
 		);
 	}
 
@@ -156,11 +191,12 @@ class AOUWAL_Crawler {
 	 * refusal produced by the SSRF or redirect guard, which must never be
 	 * retried.
 	 *
-	 * @param string $url      URL to fetch.
-	 * @param bool   $is_asset Whether this is a binary asset.
-	 * @return array{body:string,status:int,error:string,headers:array,attempts:int,retries:string[]}
+	 * @param string $url         URL to fetch.
+	 * @param bool   $is_asset    Whether this is a binary asset.
+	 * @param array  $conditional Conditional validators, see fetch().
+	 * @return array{body:string,status:int,error:string,headers:array,not_modified:bool,attempts:int,retries:string[]}
 	 */
-	public function fetch_with_retry( $url, $is_asset = false ) {
+	public function fetch_with_retry( $url, $is_asset = false, $conditional = array() ) {
 		$max     = self::retry_limit();
 		$attempt = 0;
 		$retries = array();
@@ -168,7 +204,7 @@ class AOUWAL_Crawler {
 
 		while ( true ) {
 			++$attempt;
-			$result             = $this->fetch( $url, $is_asset );
+			$result             = $this->fetch( $url, $is_asset, $conditional );
 			$result['attempts'] = $attempt;
 			$result['retries']  = $retries;
 

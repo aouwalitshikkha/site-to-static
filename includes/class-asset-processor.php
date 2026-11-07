@@ -40,20 +40,33 @@ class AOUWAL_Asset_Processor {
 	/**
 	 * Download and store an asset.
 	 *
-	 * @param string $url        Absolute asset URL.
-	 * @param string $local_path Output-relative path.
-	 * @return array{assets:string[],status:int,error:string,attempts:int,retries:string[]}
+	 * @param string $url         Absolute asset URL.
+	 * @param string $local_path  Output-relative path.
+	 * @param array  $conditional Optional ETag / Last-Modified validators.
+	 * @return array{assets:string[],status:int,error:string,attempts:int,retries:string[],not_modified:bool,headers:array,bytes:int}
 	 */
-	public function process( $url, $local_path ) {
-		$result = $this->crawler->fetch_with_retry( $url, true );
+	public function process( $url, $local_path, $conditional = array() ) {
+		$result = $this->crawler->fetch_with_retry( $url, true, $conditional );
+
+		if ( ! empty( $result['not_modified'] ) ) {
+			return array(
+				'assets'       => array(),
+				'status'       => 304,
+				'error'        => '',
+				'attempts'     => $result['attempts'],
+				'retries'      => $result['retries'],
+				'not_modified' => true,
+			);
+		}
 
 		if ( '' !== $result['error'] || $result['status'] >= 400 || '' === $result['body'] ) {
 			return array(
-				'assets'   => array(),
-				'status'   => $result['status'],
-				'error'    => '' !== $result['error'] ? $result['error'] : 'HTTP ' . $result['status'],
-				'attempts' => $result['attempts'],
-				'retries'  => $result['retries'],
+				'assets'       => array(),
+				'status'       => $result['status'],
+				'error'        => '' !== $result['error'] ? $result['error'] : 'HTTP ' . $result['status'],
+				'attempts'     => $result['attempts'],
+				'retries'      => $result['retries'],
+				'not_modified' => false,
 			);
 		}
 
@@ -81,21 +94,25 @@ class AOUWAL_Asset_Processor {
 
 		if ( ! $this->writer->write( $local_path, $body ) ) {
 			return array(
-				'assets'   => array(),
-				'status'   => $result['status'],
+				'assets'       => array(),
+				'status'       => $result['status'],
 				/* translators: %s: local file path. */
-				'error'    => sprintf( __( 'Could not write %s', 'aouwal-static-site-export' ), $local_path ),
-				'attempts' => $result['attempts'],
-				'retries'  => $result['retries'],
+				'error'        => sprintf( __( 'Could not write %s', 'aouwal-static-site-export' ), $local_path ),
+				'attempts'     => $result['attempts'],
+				'retries'      => $result['retries'],
+				'not_modified' => false,
 			);
 		}
 
 		return array(
-			'assets'   => $discovered,
-			'status'   => $result['status'],
-			'error'    => '',
-			'attempts' => $result['attempts'],
-			'retries'  => $result['retries'],
+			'assets'       => $discovered,
+			'status'       => $result['status'],
+			'error'        => '',
+			'attempts'     => $result['attempts'],
+			'retries'      => $result['retries'],
+			'not_modified' => false,
+			'headers'      => isset( $result['headers'] ) ? (array) $result['headers'] : array(),
+			'bytes'        => strlen( (string) $body ),
 		);
 	}
 
