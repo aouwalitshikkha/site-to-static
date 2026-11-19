@@ -13,6 +13,7 @@ delete_option( 'aouwal_settings' );
 delete_option( 'aouwal_jobs' );
 delete_option( 'aouwal_db_version' );
 delete_option( 'aouwal_export_baseline' );
+delete_option( 'aouwal_deploy' );
 delete_option( 'sts_settings' );
 delete_option( 'sts_jobs' );
 delete_option( 'wse_settings' );

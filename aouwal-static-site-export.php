@@ -3,7 +3,7 @@
  * Plugin Name:       Aouwal Static Site Export – Static Site Generator
  * Plugin URI:        https://github.com/aouwalitshikkha/site-to-static
  * Description:       Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, fonts and sitemap.xml for Cloudflare Pages, GitHub Pages or Netlify.
- * Version:           1.9.0
+ * Version:           1.10.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Abdul Aouwal
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AOUWAL_VERSION', '1.9.0' );
+define( 'AOUWAL_VERSION', '1.10.0' );
 define( 'AOUWAL_DB_VERSION', '3' );
 define( 'AOUWAL_PLUGIN_FILE', __FILE__ );
 define( 'AOUWAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -28,6 +28,7 @@ define( 'AOUWAL_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-brand.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-settings.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-network.php';
+require_once AOUWAL_PLUGIN_DIR . 'includes/class-deploy.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-writer.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-export-state.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-url-discovery.php';

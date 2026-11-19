@@ -579,12 +579,33 @@ class AOUWAL_Exporter {
 		$job['finished'] = current_time( 'mysql' );
 		$this->save_job( $job );
 
+		// Deployment is opt-in and runs after the ZIP exists. A failed deploy
+		// never removes the local export: it only adds a notice and a result
+		// row, so the file can be downloaded or deployed again.
+		$deploy = array();
+		if ( AOUWAL_Deploy::auto_enabled() ) {
+			$deploy = AOUWAL_Deploy::deploy_job( $job_id );
+			if ( ! empty( $deploy ) ) {
+				foreach ( $deploy as $row ) {
+					$notices[] = (string) $row['message'];
+				}
+				$stored = $this->get_job( $job_id );
+				if ( $stored ) {
+					$stored['notice']   = $notices;
+					$stored['deploy']   = $deploy;
+					$stored['deployed'] = current_time( 'mysql' );
+					$this->save_job( $stored );
+				}
+			}
+		}
+
 		return array(
 			'done'   => true,
 			'counts' => $counts,
 			'zip'    => $this->get_download_url( $job_id ),
 			'log'    => $notices,
 			'health' => $health,
+			'deploy' => $deploy,
 		);
 	}
 
@@ -1447,6 +1468,27 @@ class AOUWAL_Exporter {
 			$jobs = array_slice( $jobs, -5, 5, true );
 		}
 		update_option( self::JOBS_OPTION, $jobs );
+	}
+
+	/**
+	 * Store deployment results on a job.
+	 *
+	 * Kept apart from the export phase so a manual deploy can update the
+	 * Deploy screen without touching the export state machine.
+	 *
+	 * @param string $job_id  Job ID.
+	 * @param array  $results Result rows from AOUWAL_Deploy.
+	 * @return bool Whether the job existed.
+	 */
+	public function record_deploy( $job_id, array $results ) {
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return false;
+		}
+		$job['deploy']   = array_values( $results );
+		$job['deployed'] = current_time( 'mysql' );
+		$this->save_job( $job );
+		return true;
 	}
 
 	/**

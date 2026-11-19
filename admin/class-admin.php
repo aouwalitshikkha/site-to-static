@@ -35,6 +35,8 @@ class AOUWAL_Admin {
 		add_action( 'wp_ajax_aouwal_cancel', array( $this, 'ajax_cancel' ) );
 		add_action( 'wp_ajax_aouwal_status', array( $this, 'ajax_status' ) );
 		add_action( 'wp_ajax_aouwal_retry', array( $this, 'ajax_retry' ) );
+		add_action( 'wp_ajax_aouwal_deploy_test', array( $this, 'ajax_deploy_test' ) );
+		add_action( 'wp_ajax_aouwal_deploy_run', array( $this, 'ajax_deploy_run' ) );
 		add_action( 'admin_post_aouwal_download', array( $this, 'download_zip' ) );
 	}
 
@@ -68,6 +70,16 @@ class AOUWAL_Admin {
 				'type'              => 'array',
 				'sanitize_callback' => array( 'AOUWAL_Settings', 'sanitize' ),
 				'default'           => AOUWAL_Settings::defaults(),
+			)
+		);
+
+		register_setting(
+			'aouwal_deploy_group',
+			AOUWAL_Deploy::OPTION,
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( 'AOUWAL_Deploy', 'sanitize' ),
+				'default'           => AOUWAL_Deploy::defaults(),
 			)
 		);
 	}
@@ -116,6 +128,24 @@ class AOUWAL_Admin {
 					'download_last'     => __( 'Download the last export', 'aouwal-static-site-export' ),
 					'retrying'          => __( 'Retrying failed items…', 'aouwal-static-site-export' ),
 					'retry'             => __( 'Retry failed', 'aouwal-static-site-export' ),
+				),
+			)
+		);
+
+		wp_enqueue_script( 'aouwal-deploy', AOUWAL_PLUGIN_URL . 'admin/assets/deploy.js', array( 'jquery' ), AOUWAL_VERSION, true );
+		wp_localize_script(
+			'aouwal-deploy',
+			'AOUWAL_DEPLOY',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'aouwal_ajax' ),
+				'i18n'    => array(
+					'testing'   => __( 'Testing connection…', 'aouwal-static-site-export' ),
+					'deploying' => __( 'Deploying…', 'aouwal-static-site-export' ),
+					'confirm'   => __( 'Deploy the last export to GitHub now?', 'aouwal-static-site-export' ),
+					'error'     => __( 'The request did not reach the server. Try again.', 'aouwal-static-site-export' ),
+					'done'      => __( 'Deployment finished.', 'aouwal-static-site-export' ),
+					'failed'    => __( 'Deployment failed.', 'aouwal-static-site-export' ),
 				),
 			)
 		);
@@ -352,6 +382,67 @@ class AOUWAL_Admin {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: test the GitHub connection.
+	 *
+	 * @return void
+	 */
+	public function ajax_deploy_test() {
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
+		}
+
+		$result = AOUWAL_Deploy::test_github();
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: deploy a finished export to every enabled target.
+	 *
+	 * @return void
+	 */
+	public function ajax_deploy_run() {
+		check_ajax_referer( 'aouwal_ajax', 'nonce' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
+		}
+		$job_id = isset( $_POST['job_id'] ) ? sanitize_text_field( wp_unslash( $_POST['job_id'] ) ) : '';
+		if ( 1 !== preg_match( '/^[a-f0-9]{20}$/', $job_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Export job not found.', 'aouwal-static-site-export' ) ), 404 );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		$job      = $exporter->get_job( $job_id );
+		if ( ! $job || AOUWAL_Exporter::PHASE_DONE !== $job['phase'] ) {
+			wp_send_json_error( array( 'message' => __( 'Run the export first, then deploy the finished result.', 'aouwal-static-site-export' ) ) );
+		}
+
+		$results = AOUWAL_Deploy::deploy_job( $job_id );
+		if ( empty( $results ) ) {
+			wp_send_json_error( array( 'message' => __( 'No deployment target is enabled. Enable GitHub and save the deployment settings first.', 'aouwal-static-site-export' ) ) );
+		}
+
+		$exporter->record_deploy( $job_id, $results );
+
+		$ok = true;
+		foreach ( $results as $row ) {
+			if ( empty( $row['ok'] ) ) {
+				$ok = false;
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'ok'      => $ok,
+				'results' => $results,
+			)
+		);
 	}
 
 	/**
