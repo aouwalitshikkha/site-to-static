@@ -38,6 +38,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Chunked, timeout-safe export with a live progress log.
 - Pause, Resume and Cancel controls. Pause keeps every file already written, Cancel deletes the partial output and the ZIP, and the log records the last processed URL.
 - Optional changed-only export: start from the last export, keep every unchanged file, and re-export only edited posts, the archives that contain them, the homepage and assets whose ETag or Last-Modified changed. Full export stays the default.
+- Optional direct deployment to GitHub: token-only setup, one commit per deployment, only changed files uploaded. Off by default.
 - Optional WP-CLI command: `wp aouwal-static-export run`. It exits non-zero when items fail, so CI catches incomplete exports. `status`, `cancel` and `resume` cover a crawl that is already running.
 
 ## Requirements
@@ -71,7 +72,7 @@ Open **Static Export** in the WordPress admin menu. Three tabs:
 
 - **Settings** — choose post types, archives, asset handling, URL style, cleanup and generated files.
 - **Export** — click *Start static export*, watch the live progress bar and log, then download the ZIP. While an export runs, *Pause* stops it at the next batch boundary and keeps the files already written, *Resume* continues from the next pending URL, and *Cancel* stops it and deletes the partial output folder and ZIP. The state is stored on the server, so a reload brings the paused export back with its Resume and Cancel buttons.
-- **Deploy** — download the latest ZIP and follow the GitHub + Cloudflare Pages guide.
+- **Deploy** — push the latest export to GitHub, test the connection, or download the ZIP and follow the manual GitHub + Cloudflare Pages guide.
 
 ### WP-CLI
 
@@ -84,6 +85,7 @@ Runs a full export and prints the resulting ZIP path. Add `--changed-only` to re
 wp aouwal-static-export status          # phase, mode, processed/pending counts, last URL
 wp aouwal-static-export cancel          # stop the newest export and delete its files
 wp aouwal-static-export resume --batch=10
+wp aouwal-static-export deploy          # push the newest finished export
 ```
 `status` is useful in a cron log, and `cancel` exits with 1 so a script stops before pushing a partial build.
 
@@ -105,6 +107,21 @@ wp aouwal-static-export resume --batch=10
 | Batch size | URLs processed per request. Lower it if your server times out. |
 | Rewrite uploads path | Off by default. When on, /wp-content/uploads/ is written and linked as /<folder>/ (default "uploads"). Changes URLs only; old /wp-content/uploads/ links stop working unless you add redirects. |
 | Uploads folder | Target folder used when "Rewrite uploads path" is on. Safe relative path; defaults to "uploads". |
+| GitHub deployment | Off by default. Enable it, then set the repository owner, repository name, branch, optional folder, commit message and a personal access token. The token is encrypted at rest and never rendered back. |
+| Deploy automatically | Push every successful export to GitHub after the ZIP is built. Off by default. |
+| Remove stale files | Delete repository files that are no longer in the export. Off by default and limited to the selected folder. |
+
+## Deploy from WordPress to GitHub
+
+The Deploy tab can push a finished export to a repository with one commit per run.
+
+1. Create a personal access token with contents read and write access for the repository. A fine-grained token limited to that repository is enough.
+2. Open **Deploy**, tick **Enable direct deployment to GitHub**, and fill in the owner, repository, branch and optional target folder.
+3. Paste the token. It is stored encrypted with sodium or OpenSSL, never shown again and never written to the export or the log.
+4. Press **Save deployment settings**, then **Test connection**.
+5. Press **Deploy last export**, or enable **Deploy automatically after every successful export**.
+
+Only changed files are uploaded: each file is hashed as a git blob and compared with the branch tree. A missing branch is created from the default branch on the first push. A failed deployment reports the GitHub error text and keeps the local ZIP, so it can be retried without re-running the export.
 
 ## Deploy to Cloudflare Pages
 
@@ -203,11 +220,12 @@ aouwal-static-site-export/
 │   ├── class-asset-processor.php # asset download + CSS recursion
 │   ├── class-exporter.php        # chunked job state machine + extras
 │   ├── class-network.php         # timeout, delay, origin, TLS and Basic Auth
+│   ├── class-deploy.php          # GitHub deployment (token, push, results)
 │   └── class-zip.php
 ├── admin/
 │   ├── class-admin.php
 │   ├── views/                    # settings, export, deploy
-│   └── assets/                   # admin.css, export.js
+│   └── assets/                   # admin.css, export.js, deploy.js
 └── cli/class-cli.php             # WP-CLI command
 ```
 

@@ -216,6 +216,14 @@ class AOUWAL_CLI {
 		$done_zip = ( $done_job && ! empty( $done_job['zip_path'] ) ) ? $done_job['zip_path'] : $final['zip'];
 		WP_CLI::success( sprintf( 'Export complete: %s', $done_zip ) );
 
+		foreach ( (array) ( isset( $final['deploy'] ) ? $final['deploy'] : array() ) as $row ) {
+			if ( ! empty( $row['ok'] ) ) {
+				WP_CLI::log( $row['message'] );
+			} else {
+				WP_CLI::warning( $row['message'] );
+			}
+		}
+
 		if ( ! empty( $final['counts']['error'] ) ) {
 			foreach ( (array) $final['log'] as $notice ) {
 				WP_CLI::warning( $notice );
@@ -287,6 +295,64 @@ class AOUWAL_CLI {
 				WP_CLI::log( sprintf( 'Failed:    %s (%s)%s', $failure['url'], $failure['reason'], $origin ) );
 			}
 		}
+	}
+
+	/**
+	 * Deploy the newest finished export to every enabled target.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--job=<id>]
+	 * : Deploy this job instead of the newest one.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp aouwal-static-export deploy
+	 *     wp aouwal-static-export deploy --job=0123456789abcdef0123
+	 *
+	 * @param array $args       Positional args.
+	 * @param array $assoc_args Associative args.
+	 * @return void
+	 */
+	public function deploy( $args, $assoc_args ) {
+		$exporter = new AOUWAL_Exporter();
+		$state    = $exporter->status();
+		$job_id   = isset( $assoc_args['job'] ) ? sanitize_text_field( (string) $assoc_args['job'] ) : $state['job_id'];
+
+		if ( '' === $job_id ) {
+			WP_CLI::error( 'No export to deploy.' );
+		}
+		if ( 1 !== preg_match( '/^[a-f0-9]{20}$/', $job_id ) ) {
+			WP_CLI::error( 'The job id is not valid.' );
+		}
+
+		$job = $exporter->get_job( $job_id );
+		if ( ! $job || AOUWAL_Exporter::PHASE_DONE !== $job['phase'] ) {
+			WP_CLI::error( 'Only a finished export can be deployed.' );
+		}
+
+		$results = AOUWAL_Deploy::deploy_job( $job_id );
+		if ( empty( $results ) ) {
+			WP_CLI::error( 'No deployment target is enabled. Enable GitHub and save a token in the Deploy tab first.' );
+		}
+
+		$exporter->record_deploy( $job_id, $results );
+
+		$failed = false;
+		foreach ( $results as $row ) {
+			if ( ! empty( $row['ok'] ) ) {
+				WP_CLI::log( $row['message'] );
+			} else {
+				$failed = true;
+				WP_CLI::warning( $row['message'] );
+			}
+		}
+
+		if ( $failed ) {
+			WP_CLI::halt( 1 );
+		}
+
+		WP_CLI::success( 'Deployment complete.' );
 	}
 
 	/**

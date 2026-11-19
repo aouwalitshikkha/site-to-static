@@ -2,21 +2,21 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.9.0\n"
+"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.10.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/aouwal-static-site-export\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-07T09:44:39+01:00\n"
+"POT-Creation-Date: 2026-11-19T13:25:56+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: aouwal-static-site-export\n"
 
 #. Plugin Name of the plugin
 #: aouwal-static-site-export.php
-#: admin/class-admin.php:148
+#: admin/class-admin.php:178
 msgid "Aouwal Static Site Export – Static Site Generator"
 msgstr ""
 
@@ -32,7 +32,7 @@ msgstr ""
 
 #. Author of the plugin
 #: aouwal-static-site-export.php
-#: admin/class-admin.php:152
+#: admin/class-admin.php:182
 msgid "Abdul Aouwal"
 msgstr ""
 
@@ -41,230 +41,403 @@ msgstr ""
 msgid "https://abdulaouwal.com"
 msgstr ""
 
-#: admin/class-admin.php:48
-#: admin/class-admin.php:49
+#: admin/class-admin.php:50
+#: admin/class-admin.php:51
 msgid "Static Export"
 msgstr ""
 
-#: admin/class-admin.php:95
+#: admin/class-admin.php:107
 msgid "Discovering URLs…"
 msgstr ""
 
-#: admin/class-admin.php:96
+#: admin/class-admin.php:108
 msgid "Processing"
 msgstr ""
 
-#: admin/class-admin.php:97
+#: admin/class-admin.php:109
 msgid "Packaging export…"
 msgstr ""
 
-#: admin/class-admin.php:98
+#: admin/class-admin.php:110
 msgid "Export complete."
 msgstr ""
 
-#: admin/class-admin.php:99
+#: admin/class-admin.php:111
 msgid "Export finished with errors."
 msgstr ""
 
-#: admin/class-admin.php:100
+#: admin/class-admin.php:112
 msgid "An error occurred."
 msgstr ""
 
-#: admin/class-admin.php:101
+#: admin/class-admin.php:113
 msgid "Start a new static export?"
 msgstr ""
 
-#: admin/class-admin.php:102
-#: admin/views/deploy.php:38
+#: admin/class-admin.php:114
+#: admin/views/deploy.php:44
 msgid "Download export ZIP"
 msgstr ""
 
 #. translators: %s: number of discovered URLs.
-#: admin/class-admin.php:104
+#: admin/class-admin.php:116
 #, php-format
 msgid "Discovered %s URLs."
 msgstr ""
 
-#: admin/class-admin.php:105
+#: admin/class-admin.php:117
 #: admin/views/export.php:52
 msgid "Pause export"
 msgstr ""
 
-#: admin/class-admin.php:106
+#: admin/class-admin.php:118
 #: admin/views/export.php:55
 msgid "Resume export"
 msgstr ""
 
-#: admin/class-admin.php:107
+#: admin/class-admin.php:119
 #: admin/views/export.php:58
 msgid "Cancel export"
 msgstr ""
 
-#: admin/class-admin.php:108
+#: admin/class-admin.php:120
 msgid "Cancel this export? Partial files will be deleted."
 msgstr ""
 
-#: admin/class-admin.php:109
+#: admin/class-admin.php:121
 msgid "Cancelling…"
 msgstr ""
 
-#: admin/class-admin.php:110
+#: admin/class-admin.php:122
 msgid "Export cancelled."
 msgstr ""
 
-#: admin/class-admin.php:111
+#: admin/class-admin.php:123
 msgid "The cancel request did not reach the server. Try again."
 msgstr ""
 
-#: admin/class-admin.php:112
+#: admin/class-admin.php:124
 msgid "Export paused."
 msgstr ""
 
-#: admin/class-admin.php:113
+#: admin/class-admin.php:125
 msgid "Resuming…"
 msgstr ""
 
-#: admin/class-admin.php:114
+#: admin/class-admin.php:126
 msgid "An export is running in another tab."
 msgstr ""
 
-#: admin/class-admin.php:115
+#: admin/class-admin.php:127
 msgid "The previous export was interrupted."
 msgstr ""
 
-#: admin/class-admin.php:116
+#: admin/class-admin.php:128
 msgid "Download the last export"
 msgstr ""
 
-#: admin/class-admin.php:117
+#: admin/class-admin.php:129
 msgid "Retrying failed items…"
 msgstr ""
 
-#: admin/class-admin.php:118
+#: admin/class-admin.php:130
 msgid "Retry failed"
 msgstr ""
 
-#: admin/class-admin.php:131
-#: admin/class-admin.php:370
+#: admin/class-admin.php:143
+msgid "Testing connection…"
+msgstr ""
+
+#: admin/class-admin.php:144
+msgid "Deploying…"
+msgstr ""
+
+#: admin/class-admin.php:145
+msgid "Deploy the last export to GitHub now?"
+msgstr ""
+
+#: admin/class-admin.php:146
+msgid "The request did not reach the server. Try again."
+msgstr ""
+
+#: admin/class-admin.php:147
+msgid "Deployment finished."
+msgstr ""
+
+#: admin/class-admin.php:148
+msgid "Deployment failed."
+msgstr ""
+
+#: admin/class-admin.php:161
+#: admin/class-admin.php:461
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: admin/class-admin.php:136
+#: admin/class-admin.php:166
 msgid "Settings"
 msgstr ""
 
-#: admin/class-admin.php:137
+#: admin/class-admin.php:167
 msgid "Export"
 msgstr ""
 
-#: admin/class-admin.php:138
+#: admin/class-admin.php:168
 msgid "Deploy"
 msgstr ""
 
-#: admin/class-admin.php:151
+#: admin/class-admin.php:181
 msgid "by"
 msgstr ""
 
-#: admin/class-admin.php:159
+#: admin/class-admin.php:189
 msgid "Settings saved."
 msgstr ""
 
-#: admin/class-admin.php:199
-#: admin/class-admin.php:217
-#: admin/class-admin.php:238
-#: admin/class-admin.php:258
-#: admin/class-admin.php:281
-#: admin/class-admin.php:304
-#: admin/class-admin.php:327
-#: admin/class-admin.php:342
+#: admin/class-admin.php:229
+#: admin/class-admin.php:247
+#: admin/class-admin.php:268
+#: admin/class-admin.php:288
+#: admin/class-admin.php:311
+#: admin/class-admin.php:334
+#: admin/class-admin.php:357
+#: admin/class-admin.php:372
+#: admin/class-admin.php:395
+#: admin/class-admin.php:413
 msgid "Permission denied."
 msgstr ""
 
-#: admin/class-admin.php:262
-#: admin/class-admin.php:285
-#: admin/class-admin.php:308
-#: admin/class-admin.php:346
-#: admin/class-admin.php:373
-#: admin/class-admin.php:379
-#: admin/class-admin.php:392
+#: admin/class-admin.php:292
+#: admin/class-admin.php:315
+#: admin/class-admin.php:338
+#: admin/class-admin.php:376
+#: admin/class-admin.php:417
+#: admin/class-admin.php:464
+#: admin/class-admin.php:470
+#: admin/class-admin.php:483
+#: includes/class-deploy.php:366
 #: includes/class-exporter.php:355
 #: includes/class-exporter.php:453
-#: includes/class-exporter.php:656
-#: includes/class-exporter.php:716
-#: includes/class-exporter.php:749
-#: includes/class-exporter.php:789
+#: includes/class-exporter.php:677
+#: includes/class-exporter.php:737
+#: includes/class-exporter.php:770
+#: includes/class-exporter.php:810
 msgid "Export job not found."
 msgstr ""
 
-#: admin/class-admin.php:395
+#: admin/class-admin.php:423
+msgid "Run the export first, then deploy the finished result."
+msgstr ""
+
+#: admin/class-admin.php:428
+msgid "No deployment target is enabled. Enable GitHub and save the deployment settings first."
+msgstr ""
+
+#: admin/class-admin.php:486
 msgid "Export file not found. Run a new export."
 msgstr ""
 
-#: admin/class-admin.php:406
+#: admin/class-admin.php:497
 msgid "Could not read the export file."
 msgstr ""
 
-#: admin/views/deploy.php:34
+#: admin/views/deploy.php:40
 msgid "Your last export"
 msgstr ""
 
-#: admin/views/deploy.php:43
+#: admin/views/deploy.php:49
 msgid "No export yet. Run an export from the Export tab first."
 msgstr ""
 
-#: admin/views/deploy.php:46
-msgid "Deploy to Cloudflare Pages via GitHub"
-msgstr ""
-
-#: admin/views/deploy.php:49
-msgid "Download the export and unzip it into a new folder."
-msgstr ""
-
 #: admin/views/deploy.php:52
-msgid "Create a GitHub repository and push the files."
+msgid "Direct deployment"
+msgstr ""
+
+#: admin/views/deploy.php:54
+msgid "Push the finished export to a host from this screen. Deployment targets are off by default, so nothing is sent anywhere until you enable one and save a token."
 msgstr ""
 
 #: admin/views/deploy.php:62
-msgid "Connect the repository to Cloudflare Pages."
-msgstr ""
-
-#: admin/views/deploy.php:64
-msgid "Open the Cloudflare dashboard → Workers &amp; Pages → Create → Pages → Connect to Git."
-msgstr ""
-
-#: admin/views/deploy.php:65
-msgid "Select your repository."
+msgid "GitHub"
 msgstr ""
 
 #: admin/views/deploy.php:66
-msgid "Build command: leave blank."
-msgstr ""
-
-#: admin/views/deploy.php:67
-msgid "Build output directory: / (the repository root)."
+msgid "Enable direct deployment to GitHub"
 msgstr ""
 
 #: admin/views/deploy.php:68
+msgid "Uses a personal access token with contents write access for one repository. No GitHub App or OAuth connection is required."
+msgstr ""
+
+#: admin/views/deploy.php:76
+msgid "Repository owner"
+msgstr ""
+
+#: admin/views/deploy.php:82
+msgid "Repository name"
+msgstr ""
+
+#: admin/views/deploy.php:88
+msgid "Branch"
+msgstr ""
+
+#: admin/views/deploy.php:91
+msgid "The branch receives one commit per deployment. A missing branch is created from the default branch on the first push."
+msgstr ""
+
+#: admin/views/deploy.php:95
+msgid "Repository folder"
+msgstr ""
+
+#: admin/views/deploy.php:98
+msgid "Optional. Deploy into this subfolder instead of the repository root. Leave blank to use the root."
+msgstr ""
+
+#: admin/views/deploy.php:102
+msgid "Access token"
+msgstr ""
+
+#: admin/views/deploy.php:104
+#: admin/views/settings.php:191
+msgid "Saved"
+msgstr ""
+
+#: admin/views/deploy.php:105
+msgid "A fine-grained or classic token with contents read and write access for this repository. The token is stored encrypted, never shown again and never written to the export or the log. Leave it blank to keep the saved token."
+msgstr ""
+
+#: admin/views/deploy.php:108
+msgid "Remove the stored token"
+msgstr ""
+
+#: admin/views/deploy.php:114
+msgid "Commit message"
+msgstr ""
+
+#: admin/views/deploy.php:117
+msgid "Use {date} for the deployment time. Example: Static export {date}"
+msgstr ""
+
+#: admin/views/deploy.php:121
+msgid "Options"
+msgstr ""
+
+#: admin/views/deploy.php:125
+msgid "Deploy automatically after every successful export"
+msgstr ""
+
+#: admin/views/deploy.php:129
+msgid "Delete repository files that are no longer in the export"
+msgstr ""
+
+#: admin/views/deploy.php:131
+msgid "Removal only touches the selected folder and is off by default. Turn it on for a branch dedicated to the static site; leave it off when the branch also holds workflows or documentation."
+msgstr ""
+
+#: admin/views/deploy.php:137
+msgid "Save deployment settings"
+msgstr ""
+
+#: admin/views/deploy.php:140
+msgid "Deployment actions"
+msgstr ""
+
+#: admin/views/deploy.php:143
+msgid "Test connection"
+msgstr ""
+
+#: admin/views/deploy.php:146
+msgid "Deploy last export"
+msgstr ""
+
+#: admin/views/deploy.php:151
+msgid "Add the owner, repository and token, then save the deployment settings to enable these actions."
+msgstr ""
+
+#: admin/views/deploy.php:153
+msgid "Run and finish an export before deploying."
+msgstr ""
+
+#: admin/views/deploy.php:158
+msgid "Last deployment result"
+msgstr ""
+
+#: admin/views/deploy.php:162
+msgid "Target"
+msgstr ""
+
+#: admin/views/deploy.php:163
+msgid "Result"
+msgstr ""
+
+#: admin/views/deploy.php:164
+msgid "Time"
+msgstr ""
+
+#: admin/views/deploy.php:172
+msgid "Succeeded"
+msgstr ""
+
+#: admin/views/deploy.php:172
+msgid "Failed"
+msgstr ""
+
+#: admin/views/deploy.php:175
+msgid "View commit"
+msgstr ""
+
+#: admin/views/deploy.php:185
+msgid "Deploy to Cloudflare Pages via GitHub"
+msgstr ""
+
+#: admin/views/deploy.php:188
+msgid "Download the export and unzip it into a new folder."
+msgstr ""
+
+#: admin/views/deploy.php:191
+msgid "Create a GitHub repository and push the files."
+msgstr ""
+
+#: admin/views/deploy.php:201
+msgid "Connect the repository to Cloudflare Pages."
+msgstr ""
+
+#: admin/views/deploy.php:203
+msgid "Open the Cloudflare dashboard → Workers &amp; Pages → Create → Pages → Connect to Git."
+msgstr ""
+
+#: admin/views/deploy.php:204
+msgid "Select your repository."
+msgstr ""
+
+#: admin/views/deploy.php:205
+msgid "Build command: leave blank."
+msgstr ""
+
+#: admin/views/deploy.php:206
+msgid "Build output directory: / (the repository root)."
+msgstr ""
+
+#: admin/views/deploy.php:207
 msgid "Click Save and Deploy."
 msgstr ""
 
-#: admin/views/deploy.php:72
+#: admin/views/deploy.php:211
 msgid "Every future push redeploys automatically."
 msgstr ""
 
-#: admin/views/deploy.php:78
+#: admin/views/deploy.php:217
 msgid "When enabled in Settings, the export includes a _redirects file (Cloudflare Pages) and a _headers file for caching. Query-string URLs such as /?p=123 cannot be redirected by Cloudflare Pages; use path-based URLs going forward."
 msgstr ""
 
-#: admin/views/deploy.php:85
+#: admin/views/deploy.php:224
 msgid "Export files are stored in a subdirectory of your uploads folder, protected from browsing with an index.php file and, on Apache, a .htaccess deny rule. The ZIP is downloadable only through the signed link above, which expires and stops working when the job is pruned."
 msgstr ""
 
-#: admin/views/deploy.php:89
+#: admin/views/deploy.php:228
 msgid "This server runs Nginx, which ignores .htaccess. To block direct access to the export folder, add this to your server block and reload Nginx, or move exports outside the web root with the aouwal_export_dir filter:"
 msgstr ""
 
-#: admin/views/deploy.php:97
+#: admin/views/deploy.php:236
 msgid "Export files are stored outside the web root, so they cannot be reached by any direct URL on this server. The ZIP is downloadable only through the signed link above, which expires and stops working when the job is pruned."
 msgstr ""
 
@@ -583,10 +756,6 @@ msgstr ""
 msgid "Password"
 msgstr ""
 
-#: admin/views/settings.php:191
-msgid "Saved"
-msgstr ""
-
 #: admin/views/settings.php:193
 msgid "Sent only to this site's own hosts, never to external asset hosts or after a redirect to another domain. The password is stored encrypted and never shown again; leave it blank to keep the saved one."
 msgstr ""
@@ -653,7 +822,7 @@ msgstr ""
 
 #. translators: %s: local file path.
 #: includes/class-asset-processor.php:100
-#: includes/class-exporter.php:1280
+#: includes/class-exporter.php:1301
 #, php-format
 msgid "Could not write %s"
 msgstr ""
@@ -675,7 +844,7 @@ msgid "[retry %1$d/%2$d] %3$s %4$s (%5$d ms)"
 msgstr ""
 
 #: includes/class-crawler.php:299
-#: includes/class-exporter.php:901
+#: includes/class-exporter.php:922
 msgid "network error"
 msgstr ""
 
@@ -717,6 +886,124 @@ msgstr ""
 msgid "The host name resolves to a private, reserved or loopback address."
 msgstr ""
 
+#: includes/class-deploy.php:149
+msgid "The GitHub token was not saved: it contains characters a token never contains, such as spaces or newlines."
+msgstr ""
+
+#: includes/class-deploy.php:156
+msgid "The GitHub token could not be stored securely because this server has neither the sodium extension nor OpenSSL support."
+msgstr ""
+
+#: includes/class-deploy.php:193
+msgid "The repository path was ignored. Use a relative folder with letters, numbers, dashes, underscores and slashes only."
+msgstr ""
+
+#: includes/class-deploy.php:275
+msgid "A deployment for this export is already running."
+msgstr ""
+
+#: includes/class-deploy.php:309
+msgid "Add the repository owner, the repository name and a token first."
+msgstr ""
+
+#. translators: 1: repository name, 2: branch name.
+#: includes/class-deploy.php:332
+#, php-format
+msgid "Connected to %1$s. Branch %2$s exists."
+msgstr ""
+
+#. translators: 1: repository name, 2: branch name.
+#: includes/class-deploy.php:335
+#, php-format
+msgid "Connected to %1$s. Branch %2$s does not exist yet and will be created on the first deployment."
+msgstr ""
+
+#: includes/class-deploy.php:360
+msgid "GitHub is not configured. Add an owner, a repository and a token."
+msgstr ""
+
+#: includes/class-deploy.php:369
+msgid "Only a finished export can be deployed."
+msgstr ""
+
+#: includes/class-deploy.php:375
+msgid "The export files are missing. Run the export again."
+msgstr ""
+
+#: includes/class-deploy.php:384
+msgid "The export folder is empty."
+msgstr ""
+
+#: includes/class-deploy.php:421
+msgid "GitHub did not return a tree for the branch head."
+msgstr ""
+
+#. translators: %s: file path inside the export.
+#: includes/class-deploy.php:452
+#, php-format
+msgid "Could not read %s from the export folder."
+msgstr ""
+
+#. translators: 1: file path, 2: GitHub error text.
+#: includes/class-deploy.php:471
+#, php-format
+msgid "Uploading %1$s failed: %2$s"
+msgstr ""
+
+#. translators: %s: file path.
+#: includes/class-deploy.php:482
+#, php-format
+msgid "GitHub did not return a blob for %s."
+msgstr ""
+
+#. translators: 1: repository name, 2: branch name.
+#: includes/class-deploy.php:525
+#, php-format
+msgid "Already up to date on %1$s@%2$s. No commit was created."
+msgstr ""
+
+#. translators: %s: GitHub error text.
+#: includes/class-deploy.php:541
+#, php-format
+msgid "Building the commit tree failed: %s"
+msgstr ""
+
+#: includes/class-deploy.php:548
+msgid "GitHub did not return a tree SHA."
+msgstr ""
+
+#. translators: %s: GitHub error text.
+#: includes/class-deploy.php:566
+#, php-format
+msgid "Creating the commit failed: %s"
+msgstr ""
+
+#: includes/class-deploy.php:572
+msgid "GitHub did not return a commit SHA."
+msgstr ""
+
+#. translators: %s: GitHub error text.
+#: includes/class-deploy.php:600
+#, php-format
+msgid "Updating the branch failed: %s"
+msgstr ""
+
+#. translators: 1: number of uploaded files, 2: repository name, 3: branch, 4: short commit SHA, 5: number of unchanged files, 6: number of removed files.
+#: includes/class-deploy.php:614
+#, php-format
+msgid "Pushed %1$d file(s) to %2$s@%3$s in commit %4$s. %5$d unchanged, %6$d removed."
+msgstr ""
+
+#: includes/class-deploy.php:667
+msgid "No GitHub token is saved."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/class-deploy.php:699
+#, php-format
+msgid "GitHub returned HTTP %d."
+msgstr ""
+
 #: includes/class-exporter.php:216
 #: includes/class-zip.php:43
 msgid "The PHP zip extension is not available."
@@ -756,47 +1043,47 @@ msgid_plural "%s files from the previous export are no longer part of the site a
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-exporter.php:673
+#: includes/class-exporter.php:694
 msgid "This export already finished, so there is nothing to cancel."
 msgstr ""
 
 #. translators: 1: last processed URL, 2: number of processed items, 3: total number of items.
-#: includes/class-exporter.php:680
+#: includes/class-exporter.php:701
 #, php-format
 msgid "Export cancelled after %1$s (%2$s of %3$s items processed)."
 msgstr ""
 
-#: includes/class-exporter.php:685
+#: includes/class-exporter.php:706
 msgid "Export cancelled before any item was processed."
 msgstr ""
 
-#: includes/class-exporter.php:720
-#: includes/class-exporter.php:753
+#: includes/class-exporter.php:741
+#: includes/class-exporter.php:774
 msgid "This export was cancelled. Start a new export."
 msgstr ""
 
-#: includes/class-exporter.php:724
-#: includes/class-exporter.php:757
+#: includes/class-exporter.php:745
+#: includes/class-exporter.php:778
 msgid "This export already finished."
 msgstr ""
 
-#: includes/class-exporter.php:793
+#: includes/class-exporter.php:814
 msgid "Only a finished export can retry its failed items."
 msgstr ""
 
-#: includes/class-exporter.php:798
+#: includes/class-exporter.php:819
 msgid "There are no failed items to retry."
 msgstr ""
 
-#: includes/class-exporter.php:895
+#: includes/class-exporter.php:916
 msgid "timeout"
 msgstr ""
 
-#: includes/class-exporter.php:903
+#: includes/class-exporter.php:924
 msgid "failed"
 msgstr ""
 
-#: includes/class-exporter.php:1637
+#: includes/class-exporter.php:1679
 msgid "The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template."
 msgstr ""
 
