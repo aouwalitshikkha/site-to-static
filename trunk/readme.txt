@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,6 +51,7 @@ You can export:
 * Optional path rewrite: move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default; changes URLs only and does not remove other WordPress fingerprints.
 * Pause, resume and cancel controls, so a long export can be stopped without losing progress and a wrong export can be aborted and cleaned up.
 * Optional changed-only export: reuse the last export and re-export only pages, archives and assets that changed. Full export stays the default.
+* Optional direct deployment to GitHub: push the finished export to a branch with one commit per run. Off by default, token-only, no OAuth app.
 * Optional WP-CLI command: `wp aouwal-static-export run`.
 * Optional, invisible author credit. It is off by default and can be enabled in Settings.
 
@@ -128,6 +129,32 @@ Run it once from the command line without changing the saved setting:
     wp aouwal-static-export run --full
 
 Data stored: one row per page and asset in a custom table (`{prefix}aouwal_export_state`) holding the URL hash, fingerprint, ETag, Last-Modified, size and the last export that confirmed it. The table is removed when the plugin is uninstalled.
+
+= Deploy from WordPress to GitHub =
+
+The Deploy tab can push a finished export to GitHub without downloading, unzipping, committing and pushing by hand. The target is off by default and hidden until you enable it.
+
+What you need:
+
+* A GitHub repository and a personal access token with contents read and write access for that repository. A fine-grained token limited to one repository is enough.
+* The repository owner, the repository name, the branch and an optional target folder.
+
+How a deployment works:
+
+* The token is stored encrypted and is never shown again, never written to the export and never written to the log.
+* Only changed files are uploaded. The plugin compares a git blob hash for every exported file with the branch tree, so an unchanged file is skipped.
+* One commit is created per deployment, with a message you can edit. `{date}` is replaced with the deployment time.
+* A missing branch is created from the repository's default branch on the first deployment.
+* Files that are no longer in the export are kept unless you enable "Delete repository files that are no longer in the export". Removal is off by default and only touches the selected folder.
+* A failed deployment reports the GitHub error text, leaves the local ZIP and export folder untouched, and can be retried from the Deploy tab.
+
+Test connection checks that the token can read the repository and the branch before anything is pushed.
+
+The first deployment of a large site uploads every file once, so it can take a while. For thousands of files, run it from the command line, where there is no web request timeout:
+
+    wp aouwal-static-export deploy
+
+Deploy automatically after every successful export with the "Deploy automatically" option, or press "Deploy last export" after a manual run.
 
 = Crawl through proxies, staging sites and Basic Auth =
 
@@ -257,6 +284,20 @@ A changed-only run is much faster on a large site because unchanged pages are no
 
 Yes, the ZIP still contains the complete site, because the export is a static snapshot rather than a patch. The saving is in the crawl: only changed URLs are fetched and rewritten, and unchanged files are copied from the previous export. If you deploy with rsync or Git, your sync tool still transfers only the files that differ.
 
+= Can I deploy to GitHub from WordPress? =
+
+Yes. Open the Deploy tab, enable GitHub, and save the repository owner, repository name, branch and a personal access token. Then press "Deploy last export", or turn on automatic deployment so every successful export is pushed.
+
+The token needs contents read and write access for that repository; a fine-grained token limited to the single repository is enough. It is stored encrypted, never shown again and never written to the ZIP or the log.
+
+Only changed files are uploaded, using a git blob hash comparison, and one commit is created per deployment. Cloudflare Pages, Netlify and Vercel still deploy the new commit automatically when the repository is connected to them.
+
+= What happens if a GitHub deployment fails? =
+
+The Deploy tab shows the GitHub error text, such as `Bad credentials` or a permission message. The local ZIP and the export folder are kept, so you can fix the token or branch and press "Deploy last export" again without re-running the crawl.
+
+A failed deployment never changes the export result: the pages that were exported stay exported, and a partial commit is not left behind because the branch ref is updated only after the commit object exists.
+
 = Does the plugin work on large sites? =
 
 Yes. The crawl runs in batches, and each batch is one request, so a PHP timeout applies to a batch, not to the whole site or to a single page.
@@ -336,6 +377,15 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.10.0 =
+* New: direct GitHub deployment from the Deploy tab. Add a repository owner, repository name, branch, optional folder and a personal access token, then push the finished export with one commit. Off by default and hidden until enabled.
+* Only changed files are uploaded: each exported file is hashed as a git blob and compared with the branch tree, so unchanged files are skipped.
+* A missing branch is created from the default branch on the first deployment. An optional setting removes repository files that are no longer in the export; it is off by default and limited to the selected folder.
+* The token is encrypted at rest with sodium or OpenSSL, never rendered back, never written to the export or the log, and cleared when the option is removed on uninstall.
+* "Test connection" verifies the token, repository and branch before a push. Failures report the GitHub error text and leave the local ZIP and export folder untouched.
+* New "Deploy automatically after every successful export" option, a "Deploy last export" button, and `wp aouwal-static-export deploy`.
+* Deployment results are stored on the export job and shown in the Deploy tab.
 
 = 1.9.0 =
 * New: changed-only export. Settings > Export mode adds a second mode that starts from the last export and re-exports only what changed, while full export stays the default.
@@ -466,6 +516,9 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.10.0 =
+Adds optional direct deployment to GitHub from the Deploy tab, with token-only setup, changed-file upload and automatic deploy after each export. Off by default, so nothing changes until you enable it.
 
 = 1.9.0 =
 Adds a changed-only export mode that reuses the previous export and re-exports only changed pages and assets, plus WP-CLI --changed-only and --full flags. Full export stays the default, so nothing changes until you switch modes. The database upgrade runs automatically.
