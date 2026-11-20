@@ -255,6 +255,7 @@ class AOUWAL_Export_State {
 				'generate_sitemap'     => (int) AOUWAL_Settings::get( 'generate_sitemap' ),
 				'generate_robots'      => (int) AOUWAL_Settings::get( 'generate_robots' ),
 				'generate_headers'     => (int) AOUWAL_Settings::get( 'generate_headers' ),
+				'page_404'             => (string) AOUWAL_Settings::get( 'page_404' ),
 				'show_credit'          => AOUWAL_Brand::should_include() ? 1 : 0,
 			),
 		);

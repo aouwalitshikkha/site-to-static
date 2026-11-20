@@ -222,6 +222,16 @@ unset( $aouwal_post_types['attachment'] );
 			</td>
 		</tr>
 		<tr>
+			<th scope="row"><?php esc_html_e( '404 page', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<fieldset>
+					<label class="aouwal-inline"><input type="radio" name="aouwal_settings[page_404]" value="theme" <?php checked( $aouwal['page_404'], 'theme' ); ?> /> <?php esc_html_e( 'Theme template (uses the active theme 404 page)', 'aouwal-static-site-export' ); ?></label><br />
+					<label class="aouwal-inline"><input type="radio" name="aouwal_settings[page_404]" value="builtin" <?php checked( $aouwal['page_404'], 'builtin' ); ?> /> <?php esc_html_e( 'Built-in page (same clean page on every theme)', 'aouwal-static-site-export' ); ?></label>
+				</fieldset>
+				<p class="description"><?php esc_html_e( 'The built-in page has a clear message, a link home and no search box or archive widgets. It works at any URL depth. Both modes add a noindex robots tag and a base URL so relative CSS keeps working on /2026/11/ and similar paths.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
 			<th scope="row"><?php esc_html_e( 'Attribution', 'aouwal-static-site-export' ); ?></th>
 			<td>
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[show_credit]" value="1" <?php checked( $aouwal['show_credit'] ); ?> /> <?php esc_html_e( 'Include an invisible author credit comment in exported files', 'aouwal-static-site-export' ); ?></label>

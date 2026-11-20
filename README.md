@@ -105,6 +105,7 @@ wp aouwal-static-export deploy          # push the newest finished export
 | Exclude URLs | Patterns to skip; plain text matches a substring, `/regex/` for a regular expression. |
 | Remove dynamic features | Strip comment sections/forms and search forms (both on by default). |
 | Generated files | Toggle `sitemap.xml`, `robots.txt` and the Cloudflare Pages `_redirects` and `_headers` files. |
+| 404 page | `Theme template` (default) uses the active theme's 404. `Built-in page` uses a clean standalone page with a home link and no search box or archive widgets. Both add `noindex` and a base URL so CSS works at any 404 depth. |
 | Batch size | URLs processed per request. Lower it if your server times out. |
 | Rewrite uploads path | Off by default. When on, /wp-content/uploads/ is written and linked as /<folder>/ (default "uploads"). Changes URLs only; old /wp-content/uploads/ links stop working unless you add redirects. |
 | Uploads folder | Target folder used when "Rewrite uploads path" is on. Safe relative path; defaults to "uploads". |

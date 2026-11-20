@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-20T11:15:43+01:00\n"
+"POT-Creation-Date: 2026-11-20T11:28:24+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: aouwal-static-site-export\n"
@@ -872,14 +872,30 @@ msgid "Cloudflare Pages _headers file"
 msgstr ""
 
 #: admin/views/settings.php:225
-msgid "Attribution"
-msgstr ""
-
-#: admin/views/settings.php:227
-msgid "Include an invisible author credit comment in exported files"
+msgid "404 page"
 msgstr ""
 
 #: admin/views/settings.php:228
+msgid "Theme template (uses the active theme 404 page)"
+msgstr ""
+
+#: admin/views/settings.php:229
+msgid "Built-in page (same clean page on every theme)"
+msgstr ""
+
+#: admin/views/settings.php:231
+msgid "The built-in page has a clear message, a link home and no search box or archive widgets. It works at any URL depth. Both modes add a noindex robots tag and a base URL so relative CSS keeps working on /2026/11/ and similar paths."
+msgstr ""
+
+#: admin/views/settings.php:235
+msgid "Attribution"
+msgstr ""
+
+#: admin/views/settings.php:237
+msgid "Include an invisible author credit comment in exported files"
+msgstr ""
+
+#: admin/views/settings.php:238
 msgid "Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export – Static Site Generator. It never appears in the browser."
 msgstr ""
 
@@ -1234,26 +1250,26 @@ msgstr ""
 msgid "failed"
 msgstr ""
 
-#: includes/class-exporter.php:1680
+#: includes/class-exporter.php:1687
 msgid "The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template."
 msgstr ""
 
 #. translators: %s: site name.
-#: includes/class-exporter.php:1719
+#: includes/class-exporter.php:1722
 #, php-format
 msgid "Page not found – %s"
 msgstr ""
 
-#: includes/class-exporter.php:1739
+#: includes/class-exporter.php:1742
 msgid "Page not found"
 msgstr ""
 
-#: includes/class-exporter.php:1740
+#: includes/class-exporter.php:1743
 msgid "The page you are looking for does not exist or has moved."
 msgstr ""
 
 #. translators: %s: site name.
-#: includes/class-exporter.php:1743
+#: includes/class-exporter.php:1746
 #, php-format
 msgid "Back to %s"
 msgstr ""
@@ -1267,11 +1283,11 @@ msgstr ""
 msgid "The password cannot be stored securely because this server has neither the sodium extension nor OpenSSL support."
 msgstr ""
 
-#: includes/class-settings.php:207
+#: includes/class-settings.php:210
 msgid "The custom crawl origin was ignored. Use an http:// or https:// URL with a host, without credentials, a query string or a fragment."
 msgstr ""
 
-#: includes/class-settings.php:220
+#: includes/class-settings.php:223
 msgid "The CA bundle path is empty or not readable, so certificates are verified against the system bundle instead."
 msgstr ""
 

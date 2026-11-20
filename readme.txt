@@ -34,7 +34,7 @@ You can export:
 * Posts, pages and custom post types.
 * Category, tag and custom taxonomy archives, author archives and date archives, including page 2 and later.
 * RSS feeds (`feed/index.xml`), removable with one checkbox.
-* A `404.html` page, plus `sitemap.xml` and `robots.txt`.
+* A `404.html` page (theme template or a built-in page), plus `sitemap.xml` and `robots.txt`.
 * Cloudflare Pages `_redirects` and `_headers` files, both on by default.
 
 = WordPress static site generator features =
@@ -404,6 +404,7 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Enforced Cloudflare limits (20,000 files, 25 MB per file) with a clear message before the upload starts.
 * Fix: when an archive type is disabled, links to it are removed instead of staying broken. Date archive links (`/2026/` and `/2026/11/`) disappear when date archives are off, and `feed/index.xml`, feed directories and every feed link disappear when RSS feeds are off.
 * Fix: a fallback 404 page is now self-contained and styled, with a clear message, a home link and a `noindex` robots tag. Themed 404 pages also get `noindex` when they do not already have it.
+* New 404 page setting: use the theme template or a built-in page that looks the same on every theme and has no search box or archive widgets. Both modes add a base URL so relative CSS and menu links keep working when the 404 is served at `/2026/11/` or any other depth.
 * Cloudflare token encrypted at rest, never rendered, never logged, and removed on uninstall with the rest of the deployment option.
 * Fix: when comment forms are removed, "Leave a comment" links and leftover comment wrappers (`comments-area`, `comment-respond`, `comment-list`, `comments-wrapper` and similar) are removed too. Tested with Twenty Twenty-Five, Twenty Twenty-Four, Twenty Twenty-Three, Astra, Kadence, OceanWP and GeneratePress.
 
@@ -488,7 +489,7 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Files that cannot be written (permissions, full disk, WP_Filesystem unavailable) are now reported. The page or asset is marked as an error instead of "done", the log names the path, and the export finishes with a warning that counts the failures.
 * The generated files (404.html, sitemap.xml, robots.txt, _redirects, _headers) are checked the same way, and the log lists any that could not be written.
 * WP-CLI exits with a non-zero status when items fail, so automated exports stop reporting success for an incomplete site.
-* 404.html is only taken from the theme when the site actually answers 404 for unknown URLs. Sites that serve the homepage (or a 200 status) get a generic 404 page and a note in the log.
+* 404.html is only taken from the theme when the site actually answers 404 for unknown URLs. Sites that serve the homepage (or a 200 status) get the built-in 404 page and a note in the log. Settings > Cleanup &amp; output > 404 page lets you choose the built-in page on purpose: it has no search box or archive widgets, a home link and works at any URL depth.
 * New "Maximum asset size" setting (25 MB by default). Larger files are skipped with a clear error instead of being loaded into memory. HTML pages are never truncated.
 * Security: every redirect hop is validated by the SSRF guard, so a public URL cannot redirect the request to localhost, a private range or a link-local address.
 * Security: the guard resolves both A and AAAA records and validates every address. IPv6-only hosts now work, and IPv4-mapped IPv6 addresses cannot bypass the private-range checks. DNS results are cached per request.
