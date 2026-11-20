@@ -583,8 +583,9 @@ class AOUWAL_Exporter {
 		// never removes the local export: it only adds a notice and a result
 		// row, so the file can be downloaded or deployed again.
 		$deploy = array();
-		if ( AOUWAL_Deploy::auto_enabled() ) {
-			$deploy = AOUWAL_Deploy::deploy_job( $job_id );
+		$auto   = AOUWAL_Deploy::auto_targets();
+		if ( ! empty( $auto ) ) {
+			$deploy = AOUWAL_Deploy::deploy_job( $job_id, $auto );
 			if ( ! empty( $deploy ) ) {
 				foreach ( $deploy as $row ) {
 					$notices[] = (string) $row['message'];
@@ -1485,7 +1486,20 @@ class AOUWAL_Exporter {
 		if ( ! $job ) {
 			return false;
 		}
-		$job['deploy']   = array_values( $results );
+
+		$by_target = array();
+		foreach ( (array) ( isset( $job['deploy'] ) ? $job['deploy'] : array() ) as $row ) {
+			if ( isset( $row['target'] ) ) {
+				$by_target[ (string) $row['target'] ] = $row;
+			}
+		}
+		foreach ( $results as $row ) {
+			if ( isset( $row['target'] ) ) {
+				$by_target[ (string) $row['target'] ] = $row;
+			}
+		}
+
+		$job['deploy']   = array_values( $by_target );
 		$job['deployed'] = current_time( 'mysql' );
 		$this->save_job( $job );
 		return true;
@@ -1658,6 +1672,13 @@ class AOUWAL_Exporter {
 	 * @return array{html:string,notice:string} Page HTML and an optional notice.
 	 */
 	protected function build_404( $job_id ) {
+		if ( 'builtin' === AOUWAL_Settings::get( 'page_404', 'theme' ) ) {
+			return array(
+				'html'   => $this->add_404_base( $this->add_404_noindex( $this->fallback_404_html() ) ),
+				'notice' => '',
+			);
+		}
+
 		$url     = home_url( '/aouwal-404-' . wp_generate_password( 10, false ) . '/' );
 		$crawler = new AOUWAL_Crawler();
 		$result  = $crawler->fetch( $url, false );
@@ -1676,26 +1697,124 @@ class AOUWAL_Exporter {
 		}
 
 		if ( ! $use_body ) {
-			$notice   = __( 'The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template.', 'aouwal-static-site-export' );
-			$fallback = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
-			if ( AOUWAL_Brand::should_include() ) {
-				$fallback = AOUWAL_Brand::html_comment() . "\n" . $fallback;
-			}
-			return array(
-				'html'   => $fallback,
-				'notice' => $notice,
-			);
+			$notice = __( 'The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template.', 'aouwal-static-site-export' );
+			$html   = $this->fallback_404_html();
+		} else {
+			$processor = new AOUWAL_HTML_Processor( $this->writer );
+			$processed = $processor->process( $result['body'], $url, '404.html', $job_id );
+
+			$this->download_recursive( $processed['assets'] );
+			$html = $processed['html'];
 		}
 
-		$processor = new AOUWAL_HTML_Processor( $this->writer );
-		$processed = $processor->process( $result['body'], $url, '404.html', $job_id );
-
-		$this->download_recursive( $processed['assets'] );
-
 		return array(
-			'html'   => $processed['html'],
+			'html'   => $this->add_404_base( $this->add_404_noindex( $html ) ),
 			'notice' => $notice,
 		);
+	}
+
+	/**
+	 * Build a self-contained 404 page.
+	 *
+	 * Used when the site answers unknown URLs with a redirect or a copy of
+	 * the homepage. It has no external assets, no search form and no links to
+	 * archives that may not be part of the export.
+	 *
+	 * @return string
+	 */
+	protected function fallback_404_html() {
+		$name = (string) get_bloginfo( 'name' );
+		if ( '' === $name ) {
+			$name = (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+		}
+
+		$lang = (string) get_bloginfo( 'language' );
+
+		$title = sprintf(
+			/* translators: %s: site name. */
+			__( 'Page not found – %s', 'aouwal-static-site-export' ),
+			$name
+		);
+
+		$html = '<!DOCTYPE html><html lang="' . esc_attr( $lang ) . '"><head><meta charset="utf-8">'
+			. '<meta name="viewport" content="width=device-width, initial-scale=1">'
+			. '<meta name="robots" content="noindex, follow">'
+			. '<title>' . esc_html( $title ) . '</title>'
+			. '<style>'
+			. '*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;'
+			. 'padding:2rem;background:#0f172a;color:#e2e8f0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6}'
+			. 'main{width:100%;max-width:34rem;text-align:center}'
+			. '.code{margin:0;font-size:clamp(4rem,18vw,7rem);font-weight:800;line-height:1;letter-spacing:-.04em;color:#6366f1}'
+			. 'h1{margin:1rem 0 .5rem;font-size:clamp(1.5rem,4vw,2rem);color:#f8fafc}'
+			. 'p{margin:0 0 2rem;color:#94a3b8}'
+			. 'a{display:inline-block;padding:.85rem 1.5rem;border-radius:.6rem;background:#4f46e5;color:#fff;font-weight:600;text-decoration:none}'
+			. 'a:hover,a:focus{background:#6366f1}'
+			. 'a:focus{outline:3px solid #a5b4fc;outline-offset:3px}'
+			. '</style></head><body><main>'
+			. '<p class="code" aria-hidden="true">404</p>'
+			. '<h1>' . esc_html__( 'Page not found', 'aouwal-static-site-export' ) . '</h1>'
+			. '<p>' . esc_html__( 'The page you are looking for does not exist or has moved.', 'aouwal-static-site-export' ) . '</p>'
+			. '<a href="./">'
+			/* translators: %s: site name. */
+			. esc_html( sprintf( __( 'Back to %s', 'aouwal-static-site-export' ), $name ) )
+			. '</a></main></body></html>';
+
+		if ( AOUWAL_Brand::should_include() ) {
+			$html = AOUWAL_Brand::html_comment() . "\n" . $html;
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Add a noindex robots meta tag to a themed 404 page when it has none.
+	 *
+	 * @param string $html Page HTML.
+	 * @return string
+	 */
+	protected function add_404_noindex( $html ) {
+		if ( preg_match( '/<meta[^>]+name=["\']robots["\']/i', (string) $html ) ) {
+			return $html;
+		}
+		$tag = '<meta name="robots" content="noindex, follow">';
+		if ( false !== stripos( $html, '</head>' ) ) {
+			return (string) preg_replace( '/<\/head>/i', $tag . '</head>', $html, 1 );
+		}
+		return $html;
+	}
+
+	/**
+	 * Add a base URL to the 404 page.
+	 *
+	 * A static 404 is served at whatever path the visitor requested, such as
+	 * /2026/11/. Relative theme assets would then resolve inside that folder
+	 * and the stylesheet would 404. A <base> element pointing at the site root
+	 * keeps CSS, JS and menu links working at any depth, including a subfolder
+	 * install.
+	 *
+	 * @param string $html Page HTML.
+	 * @return string
+	 */
+	protected function add_404_base( $html ) {
+		if ( preg_match( '/<base\b/i', (string) $html ) ) {
+			return $html;
+		}
+
+		$public = (string) AOUWAL_Settings::get( 'public_url' );
+		$path   = '/';
+		if ( '' !== $public ) {
+			$path = (string) wp_parse_url( $public, PHP_URL_PATH );
+			if ( '' === $path ) {
+				$path = '/';
+			}
+		}
+		$tag = '<base href="' . esc_url( trailingslashit( $path ) ) . '">';
+
+		if ( preg_match( '/<head\b[^>]*>/i', $html, $match ) ) {
+			return (string) preg_replace( '/<head\b[^>]*>/i', $match[0] . $tag, $html, 1 );
+		}
+
+		return $tag . $html;
 	}
 
 	/**

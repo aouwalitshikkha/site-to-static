@@ -37,22 +37,26 @@
 	}
 
 	$( function () {
-		var $toggle = $( '#aouwal_github_enabled' );
-		var $fields = $( '#aouwal-github-fields' );
-
-		function syncFields() {
+		function bindToggle( toggleId, fieldsId ) {
+			var $toggle = $( '#' + toggleId );
+			var $fields = $( '#' + fieldsId );
 			if ( ! $toggle.length || ! $fields.length ) {
 				return;
 			}
-			if ( $toggle.is( ':checked' ) ) {
-				$fields.removeAttr( 'hidden' );
-			} else {
-				$fields.attr( 'hidden', 'hidden' );
+			function sync() {
+				if ( $toggle.is( ':checked' ) ) {
+					$fields.removeAttr( 'hidden' );
+				} else {
+					$fields.attr( 'hidden', 'hidden' );
+				}
 			}
+			$toggle.on( 'change', sync );
+			sync();
 		}
 
-		$toggle.on( 'change', syncFields );
-		syncFields();
+		bindToggle( 'aouwal_github_enabled', 'aouwal-github-fields' );
+		bindToggle( 'aouwal_cloudflare_enabled', 'aouwal-cloudflare-fields' );
+		bindToggle( 'aouwal_netlify_enabled', 'aouwal-netlify-fields' );
 
 		$( '#aouwal-deploy-test' ).on( 'click', function () {
 			busy( true );
@@ -61,8 +65,8 @@
 				action: 'aouwal_deploy_test',
 				nonce: cfg.nonce
 			} ).done( function ( response ) {
-				if ( response && response.success && response.data ) {
-					show( response.data.message || i18n.done || 'Connected.', true );
+				if ( response && response.success && response.data && response.data.results ) {
+					showResults( response.data.results );
 				} else {
 					show( ( response && response.data && response.data.message ) || i18n.failed || 'Failed.', false );
 				}
@@ -73,9 +77,12 @@
 			} );
 		} );
 
-		$( '#aouwal-deploy-run' ).on( 'click', function () {
-			var jobId = $( this ).attr( 'data-job' );
-			if ( ! jobId || ! window.confirm( i18n.confirm || 'Deploy now?' ) ) {
+		function deploy( jobId, target, targetLabel ) {
+			if ( ! jobId ) {
+				return;
+			}
+			var label = targetLabel ? 'Deploy to ' + targetLabel + ' now?' : ( i18n.confirm || 'Deploy now?' );
+			if ( ! window.confirm( label ) ) {
 				return;
 			}
 			busy( true );
@@ -83,7 +90,8 @@
 			$.post( cfg.ajaxUrl, {
 				action: 'aouwal_deploy_run',
 				nonce: cfg.nonce,
-				job_id: jobId
+				job_id: jobId,
+				target: target || ''
 			} ).done( function ( response ) {
 				if ( response && response.success && response.data ) {
 					showResults( response.data.results );
@@ -95,6 +103,16 @@
 			} ).always( function () {
 				busy( false );
 			} );
+		}
+
+		$( '.aouwal-deploy-target' ).on( 'click', function () {
+			var $btn  = $( this );
+			var label = $btn.text().trim().replace( /^Deploy to /, '' );
+			deploy( $btn.attr( 'data-job' ), $btn.attr( 'data-target' ), label );
+		} );
+
+		$( '#aouwal-deploy-run' ).on( 'click', function () {
+			deploy( $( this ).attr( 'data-job' ), '' );
 		} );
 	} );
 }( jQuery ) );

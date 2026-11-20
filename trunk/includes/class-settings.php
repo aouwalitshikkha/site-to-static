@@ -76,6 +76,7 @@ class AOUWAL_Settings {
 			'generate_sitemap'     => 1,
 			'generate_robots'      => 1,
 			'generate_headers'     => 1,
+			'page_404'             => 'theme',
 			'show_credit'          => 0,
 		);
 	}
@@ -173,6 +174,8 @@ class AOUWAL_Settings {
 		$out['url_style'] = ( isset( $input['url_style'] ) && 'root' === $input['url_style'] ) ? 'root' : 'relative';
 
 		$out['export_mode'] = ( isset( $input['export_mode'] ) && 'changed' === $input['export_mode'] ) ? 'changed' : 'full';
+
+		$out['page_404'] = ( isset( $input['page_404'] ) && 'builtin' === $input['page_404'] ) ? 'builtin' : 'theme';
 
 		// Path rewrite (opt-in). Sanitize to a safe, relative, single-segment-or-
 		// nested folder name with no traversal, backslashes or leading slash.
