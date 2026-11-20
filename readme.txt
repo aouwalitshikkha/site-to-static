@@ -134,7 +134,7 @@ Data stored: one row per page and asset in a custom table (`{prefix}aouwal_expor
 
 = Deploy from WordPress to GitHub and Cloudflare Pages =
 
-The Deploy tab pushes a finished export to GitHub or Cloudflare Pages without downloading, unzipping and pushing by hand. Each target is off by default and hidden until enabled, and each has its own Test connection and Deploy automatically options. Both tokens are stored encrypted, never shown again, and a failed deployment keeps the local ZIP so it can be retried.
+The Deploy tab pushes a finished export to GitHub, Cloudflare Pages or Netlify without downloading, unzipping and pushing by hand. Each target is off by default and hidden until enabled, and each has its own Test connection, Deploy automatically option and Deploy button. "Deploy all enabled" runs every enabled target. Tokens are stored encrypted, never shown again, and a failed deployment keeps the local ZIP so it can be retried.
 
 = GitHub =
 
@@ -153,6 +153,8 @@ Cloudflare Pages needs the 32-character account ID, the project name (not the `.
 Only missing file hashes are uploaded, and `_headers` and `_redirects` are included. Leave the branch blank for production, or enter a branch for a preview deployment.
 
 Limits: Cloudflare Pages accepts up to 20,000 files per deployment and 25 MB per file. The plugin stops with a clear message before uploading when the export exceeds either limit.
+
+Optional cache purge: set the 32-character zone ID and tick "Purge the zone cache after every Cloudflare deployment". The API token then also needs Zone > Cache Purge permission. A purge runs only after a successful deployment, so a removed file stops being served from the edge cache.
 
 Pages keeps every deployment as a preview, so removing content from the export does not delete the previous deployment; the new deployment simply no longer serves it.
 
@@ -400,6 +402,9 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Per-target automatic deployment: GitHub and Cloudflare Pages can each deploy after a successful export, independently.
 * "Test connection" now tests every enabled target and lists each result. "Deploy last export" deploys to every enabled target.
 * New: direct deployment to Netlify. Add the Project ID and a personal access token, then push the export. Only missing SHA1 hashes are uploaded, Netlify publishes the deploy atomically, and removed content disappears.
+* Per-target deploy buttons: deploy to GitHub, Cloudflare Pages or Netlify on its own, or use "Deploy all enabled". Results are merged per target instead of replacing the whole last-run table.
+* Optional Cloudflare cache purge after a successful deployment: set the zone ID and tick the option; the token then also needs Zone > Cache Purge permission.
+* Refactor: a single target registry drives labels, configuration checks, test and deploy methods for all targets.
 * Enforced Cloudflare limits (20,000 files, 25 MB per file) with a clear message before the upload starts.
 * Fix: when an archive type is disabled, links to it are removed instead of staying broken. Date archive links (`/2026/` and `/2026/11/`) disappear when date archives are off, and `feed/index.xml`, feed directories and every feed link disappear when RSS feeds are off.
 * Fix: a fallback 404 page is now self-contained and styled, with a clear message, a home link and a `noindex` robots tag. Themed 404 pages also get `noindex` when they do not already have it.

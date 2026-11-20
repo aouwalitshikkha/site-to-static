@@ -1486,7 +1486,20 @@ class AOUWAL_Exporter {
 		if ( ! $job ) {
 			return false;
 		}
-		$job['deploy']   = array_values( $results );
+
+		$by_target = array();
+		foreach ( (array) ( isset( $job['deploy'] ) ? $job['deploy'] : array() ) as $row ) {
+			if ( isset( $row['target'] ) ) {
+				$by_target[ (string) $row['target'] ] = $row;
+			}
+		}
+		foreach ( $results as $row ) {
+			if ( isset( $row['target'] ) ) {
+				$by_target[ (string) $row['target'] ] = $row;
+			}
+		}
+
+		$job['deploy']   = array_values( $by_target );
 		$job['deployed'] = current_time( 'mysql' );
 		$this->save_job( $job );
 		return true;

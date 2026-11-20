@@ -65,6 +65,8 @@ class AOUWAL_Deploy {
 			'cloudflare_branch'     => '',
 			'cloudflare_message'    => 'Static export {date}',
 			'cloudflare_on_export'  => 0,
+			'cloudflare_zone_id'    => '',
+			'cloudflare_purge'      => 0,
 
 			'netlify_enabled'       => 0,
 			'netlify_token'         => '',
@@ -122,7 +124,7 @@ class AOUWAL_Deploy {
 		$stored = self::all();
 		$out    = array();
 
-		$booleans = array( 'github_enabled', 'github_prune', 'github_on_export', 'cloudflare_enabled', 'cloudflare_on_export', 'netlify_enabled', 'netlify_on_export' );
+		$booleans = array( 'github_enabled', 'github_prune', 'github_on_export', 'cloudflare_enabled', 'cloudflare_on_export', 'cloudflare_purge', 'netlify_enabled', 'netlify_on_export' );
 		foreach ( $booleans as $key ) {
 			$out[ $key ] = ! empty( $input[ $key ] ) ? 1 : 0;
 		}
@@ -161,6 +163,16 @@ class AOUWAL_Deploy {
 			$account = '';
 		}
 		$out['cloudflare_account_id'] = $account;
+
+		$zone = isset( $input['cloudflare_zone_id'] ) ? strtolower( preg_replace( '/[^a-f0-9]/i', '', (string) $input['cloudflare_zone_id'] ) ) : '';
+		if ( '' !== trim( (string) ( isset( $input['cloudflare_zone_id'] ) ? $input['cloudflare_zone_id'] : '' ) ) && 32 !== strlen( (string) $zone ) ) {
+			self::notice(
+				'aouwal_cloudflare_zone',
+				__( 'The Cloudflare zone ID was ignored. It is the 32-character hexadecimal value on the zone overview page.', 'aouwal-static-site-export' )
+			);
+			$zone = '';
+		}
+		$out['cloudflare_zone_id'] = $zone;
 
 		$out['cloudflare_project'] = isset( $input['cloudflare_project'] ) ? strtolower( preg_replace( '/[^a-z0-9-]/i', '', (string) $input['cloudflare_project'] ) ) : '';
 
@@ -373,6 +385,49 @@ class AOUWAL_Deploy {
 	}
 
 	/**
+	 * Registered deployment targets.
+	 *
+	 * One place decides the order, label, configuration check, test method and
+	 * deploy method for every target. Adding a target means one entry here plus
+	 * its settings and methods.
+	 *
+	 * @return array<string,array{label:string,configured:string,test:string,deploy:string}>
+	 */
+	public static function targets() {
+		return array(
+			'github'     => array(
+				'label'      => __( 'GitHub', 'aouwal-static-site-export' ),
+				'configured' => 'github_configured',
+				'test'       => 'test_github',
+				'deploy'     => 'deploy_github',
+			),
+			'cloudflare' => array(
+				'label'      => __( 'Cloudflare Pages', 'aouwal-static-site-export' ),
+				'configured' => 'cloudflare_configured',
+				'test'       => 'test_cloudflare',
+				'deploy'     => 'deploy_cloudflare',
+			),
+			'netlify'    => array(
+				'label'      => __( 'Netlify', 'aouwal-static-site-export' ),
+				'configured' => 'netlify_configured',
+				'test'       => 'test_netlify',
+				'deploy'     => 'deploy_netlify',
+			),
+		);
+	}
+
+	/**
+	 * Human label for a target key.
+	 *
+	 * @param string $target Target key.
+	 * @return string
+	 */
+	public static function target_label( $target ) {
+		$targets = self::targets();
+		return isset( $targets[ $target ] ) ? (string) $targets[ $target ]['label'] : (string) $target;
+	}
+
+	/**
 	 * Targets that are enabled and ready to receive a deployment.
 	 *
 	 * Nothing is returned for a target that is switched off, so an opt-in
@@ -382,14 +437,10 @@ class AOUWAL_Deploy {
 	 */
 	public static function enabled_targets() {
 		$targets = array();
-		if ( self::get( 'github_enabled' ) && self::github_configured() ) {
-			$targets[] = 'github';
-		}
-		if ( self::get( 'cloudflare_enabled' ) && self::cloudflare_configured() ) {
-			$targets[] = 'cloudflare';
-		}
-		if ( self::get( 'netlify_enabled' ) && self::netlify_configured() ) {
-			$targets[] = 'netlify';
+		foreach ( self::targets() as $key => $target ) {
+			if ( self::get( $key . '_enabled' ) && call_user_func( array( __CLASS__, $target['configured'] ) ) ) {
+				$targets[] = $key;
+			}
 		}
 		return $targets;
 	}
@@ -442,13 +493,10 @@ class AOUWAL_Deploy {
 		set_transient( $lock, 1, 10 * MINUTE_IN_SECONDS );
 
 		$results = array();
+		$map     = self::targets();
 		foreach ( $targets as $target ) {
-			if ( 'github' === $target ) {
-				$results[] = self::deploy_github( $job_id );
-			} elseif ( 'cloudflare' === $target ) {
-				$results[] = self::deploy_cloudflare( $job_id );
-			} elseif ( 'netlify' === $target ) {
-				$results[] = self::deploy_netlify( $job_id );
+			if ( isset( $map[ $target ] ) ) {
+				$results[] = call_user_func( array( __CLASS__, $map[ $target ]['deploy'] ), $job_id );
 			}
 		}
 
@@ -473,16 +521,12 @@ class AOUWAL_Deploy {
 	 */
 	public static function test_targets() {
 		$results = array();
+		$map     = self::targets();
 		foreach ( self::enabled_targets() as $target ) {
-			if ( 'github' === $target ) {
-				$test = self::test_github();
-			} elseif ( 'cloudflare' === $target ) {
-				$test = self::test_cloudflare();
-			} elseif ( 'netlify' === $target ) {
-				$test = self::test_netlify();
-			} else {
+			if ( ! isset( $map[ $target ] ) ) {
 				continue;
 			}
+			$test = call_user_func( array( __CLASS__, $map[ $target ]['test'] ) );
 
 			if ( is_wp_error( $test ) ) {
 				$results[] = array(
@@ -1023,6 +1067,24 @@ class AOUWAL_Deploy {
 
 		if ( '' === $prod && '' !== $sub ) {
 			$result['message'] .= ' https://' . preg_replace( '/\.pages\.dev$/i', '', (string) $sub ) . '.pages.dev';
+		}
+
+		$zone = (string) self::get( 'cloudflare_zone_id', '' );
+		if ( self::get( 'cloudflare_purge' ) && '' !== $zone ) {
+			$purge = self::cloudflare_request(
+				'POST',
+				'/zones/' . rawurlencode( $zone ) . '/purge_cache',
+				array( 'purge_everything' => true )
+			);
+			if ( is_wp_error( $purge ) ) {
+				$result['message'] .= ' ' . sprintf(
+					/* translators: %s: Cloudflare error text. */
+					__( 'Cache purge failed: %s', 'aouwal-static-site-export' ),
+					self::cloudflare_error( $purge )
+				);
+			} else {
+				$result['message'] .= ' ' . __( 'Cloudflare cache purged.', 'aouwal-static-site-export' );
+			}
 		}
 
 		return $result;

@@ -111,14 +111,14 @@ wp aouwal-static-export deploy          # push the newest finished export
 | Rewrite uploads path | Off by default. When on, /wp-content/uploads/ is written and linked as /<folder>/ (default "uploads"). Changes URLs only; old /wp-content/uploads/ links stop working unless you add redirects. |
 | Uploads folder | Target folder used when "Rewrite uploads path" is on. Safe relative path; defaults to "uploads". |
 | GitHub deployment | Off by default. Enable it, then set the repository owner, repository name, branch, optional folder, commit message and a personal access token. The token is encrypted at rest and never rendered back. |
-| Cloudflare Pages | Off by default. Enable it, then set the 32-character account ID, the Pages project name, an API token with Pages Edit access, an optional branch and a deployment message. The token is encrypted at rest. |
+| Cloudflare Pages | Off by default. Enable it, then set the 32-character account ID, the Pages project name, an API token with Pages Edit access, an optional branch and a deployment message. Add a zone ID and tick cache purge to clear the edge cache after each deploy (token also needs Zone > Cache Purge). The token is encrypted at rest. |
 | Netlify | Off by default. Enable it, then set the Project ID (also called Site ID) and a personal access token from Applications > Personal access tokens. The token is encrypted at rest. |
 | Deploy automatically | Per target: deploy every successful export to GitHub and/or Cloudflare Pages after the ZIP is built. Off by default. |
 | Remove stale files | Delete repository files that are no longer in the export. Off by default and limited to the selected folder. GitHub only. |
 
 ## Deploy from WordPress
 
-The Deploy tab can push a finished export to GitHub or Cloudflare Pages without downloading, unzipping and pushing by hand. Every target is off by default.
+The Deploy tab can push a finished export to GitHub, Cloudflare Pages or Netlify without downloading, unzipping and pushing by hand. Every target is off by default. Each enabled target gets its own **Deploy to …** button, and **Deploy all enabled** runs every one.
 
 ### GitHub
 
@@ -143,6 +143,8 @@ Use this for a Pages project that is **not** connected to Git. If the project bu
 5. Press **Deploy last export**, or enable automatic deployment.
 
 The plugin hashes every file, asks Pages which hashes are missing, uploads only those files, and creates one deployment with the full manifest. `_headers` and `_redirects` are sent as Pages configuration. Limits: 20,000 files and 25 MB per file, checked before the upload starts.
+
+Optional cache purge: set the zone ID and tick **Purge the zone cache after every Cloudflare deployment**. The token also needs **Zone > Cache Purge**. The purge runs after a successful deploy, so removed files stop being served from edge cache.
 
 ### Netlify (file digest)
 

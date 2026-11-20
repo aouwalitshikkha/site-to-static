@@ -430,15 +430,20 @@ class AOUWAL_Admin {
 			wp_send_json_error( array( 'message' => __( 'Export job not found.', 'aouwal-static-site-export' ) ), 404 );
 		}
 
+		$target = isset( $_POST['target'] ) ? sanitize_key( wp_unslash( $_POST['target'] ) ) : '';
+		if ( '' !== $target && ! in_array( $target, AOUWAL_Deploy::enabled_targets(), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'That deployment target is not enabled.', 'aouwal-static-site-export' ) ) );
+		}
+
 		$exporter = new AOUWAL_Exporter();
 		$job      = $exporter->get_job( $job_id );
 		if ( ! $job || AOUWAL_Exporter::PHASE_DONE !== $job['phase'] ) {
 			wp_send_json_error( array( 'message' => __( 'Run the export first, then deploy the finished result.', 'aouwal-static-site-export' ) ) );
 		}
 
-		$results = AOUWAL_Deploy::deploy_job( $job_id );
+		$results = AOUWAL_Deploy::deploy_job( $job_id, '' !== $target ? array( $target ) : null );
 		if ( empty( $results ) ) {
-			wp_send_json_error( array( 'message' => __( 'No deployment target is enabled. Enable GitHub and save the deployment settings first.', 'aouwal-static-site-export' ) ) );
+			wp_send_json_error( array( 'message' => __( 'No deployment target is enabled. Enable a target and save its settings first.', 'aouwal-static-site-export' ) ) );
 		}
 
 		$exporter->record_deploy( $job_id, $results );

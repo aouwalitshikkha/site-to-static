@@ -77,9 +77,12 @@
 			} );
 		} );
 
-		$( '#aouwal-deploy-run' ).on( 'click', function () {
-			var jobId = $( this ).attr( 'data-job' );
-			if ( ! jobId || ! window.confirm( i18n.confirm || 'Deploy now?' ) ) {
+		function deploy( jobId, target, targetLabel ) {
+			if ( ! jobId ) {
+				return;
+			}
+			var label = targetLabel ? 'Deploy to ' + targetLabel + ' now?' : ( i18n.confirm || 'Deploy now?' );
+			if ( ! window.confirm( label ) ) {
 				return;
 			}
 			busy( true );
@@ -87,7 +90,8 @@
 			$.post( cfg.ajaxUrl, {
 				action: 'aouwal_deploy_run',
 				nonce: cfg.nonce,
-				job_id: jobId
+				job_id: jobId,
+				target: target || ''
 			} ).done( function ( response ) {
 				if ( response && response.success && response.data ) {
 					showResults( response.data.results );
@@ -99,6 +103,16 @@
 			} ).always( function () {
 				busy( false );
 			} );
+		}
+
+		$( '.aouwal-deploy-target' ).on( 'click', function () {
+			var $btn  = $( this );
+			var label = $btn.text().trim().replace( /^Deploy to /, '' );
+			deploy( $btn.attr( 'data-job' ), $btn.attr( 'data-target' ), label );
+		} );
+
+		$( '#aouwal-deploy-run' ).on( 'click', function () {
+			deploy( $( this ).attr( 'data-job' ), '' );
 		} );
 	} );
 }( jQuery ) );

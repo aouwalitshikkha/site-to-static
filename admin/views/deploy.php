@@ -38,7 +38,8 @@ $aouwal_cf_ready     = AOUWAL_Deploy::cloudflare_configured();
 $aouwal_has_nl_token = AOUWAL_Deploy::has_netlify_token();
 $aouwal_nl_ready     = AOUWAL_Deploy::netlify_configured();
 $aouwal_any_ready    = $aouwal_github_ready || $aouwal_cf_ready || $aouwal_nl_ready;
-$aouwal_any_enabled  = ! empty( AOUWAL_Deploy::enabled_targets() );
+$aouwal_targets      = AOUWAL_Deploy::enabled_targets();
+$aouwal_any_enabled  = ! empty( $aouwal_targets );
 $aouwal_deploy_rows  = ( $aouwal_last && is_array( $aouwal_last ) ) ? AOUWAL_Deploy::last_results( $aouwal_last ) : array();
 $aouwal_can_deploy   = $aouwal_last && isset( $aouwal_last['phase'] ) && AOUWAL_Exporter::PHASE_DONE === $aouwal_last['phase'];
 ?>
@@ -189,6 +190,23 @@ $aouwal_can_deploy   = $aouwal_last && isset( $aouwal_last['phase'] ) && AOUWAL_
 					</td>
 				</tr>
 				<tr>
+					<th scope="row"><label for="aouwal_cloudflare_zone_id"><?php esc_html_e( 'Zone ID (optional)', 'aouwal-static-site-export' ); ?></label></th>
+					<td>
+						<input type="text" class="regular-text code" id="aouwal_cloudflare_zone_id" name="aouwal_deploy[cloudflare_zone_id]" value="<?php echo esc_attr( $aouwal_deploy['cloudflare_zone_id'] ); ?>" autocomplete="off" placeholder="023e105f4ecef8ad9ca31a8372d0c353" />
+						<p class="description"><?php esc_html_e( 'Only needed for cache purging. The 32-character zone ID from the domain overview page, not the account ID.', 'aouwal-static-site-export' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Cache purge', 'aouwal-static-site-export' ); ?></th>
+					<td>
+						<label class="aouwal-inline">
+							<input type="checkbox" name="aouwal_deploy[cloudflare_purge]" value="1" <?php checked( $aouwal_deploy['cloudflare_purge'] ); ?> />
+							<?php esc_html_e( 'Purge the zone cache after every Cloudflare deployment', 'aouwal-static-site-export' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Runs a purge-everything request after a successful deploy, so a removed file stops being served from cache. The API token then also needs Zone > Cache Purge permission, and the zone ID above must be set.', 'aouwal-static-site-export' ); ?></p>
+					</td>
+				</tr>
+				<tr>
 					<th scope="row"><label for="aouwal_cloudflare_message"><?php esc_html_e( 'Deployment message', 'aouwal-static-site-export' ); ?></label></th>
 					<td>
 						<input type="text" class="regular-text" id="aouwal_cloudflare_message" name="aouwal_deploy[cloudflare_message]" value="<?php echo esc_attr( $aouwal_deploy['cloudflare_message'] ); ?>" />
@@ -263,13 +281,28 @@ $aouwal_can_deploy   = $aouwal_last && isset( $aouwal_last['phase'] ) && AOUWAL_
 		<button type="button" class="button" id="aouwal-deploy-test" <?php disabled( ! $aouwal_any_ready ); ?>>
 			<?php esc_html_e( 'Test connection', 'aouwal-static-site-export' ); ?>
 		</button>
-		<button type="button" class="button button-primary" id="aouwal-deploy-run" data-job="<?php echo $aouwal_can_deploy ? esc_attr( $aouwal_last['id'] ) : ''; ?>" <?php disabled( ! $aouwal_any_enabled || ! $aouwal_can_deploy ); ?>>
-			<?php esc_html_e( 'Deploy last export', 'aouwal-static-site-export' ); ?>
-		</button>
+		<?php foreach ( $aouwal_targets as $aouwal_target ) : ?>
+			<button type="button" class="button <?php echo 1 === count( $aouwal_targets ) ? 'button-primary' : ''; ?> aouwal-deploy-target" data-target="<?php echo esc_attr( $aouwal_target ); ?>" data-job="<?php echo $aouwal_can_deploy ? esc_attr( $aouwal_last['id'] ) : ''; ?>" <?php disabled( ! $aouwal_can_deploy ); ?>>
+				<?php
+				printf(
+					/* translators: %s: deployment target name, such as GitHub or Netlify. */
+					esc_html__( 'Deploy to %s', 'aouwal-static-site-export' ),
+					esc_html( AOUWAL_Deploy::target_label( $aouwal_target ) )
+				);
+				?>
+			</button>
+		<?php endforeach; ?>
+		<?php if ( count( $aouwal_targets ) > 1 ) : ?>
+			<button type="button" class="button button-primary" id="aouwal-deploy-run" data-job="<?php echo $aouwal_can_deploy ? esc_attr( $aouwal_last['id'] ) : ''; ?>" <?php disabled( ! $aouwal_can_deploy ); ?>>
+				<?php esc_html_e( 'Deploy all enabled', 'aouwal-static-site-export' ); ?>
+			</button>
+		<?php endif; ?>
 		<span class="spinner" id="aouwal-deploy-spinner" aria-hidden="true"></span>
 	</p>
 	<?php if ( ! $aouwal_any_ready ) : ?>
 		<p class="description"><?php esc_html_e( 'Enable a target, add its credentials and save the deployment settings to use these actions.', 'aouwal-static-site-export' ); ?></p>
+	<?php elseif ( ! $aouwal_any_enabled ) : ?>
+		<p class="description"><?php esc_html_e( 'Credentials are saved. Tick a target and save the deployment settings to enable its buttons.', 'aouwal-static-site-export' ); ?></p>
 	<?php elseif ( ! $aouwal_can_deploy ) : ?>
 		<p class="description"><?php esc_html_e( 'Run and finish an export before deploying.', 'aouwal-static-site-export' ); ?></p>
 	<?php endif; ?>
