@@ -65,6 +65,11 @@ class AOUWAL_Deploy {
 			'cloudflare_branch'     => '',
 			'cloudflare_message'    => 'Static export {date}',
 			'cloudflare_on_export'  => 0,
+
+			'netlify_enabled'       => 0,
+			'netlify_token'         => '',
+			'netlify_site_id'       => '',
+			'netlify_on_export'     => 0,
 		);
 	}
 
@@ -117,7 +122,7 @@ class AOUWAL_Deploy {
 		$stored = self::all();
 		$out    = array();
 
-		$booleans = array( 'github_enabled', 'github_prune', 'github_on_export', 'cloudflare_enabled', 'cloudflare_on_export' );
+		$booleans = array( 'github_enabled', 'github_prune', 'github_on_export', 'cloudflare_enabled', 'cloudflare_on_export', 'netlify_enabled', 'netlify_on_export' );
 		foreach ( $booleans as $key ) {
 			$out[ $key ] = ! empty( $input[ $key ] ) ? 1 : 0;
 		}
@@ -171,6 +176,12 @@ class AOUWAL_Deploy {
 		$out['cloudflare_message'] = $cf_message;
 
 		$out['cloudflare_token'] = self::sanitize_secret( $input, $stored, 'cloudflare_token', 'cloudflare_clear', 'Cloudflare' );
+
+		$site_id                = isset( $input['netlify_site_id'] ) ? sanitize_text_field( (string) $input['netlify_site_id'] ) : '';
+		$site_id                = preg_replace( '/[^A-Za-z0-9.-]/', '', trim( $site_id ) );
+		$out['netlify_site_id'] = is_string( $site_id ) ? $site_id : '';
+
+		$out['netlify_token'] = self::sanitize_secret( $input, $stored, 'netlify_token', 'netlify_clear', 'Netlify' );
 
 		return wp_parse_args( $out, $d );
 	}
@@ -331,6 +342,37 @@ class AOUWAL_Deploy {
 	}
 
 	/**
+	 * Whether a Netlify token is stored.
+	 *
+	 * @return bool
+	 */
+	public static function has_netlify_token() {
+		return '' !== self::netlify_token();
+	}
+
+	/**
+	 * Decrypted Netlify personal access token.
+	 *
+	 * @return string
+	 */
+	public static function netlify_token() {
+		$stored = (string) self::get( 'netlify_token', '' );
+		if ( '' === $stored ) {
+			return '';
+		}
+		return (string) AOUWAL_Network::decrypt( $stored );
+	}
+
+	/**
+	 * Whether Netlify has every required value.
+	 *
+	 * @return bool
+	 */
+	public static function netlify_configured() {
+		return '' !== (string) self::get( 'netlify_site_id', '' ) && self::has_netlify_token();
+	}
+
+	/**
 	 * Targets that are enabled and ready to receive a deployment.
 	 *
 	 * Nothing is returned for a target that is switched off, so an opt-in
@@ -345,6 +387,9 @@ class AOUWAL_Deploy {
 		}
 		if ( self::get( 'cloudflare_enabled' ) && self::cloudflare_configured() ) {
 			$targets[] = 'cloudflare';
+		}
+		if ( self::get( 'netlify_enabled' ) && self::netlify_configured() ) {
+			$targets[] = 'netlify';
 		}
 		return $targets;
 	}
@@ -402,6 +447,8 @@ class AOUWAL_Deploy {
 				$results[] = self::deploy_github( $job_id );
 			} elseif ( 'cloudflare' === $target ) {
 				$results[] = self::deploy_cloudflare( $job_id );
+			} elseif ( 'netlify' === $target ) {
+				$results[] = self::deploy_netlify( $job_id );
 			}
 		}
 
@@ -431,6 +478,8 @@ class AOUWAL_Deploy {
 				$test = self::test_github();
 			} elseif ( 'cloudflare' === $target ) {
 				$test = self::test_cloudflare();
+			} elseif ( 'netlify' === $target ) {
+				$test = self::test_netlify();
 			} else {
 				continue;
 			}
@@ -545,6 +594,191 @@ class AOUWAL_Deploy {
 			'subdomain'         => $sub,
 			'message'           => $message,
 		);
+	}
+
+	/**
+	 * Verify the Netlify token can read the site.
+	 *
+	 * @return array|WP_Error
+	 */
+	public static function test_netlify() {
+		if ( ! self::netlify_configured() ) {
+			return new WP_Error(
+				'aouwal_netlify_config',
+				__( 'Add the Netlify site ID and a personal access token first.', 'aouwal-static-site-export' )
+			);
+		}
+
+		$response = self::netlify_request( 'GET', '/sites/' . rawurlencode( (string) self::get( 'netlify_site_id', '' ) ) );
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
+
+		$name = isset( $response['name'] ) ? (string) $response['name'] : (string) self::get( 'netlify_site_id', '' );
+		$url  = isset( $response['ssl_url'] ) ? (string) $response['ssl_url'] : ( isset( $response['url'] ) ? (string) $response['url'] : '' );
+
+		/* translators: 1: Netlify site name, 2: site URL. */
+		$message = sprintf( __( 'Connected to Netlify site %1$s (%2$s).', 'aouwal-static-site-export' ), $name, $url );
+
+		return array(
+			'site'    => $name,
+			'url'     => $url,
+			'message' => $message,
+		);
+	}
+
+	/**
+	 * Upload the export folder to Netlify.
+	 *
+	 * Uses Netlify's file digest deploy: a SHA1 manifest, the missing hashes
+	 * from the deploy response, one upload per missing hash, then a state poll.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return array Result row.
+	 */
+	public static function deploy_netlify( $job_id ) {
+		if ( ! self::netlify_configured() ) {
+			return self::fail_result( 'netlify', __( 'Netlify is not configured. Add a site ID and a personal access token.', 'aouwal-static-site-export' ) );
+		}
+
+		$exporter = new AOUWAL_Exporter();
+		$job      = $exporter->get_job( $job_id );
+		if ( ! $job || empty( $job['output_dir'] ) ) {
+			return self::fail_result( 'netlify', __( 'Export job not found.', 'aouwal-static-site-export' ) );
+		}
+		if ( AOUWAL_Exporter::PHASE_DONE !== $job['phase'] ) {
+			return self::fail_result( 'netlify', __( 'Only a finished export can be deployed.', 'aouwal-static-site-export' ) );
+		}
+
+		$root = untrailingslashit( wp_normalize_path( (string) $job['output_dir'] ) );
+		$fs   = AOUWAL_Writer::filesystem_instance();
+		if ( ! $fs || ! $fs->is_dir( $root ) ) {
+			return self::fail_result( 'netlify', __( 'The export files are missing. Run the export again.', 'aouwal-static-site-export' ) );
+		}
+
+		$files = array();
+		self::scan_netlify_files( $fs, $root, '', $files );
+		if ( empty( $files ) ) {
+			return self::fail_result( 'netlify', __( 'The export folder is empty.', 'aouwal-static-site-export' ) );
+		}
+
+		$manifest = array();
+		$by_hash  = array();
+		foreach ( $files as $relative => $file ) {
+			$manifest[ '/' . $relative ] = $file['sha1'];
+			if ( ! isset( $by_hash[ $file['sha1'] ] ) ) {
+				$by_hash[ $file['sha1'] ] = $relative;
+			}
+		}
+
+		$site_id = rawurlencode( (string) self::get( 'netlify_site_id', '' ) );
+		$deploy  = self::netlify_request( 'POST', '/sites/' . $site_id . '/deploys', array( 'files' => $manifest ) );
+		if ( is_wp_error( $deploy ) ) {
+			return self::fail_result( 'netlify', self::netlify_error( $deploy ) );
+		}
+
+		$deploy_id = isset( $deploy['id'] ) ? (string) $deploy['id'] : '';
+		if ( '' === $deploy_id ) {
+			return self::fail_result( 'netlify', __( 'Netlify did not return a deploy ID.', 'aouwal-static-site-export' ) );
+		}
+
+		$required = isset( $deploy['required'] ) && is_array( $deploy['required'] ) ? array_values( array_filter( array_map( 'strval', $deploy['required'] ) ) ) : array();
+		$uploaded = 0;
+
+		foreach ( $required as $hash ) {
+			if ( ! isset( $by_hash[ $hash ] ) ) {
+				continue;
+			}
+			$relative = $by_hash[ $hash ];
+			$content  = $fs->get_contents( trailingslashit( $root ) . $relative );
+			if ( ! is_string( $content ) ) {
+				return self::fail_result(
+					'netlify',
+					sprintf(
+						/* translators: %s: file path inside the export. */
+						__( 'Could not read %s from the export folder.', 'aouwal-static-site-export' ),
+						$relative
+					)
+				);
+			}
+
+			$path  = implode( '/', array_map( 'rawurlencode', explode( '/', $relative ) ) );
+			$write = self::netlify_request( 'PUT', '/deploys/' . rawurlencode( $deploy_id ) . '/files/' . $path, $content, true, 'application/octet-stream', 180 );
+			if ( is_wp_error( $write ) ) {
+				return self::fail_result(
+					'netlify',
+					sprintf(
+						/* translators: 1: file path, 2: Netlify error text. */
+						__( 'Uploading %1$s failed: %2$s', 'aouwal-static-site-export' ),
+						$relative,
+						self::netlify_error( $write )
+					)
+				);
+			}
+
+			// Every path sharing this hash is now covered; Netlify stores the
+			// content once and the manifest points each path at it.
+			foreach ( $files as $other => $other_file ) {
+				if ( $other_file['sha1'] === $hash ) {
+					++$uploaded;
+				}
+			}
+		}
+
+		$state    = isset( $deploy['state'] ) ? (string) $deploy['state'] : '';
+		$url      = isset( $deploy['deploy_ssl_url'] ) ? (string) $deploy['deploy_ssl_url'] : '';
+		$site_url = isset( $deploy['ssl_url'] ) ? (string) $deploy['ssl_url'] : ( isset( $deploy['url'] ) ? (string) $deploy['url'] : '' );
+		if ( '' === $url ) {
+			$url = $site_url;
+		}
+
+		$settled = in_array( $state, array( 'ready', 'error', 'rejected' ), true );
+		for ( $i = 0; $i < 4 && ! $settled; $i++ ) {
+			sleep( 1 );
+			$status = self::netlify_request( 'GET', '/deploys/' . rawurlencode( $deploy_id ) );
+			if ( is_wp_error( $status ) ) {
+				break;
+			}
+			$state   = isset( $status['state'] ) ? (string) $status['state'] : $state;
+			$settled = in_array( $state, array( 'ready', 'error', 'rejected' ), true );
+			if ( ! empty( $status['deploy_ssl_url'] ) ) {
+				$url = (string) $status['deploy_ssl_url'];
+			}
+			if ( ! empty( $status['ssl_url'] ) ) {
+				$site_url = (string) $status['ssl_url'];
+			}
+			if ( ! empty( $status['error_message'] ) && in_array( $state, array( 'error', 'rejected' ), true ) ) {
+				return self::fail_result( 'netlify', (string) $status['error_message'] );
+			}
+		}
+
+		$result            = self::result( 'netlify' );
+		$result['commit']  = $deploy_id;
+		$result['url']     = ( '' !== $url ) ? $url : $site_url;
+		$result['files']   = $uploaded;
+		$result['skipped'] = count( $files ) - $uploaded;
+
+		if ( in_array( $state, array( 'error', 'rejected' ), true ) ) {
+			$result['message'] = sprintf(
+				/* translators: 1: Netlify site ID, 2: deploy URL. */
+				__( 'Netlify accepted the deploy for %1$s but processing failed. Check the Netlify deploy log: %2$s', 'aouwal-static-site-export' ),
+				(string) self::get( 'netlify_site_id', '' ),
+				$result['url']
+			);
+			return $result;
+		}
+
+		$result['ok']      = true;
+		$result['message'] = sprintf(
+			/* translators: 1: number of uploaded files, 2: Netlify site ID, 3: number of unchanged files, 4: deploy URL. */
+			__( 'Deployed %1$d file(s) to Netlify site %2$s. %3$d unchanged. %4$s', 'aouwal-static-site-export' ),
+			$uploaded,
+			(string) self::get( 'netlify_site_id', '' ),
+			count( $files ) - $uploaded,
+			$result['url']
+		);
+
+		return $result;
 	}
 
 	/**
@@ -1177,6 +1411,116 @@ class AOUWAL_Deploy {
 	 */
 	protected static function cloudflare_error( $error ) {
 		return is_wp_error( $error ) ? (string) $error->get_error_message() : '';
+	}
+
+	/**
+	 * Call the Netlify API through the WordPress HTTP API.
+	 *
+	 * @param string            $method       HTTP method.
+	 * @param string            $path         API path beginning with a slash.
+	 * @param array|string|null $body   JSON data, raw upload body, or null.
+	 * @param bool              $raw          Whether body is a raw string.
+	 * @param string            $content_type Content-Type header.
+	 * @param int               $timeout      Timeout in seconds.
+	 * @return array|WP_Error Decoded response or error.
+	 */
+	protected static function netlify_request( $method, $path, $body = null, $raw = false, $content_type = 'application/json', $timeout = 60 ) {
+		$token = self::netlify_token();
+		if ( '' === $token ) {
+			return new WP_Error( 'aouwal_netlify_token', __( 'No Netlify token is saved.', 'aouwal-static-site-export' ) );
+		}
+
+		$headers = array(
+			'Authorization' => 'Bearer ' . $token,
+			'User-Agent'    => 'Aouwal-Static-Site-Export/' . AOUWAL_VERSION,
+		);
+		if ( null !== $body ) {
+			$headers['Content-Type'] = $content_type;
+		}
+
+		$args = array(
+			'method'  => $method,
+			'headers' => $headers,
+			'timeout' => (int) $timeout,
+		);
+		if ( null !== $body ) {
+			$args['body'] = ( $raw || is_string( $body ) ) ? (string) $body : (string) wp_json_encode( $body );
+		}
+
+		$response = wp_remote_request( 'https://api.netlify.com/api/v1' . $path, $args );
+		if ( is_wp_error( $response ) ) {
+			return new WP_Error( 'aouwal_netlify_network', $response->get_error_message() );
+		}
+
+		$code = (int) wp_remote_retrieve_response_code( $response );
+		$text = (string) wp_remote_retrieve_body( $response );
+		$data = '' !== $text ? json_decode( $text, true ) : array();
+
+		if ( $code < 200 || $code >= 300 ) {
+			$message = '';
+			if ( is_array( $data ) ) {
+				if ( ! empty( $data['message'] ) ) {
+					$message = (string) $data['message'];
+				} elseif ( ! empty( $data['error'] ) ) {
+					$message = (string) $data['error'];
+				}
+			}
+			if ( '' === $message ) {
+				/* translators: %d: HTTP status code. */
+				$message = sprintf( __( 'Netlify returned HTTP %d.', 'aouwal-static-site-export' ), $code );
+			}
+			return new WP_Error( 'aouwal_netlify_http', $message, array( 'status' => $code ) );
+		}
+
+		return is_array( $data ) ? $data : array();
+	}
+
+	/**
+	 * Safe Netlify error text.
+	 *
+	 * @param WP_Error $error Error.
+	 * @return string
+	 */
+	protected static function netlify_error( $error ) {
+		return is_wp_error( $error ) ? (string) $error->get_error_message() : '';
+	}
+
+	/**
+	 * Walk the export folder and record a SHA1 per file for a Netlify deploy.
+	 *
+	 * @param WP_Filesystem_Base $fs     Filesystem.
+	 * @param string             $dir    Absolute directory.
+	 * @param string             $prefix Relative prefix.
+	 * @param array              $out    Relative path => metadata, by reference.
+	 * @return void
+	 */
+	protected static function scan_netlify_files( $fs, $dir, $prefix, array &$out ) {
+		$entries = $fs->dirlist( $dir );
+		if ( ! is_array( $entries ) ) {
+			return;
+		}
+
+		foreach ( $entries as $name => $info ) {
+			if ( '.' === $name || '..' === $name ) {
+				continue;
+			}
+			$path     = trailingslashit( $dir ) . $name;
+			$relative = '' === $prefix ? (string) $name : $prefix . '/' . $name;
+
+			if ( ! empty( $info['type'] ) && 'd' === $info['type'] ) {
+				self::scan_netlify_files( $fs, $path, $relative, $out );
+				continue;
+			}
+
+			$content = $fs->get_contents( $path );
+			if ( ! is_string( $content ) ) {
+				continue;
+			}
+			$out[ $relative ] = array(
+				'sha1' => sha1( $content ),
+				'size' => strlen( $content ),
+			);
+		}
 	}
 
 	/**

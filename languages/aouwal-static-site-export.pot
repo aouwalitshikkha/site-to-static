@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-20T11:28:24+01:00\n"
+"POT-Creation-Date: 2026-11-20T11:44:32+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: aouwal-static-site-export\n"
@@ -75,7 +75,7 @@ msgid "Start a new static export?"
 msgstr ""
 
 #: admin/class-admin.php:114
-#: admin/views/deploy.php:48
+#: admin/views/deploy.php:50
 msgid "Download export ZIP"
 msgstr ""
 
@@ -214,8 +214,9 @@ msgstr ""
 #: admin/class-admin.php:477
 #: admin/class-admin.php:483
 #: admin/class-admin.php:496
-#: includes/class-deploy.php:568
-#: includes/class-deploy.php:813
+#: includes/class-deploy.php:647
+#: includes/class-deploy.php:802
+#: includes/class-deploy.php:1047
 #: includes/class-exporter.php:355
 #: includes/class-exporter.php:453
 #: includes/class-exporter.php:678
@@ -245,258 +246,294 @@ msgstr ""
 msgid "Could not read the export file."
 msgstr ""
 
-#: admin/views/deploy.php:44
+#: admin/views/deploy.php:46
 msgid "Your last export"
 msgstr ""
 
-#: admin/views/deploy.php:53
+#: admin/views/deploy.php:55
 msgid "No export yet. Run an export from the Export tab first."
 msgstr ""
 
-#: admin/views/deploy.php:56
+#: admin/views/deploy.php:58
 msgid "Direct deployment"
 msgstr ""
 
-#: admin/views/deploy.php:58
+#: admin/views/deploy.php:60
 msgid "Push the finished export to a host from this screen. Deployment targets are off by default, so nothing is sent anywhere until you enable one and save a token."
 msgstr ""
 
-#: admin/views/deploy.php:66
+#: admin/views/deploy.php:68
 msgid "GitHub"
 msgstr ""
 
-#: admin/views/deploy.php:70
+#: admin/views/deploy.php:72
 msgid "Enable direct deployment to GitHub"
 msgstr ""
 
-#: admin/views/deploy.php:72
+#: admin/views/deploy.php:74
 msgid "Uses a personal access token with contents write access for one repository. No GitHub App or OAuth connection is required."
 msgstr ""
 
-#: admin/views/deploy.php:80
+#: admin/views/deploy.php:82
 msgid "Repository owner"
 msgstr ""
 
-#: admin/views/deploy.php:86
+#: admin/views/deploy.php:88
 msgid "Repository name"
 msgstr ""
 
-#: admin/views/deploy.php:92
-#: admin/views/deploy.php:183
+#: admin/views/deploy.php:94
+#: admin/views/deploy.php:185
 msgid "Branch"
 msgstr ""
 
-#: admin/views/deploy.php:95
+#: admin/views/deploy.php:97
 msgid "The branch receives one commit per deployment. A missing branch is created from the default branch on the first push."
 msgstr ""
 
-#: admin/views/deploy.php:99
+#: admin/views/deploy.php:101
 msgid "Repository folder"
 msgstr ""
 
-#: admin/views/deploy.php:102
+#: admin/views/deploy.php:104
 msgid "Optional. Deploy into this subfolder instead of the repository root. Leave blank to use the root."
 msgstr ""
 
-#: admin/views/deploy.php:106
+#: admin/views/deploy.php:108
 msgid "Access token"
 msgstr ""
 
-#: admin/views/deploy.php:108
-#: admin/views/deploy.php:173
+#: admin/views/deploy.php:110
+#: admin/views/deploy.php:175
+#: admin/views/deploy.php:236
 #: admin/views/settings.php:192
 msgid "Saved"
 msgstr ""
 
-#: admin/views/deploy.php:109
+#: admin/views/deploy.php:111
 msgid "A fine-grained or classic token with contents read and write access for this repository. The token is stored encrypted, never shown again and never written to the export or the log. Leave it blank to keep the saved token."
 msgstr ""
 
-#: admin/views/deploy.php:112
-#: admin/views/deploy.php:177
+#: admin/views/deploy.php:114
+#: admin/views/deploy.php:179
+#: admin/views/deploy.php:240
 msgid "Remove the stored token"
 msgstr ""
 
-#: admin/views/deploy.php:118
+#: admin/views/deploy.php:120
 msgid "Commit message"
 msgstr ""
 
-#: admin/views/deploy.php:121
-#: admin/views/deploy.php:193
+#: admin/views/deploy.php:123
+#: admin/views/deploy.php:195
 msgid "Use {date} for the deployment time. Example: Static export {date}"
 msgstr ""
 
-#: admin/views/deploy.php:125
-#: admin/views/deploy.php:197
+#: admin/views/deploy.php:127
+#: admin/views/deploy.php:199
+#: admin/views/deploy.php:246
 msgid "Options"
 msgstr ""
 
-#: admin/views/deploy.php:129
-#: admin/views/deploy.php:201
+#: admin/views/deploy.php:131
+#: admin/views/deploy.php:203
+#: admin/views/deploy.php:250
 msgid "Deploy automatically after every successful export"
 msgstr ""
 
-#: admin/views/deploy.php:133
+#: admin/views/deploy.php:135
 msgid "Delete repository files that are no longer in the export"
 msgstr ""
 
-#: admin/views/deploy.php:135
+#: admin/views/deploy.php:137
 msgid "Removal only touches the selected folder and is off by default. Turn it on for a branch dedicated to the static site; leave it off when the branch also holds workflows or documentation."
 msgstr ""
 
-#: admin/views/deploy.php:143
+#: admin/views/deploy.php:145
 msgid "Cloudflare Pages"
 msgstr ""
 
-#: admin/views/deploy.php:147
+#: admin/views/deploy.php:149
 msgid "Enable direct deployment to Cloudflare Pages"
 msgstr ""
 
-#: admin/views/deploy.php:149
+#: admin/views/deploy.php:151
 msgid "Uploads the export to a Pages project with the direct upload API. The project must not be connected to a Git repository. An account ID and a Pages API token with edit access are required."
 msgstr ""
 
-#: admin/views/deploy.php:157
+#: admin/views/deploy.php:159
 msgid "Account ID"
 msgstr ""
 
-#: admin/views/deploy.php:160
+#: admin/views/deploy.php:162
 msgid "The 32-character account ID from the Cloudflare dashboard URL or the account overview page."
 msgstr ""
 
-#: admin/views/deploy.php:164
+#: admin/views/deploy.php:166
 msgid "Pages project"
 msgstr ""
 
-#: admin/views/deploy.php:167
+#: admin/views/deploy.php:169
 msgid "The project name from Workers &amp; Pages, not the .pages.dev hostname. Direct upload projects only."
 msgstr ""
 
-#: admin/views/deploy.php:171
+#: admin/views/deploy.php:173
 msgid "API token"
 msgstr ""
 
-#: admin/views/deploy.php:174
+#: admin/views/deploy.php:176
 msgid "A Cloudflare API token with the Cloudflare Pages permission set to Edit for this account. Stored encrypted, never shown again and never written to the export or the log. Leave blank to keep the saved token."
 msgstr ""
 
-#: admin/views/deploy.php:186
+#: admin/views/deploy.php:188
 msgid "Optional. Leave blank to deploy to the production branch. Set a branch name for a preview deployment."
 msgstr ""
 
-#: admin/views/deploy.php:190
+#: admin/views/deploy.php:192
 msgid "Deployment message"
 msgstr ""
 
-#: admin/views/deploy.php:203
+#: admin/views/deploy.php:205
 msgid "Only changed files are uploaded. Pages keeps every deployment as a preview, so removing content from the export does not delete the old deployment."
 msgstr ""
 
-#: admin/views/deploy.php:209
-msgid "Save deployment settings"
+#: admin/views/deploy.php:213
+msgid "Netlify"
 msgstr ""
 
-#: admin/views/deploy.php:212
-msgid "Deployment actions"
+#: admin/views/deploy.php:217
+msgid "Enable direct deployment to Netlify"
 msgstr ""
 
-#: admin/views/deploy.php:215
-msgid "Test connection"
+#: admin/views/deploy.php:219
+msgid "Uses the Netlify file digest API. Only files Netlify does not already have are uploaded. A site ID and a personal access token with access to that site are required."
 msgstr ""
 
-#: admin/views/deploy.php:218
-msgid "Deploy last export"
-msgstr ""
-
-#: admin/views/deploy.php:223
-msgid "Enable a target, add its credentials and save the deployment settings to use these actions."
-msgstr ""
-
-#: admin/views/deploy.php:225
-msgid "Run and finish an export before deploying."
+#: admin/views/deploy.php:227
+msgid "Site ID"
 msgstr ""
 
 #: admin/views/deploy.php:230
-msgid "Last deployment result"
+msgid "Project configuration > General > Project details > Project information > Project ID. The site domain, such as mysite.netlify.app, also works."
 msgstr ""
 
 #: admin/views/deploy.php:234
-msgid "Target"
+msgid "Personal access token"
 msgstr ""
 
-#: admin/views/deploy.php:235
-msgid "Result"
+#: admin/views/deploy.php:237
+msgid "Create one at Netlify: Applications > Personal access tokens > New access token. Stored encrypted, never shown again and never written to the export or the log. Leave blank to keep the saved token."
 msgstr ""
 
-#: admin/views/deploy.php:236
-msgid "Time"
+#: admin/views/deploy.php:252
+msgid "Netlify deploys are atomic: the new deploy replaces the previous file set, so content removed from the export disappears from the site."
 msgstr ""
 
-#: admin/views/deploy.php:244
-msgid "Succeeded"
+#: admin/views/deploy.php:258
+msgid "Save deployment settings"
 msgstr ""
 
-#: admin/views/deploy.php:244
-msgid "Failed"
+#: admin/views/deploy.php:261
+msgid "Deployment actions"
 msgstr ""
 
-#: admin/views/deploy.php:247
-msgid "View commit"
+#: admin/views/deploy.php:264
+msgid "Test connection"
 msgstr ""
 
-#: admin/views/deploy.php:257
-msgid "Deploy to Cloudflare Pages via GitHub"
+#: admin/views/deploy.php:267
+msgid "Deploy last export"
 msgstr ""
 
-#: admin/views/deploy.php:260
-msgid "Download the export and unzip it into a new folder."
+#: admin/views/deploy.php:272
+msgid "Enable a target, add its credentials and save the deployment settings to use these actions."
 msgstr ""
 
-#: admin/views/deploy.php:263
-msgid "Create a GitHub repository and push the files."
-msgstr ""
-
-#: admin/views/deploy.php:273
-msgid "Connect the repository to Cloudflare Pages."
-msgstr ""
-
-#: admin/views/deploy.php:275
-msgid "Open the Cloudflare dashboard → Workers &amp; Pages → Create → Pages → Connect to Git."
-msgstr ""
-
-#: admin/views/deploy.php:276
-msgid "Select your repository."
-msgstr ""
-
-#: admin/views/deploy.php:277
-msgid "Build command: leave blank."
-msgstr ""
-
-#: admin/views/deploy.php:278
-msgid "Build output directory: / (the repository root)."
+#: admin/views/deploy.php:274
+msgid "Run and finish an export before deploying."
 msgstr ""
 
 #: admin/views/deploy.php:279
-msgid "Click Save and Deploy."
+msgid "Last deployment result"
 msgstr ""
 
 #: admin/views/deploy.php:283
-msgid "Every future push redeploys automatically."
+msgid "Target"
 msgstr ""
 
-#: admin/views/deploy.php:289
-msgid "When enabled in Settings, the export includes a _redirects file (Cloudflare Pages) and a _headers file for caching. Query-string URLs such as /?p=123 cannot be redirected by Cloudflare Pages; use path-based URLs going forward."
+#: admin/views/deploy.php:284
+msgid "Result"
+msgstr ""
+
+#: admin/views/deploy.php:285
+msgid "Time"
+msgstr ""
+
+#: admin/views/deploy.php:293
+msgid "Succeeded"
+msgstr ""
+
+#: admin/views/deploy.php:293
+msgid "Failed"
 msgstr ""
 
 #: admin/views/deploy.php:296
+msgid "View commit"
+msgstr ""
+
+#: admin/views/deploy.php:306
+msgid "Deploy to Cloudflare Pages via GitHub"
+msgstr ""
+
+#: admin/views/deploy.php:309
+msgid "Download the export and unzip it into a new folder."
+msgstr ""
+
+#: admin/views/deploy.php:312
+msgid "Create a GitHub repository and push the files."
+msgstr ""
+
+#: admin/views/deploy.php:322
+msgid "Connect the repository to Cloudflare Pages."
+msgstr ""
+
+#: admin/views/deploy.php:324
+msgid "Open the Cloudflare dashboard → Workers &amp; Pages → Create → Pages → Connect to Git."
+msgstr ""
+
+#: admin/views/deploy.php:325
+msgid "Select your repository."
+msgstr ""
+
+#: admin/views/deploy.php:326
+msgid "Build command: leave blank."
+msgstr ""
+
+#: admin/views/deploy.php:327
+msgid "Build output directory: / (the repository root)."
+msgstr ""
+
+#: admin/views/deploy.php:328
+msgid "Click Save and Deploy."
+msgstr ""
+
+#: admin/views/deploy.php:332
+msgid "Every future push redeploys automatically."
+msgstr ""
+
+#: admin/views/deploy.php:338
+msgid "When enabled in Settings, the export includes a _redirects file (Cloudflare Pages) and a _headers file for caching. Query-string URLs such as /?p=123 cannot be redirected by Cloudflare Pages; use path-based URLs going forward."
+msgstr ""
+
+#: admin/views/deploy.php:345
 msgid "Export files are stored in a subdirectory of your uploads folder, protected from browsing with an index.php file and, on Apache, a .htaccess deny rule. The ZIP is downloadable only through the signed link above, which expires and stops working when the job is pruned."
 msgstr ""
 
-#: admin/views/deploy.php:300
+#: admin/views/deploy.php:349
 msgid "This server runs Nginx, which ignores .htaccess. To block direct access to the export folder, add this to your server block and reload Nginx, or move exports outside the web root with the aouwal_export_dir filter:"
 msgstr ""
 
-#: admin/views/deploy.php:308
+#: admin/views/deploy.php:357
 msgid "Export files are stored outside the web root, so they cannot be reached by any direct URL on this server. The ZIP is downloadable only through the signed link above, which expires and stops working when the job is pruned."
 msgstr ""
 
@@ -965,208 +1002,254 @@ msgstr ""
 msgid "The host name resolves to a private, reserved or loopback address."
 msgstr ""
 
-#: includes/class-deploy.php:154
+#: includes/class-deploy.php:159
 msgid "The Cloudflare account ID was ignored. It is the 32-character hexadecimal value from the dashboard URL or the overview page."
 msgstr ""
 
 #. translators: %s: deployment target, such as GitHub or Cloudflare.
-#: includes/class-deploy.php:208
+#: includes/class-deploy.php:219
 #, php-format
 msgid "The %s token was not saved: it contains characters a token never contains, such as spaces or newlines."
 msgstr ""
 
 #. translators: %s: deployment target, such as GitHub or Cloudflare.
-#: includes/class-deploy.php:221
+#: includes/class-deploy.php:232
 #, php-format
 msgid "The %s token could not be stored securely because this server has neither the sodium extension nor OpenSSL support."
 msgstr ""
 
-#: includes/class-deploy.php:257
+#: includes/class-deploy.php:268
 msgid "The repository path was ignored. Use a relative folder with letters, numbers, dashes, underscores and slashes only."
 msgstr ""
 
-#: includes/class-deploy.php:395
+#: includes/class-deploy.php:440
 msgid "A deployment for this export is already running."
 msgstr ""
 
-#: includes/class-deploy.php:464
+#: includes/class-deploy.php:513
 msgid "Add the repository owner, the repository name and a token first."
 msgstr ""
 
 #. translators: 1: repository name, 2: branch name.
-#: includes/class-deploy.php:487
+#: includes/class-deploy.php:536
 #, php-format
 msgid "Connected to %1$s. Branch %2$s exists."
 msgstr ""
 
 #. translators: 1: repository name, 2: branch name.
-#: includes/class-deploy.php:490
+#: includes/class-deploy.php:539
 #, php-format
 msgid "Connected to %1$s. Branch %2$s does not exist yet and will be created on the first deployment."
 msgstr ""
 
-#: includes/class-deploy.php:514
+#: includes/class-deploy.php:563
 msgid "Add the Cloudflare account ID, the Pages project name and an API token first."
 msgstr ""
 
 #. translators: 1: Pages project name, 2: production branch.
-#: includes/class-deploy.php:529
+#: includes/class-deploy.php:578
 #, php-format
 msgid "Connected to Cloudflare Pages project %1$s (production branch %2$s)."
 msgstr ""
 
 #. translators: %s: pages.dev hostname.
-#: includes/class-deploy.php:536
+#: includes/class-deploy.php:585
 #, php-format
 msgid "Preview URL: https://%s."
 msgstr ""
 
-#: includes/class-deploy.php:539
+#: includes/class-deploy.php:588
 msgid "This project is connected to Git, so direct uploads are not supported. Use the GitHub target instead."
 msgstr ""
 
-#: includes/class-deploy.php:562
-msgid "Cloudflare Pages is not configured. Add an account ID, a project name and a token."
+#: includes/class-deploy.php:608
+msgid "Add the Netlify site ID and a personal access token first."
 msgstr ""
 
-#: includes/class-deploy.php:571
-#: includes/class-deploy.php:816
+#. translators: 1: Netlify site name, 2: site URL.
+#: includes/class-deploy.php:621
+#, php-format
+msgid "Connected to Netlify site %1$s (%2$s)."
+msgstr ""
+
+#: includes/class-deploy.php:641
+msgid "Netlify is not configured. Add a site ID and a personal access token."
+msgstr ""
+
+#: includes/class-deploy.php:650
+#: includes/class-deploy.php:805
+#: includes/class-deploy.php:1050
 msgid "Only a finished export can be deployed."
 msgstr ""
 
-#: includes/class-deploy.php:577
-#: includes/class-deploy.php:822
+#: includes/class-deploy.php:656
+#: includes/class-deploy.php:811
+#: includes/class-deploy.php:1056
 msgid "The export files are missing. Run the export again."
 msgstr ""
 
-#: includes/class-deploy.php:583
-#: includes/class-deploy.php:831
+#: includes/class-deploy.php:662
+#: includes/class-deploy.php:817
+#: includes/class-deploy.php:1065
 msgid "The export folder is empty."
 msgstr ""
 
-#: includes/class-deploy.php:586
-msgid "Cloudflare Pages accepts up to 20,000 files in a deployment. Exclude some content or use Git integration instead."
-msgstr ""
-
-#: includes/class-deploy.php:604
-msgid "This Pages project is connected to Git, so Cloudflare builds it from the repository and rejects direct uploads. Use the GitHub target, or create a Direct Upload project."
+#: includes/class-deploy.php:682
+msgid "Netlify did not return a deploy ID."
 msgstr ""
 
 #. translators: %s: file path inside the export.
-#: includes/class-deploy.php:616
-#, php-format
-msgid "Cloudflare Pages accepts files up to 25 MB, and %s is larger. Lower the Maximum asset size setting or exclude the file."
-msgstr ""
-
-#: includes/class-deploy.php:631
-msgid "Cloudflare did not return an upload token for this project."
-msgstr ""
-
-#. translators: %s: file path inside the export.
-#: includes/class-deploy.php:689
-#: includes/class-deploy.php:899
+#: includes/class-deploy.php:699
+#: includes/class-deploy.php:923
+#: includes/class-deploy.php:1133
 #, php-format
 msgid "Could not read %s from the export folder."
 msgstr ""
 
+#. translators: 1: file path, 2: Netlify error text.
+#. translators: 1: file path, 2: GitHub error text.
+#: includes/class-deploy.php:712
+#: includes/class-deploy.php:1152
+#, php-format
+msgid "Uploading %1$s failed: %2$s"
+msgstr ""
+
+#. translators: 1: Netlify site ID, 2: deploy URL.
+#: includes/class-deploy.php:764
+#, php-format
+msgid "Netlify accepted the deploy for %1$s but processing failed. Check the Netlify deploy log: %2$s"
+msgstr ""
+
+#. translators: 1: number of uploaded files, 2: Netlify site ID, 3: number of unchanged files, 4: deploy URL.
+#: includes/class-deploy.php:774
+#, php-format
+msgid "Deployed %1$d file(s) to Netlify site %2$s. %3$d unchanged. %4$s"
+msgstr ""
+
+#: includes/class-deploy.php:796
+msgid "Cloudflare Pages is not configured. Add an account ID, a project name and a token."
+msgstr ""
+
+#: includes/class-deploy.php:820
+msgid "Cloudflare Pages accepts up to 20,000 files in a deployment. Exclude some content or use Git integration instead."
+msgstr ""
+
+#: includes/class-deploy.php:838
+msgid "This Pages project is connected to Git, so Cloudflare builds it from the repository and rejects direct uploads. Use the GitHub target, or create a Direct Upload project."
+msgstr ""
+
+#. translators: %s: file path inside the export.
+#: includes/class-deploy.php:850
+#, php-format
+msgid "Cloudflare Pages accepts files up to 25 MB, and %s is larger. Lower the Maximum asset size setting or exclude the file."
+msgstr ""
+
+#: includes/class-deploy.php:865
+msgid "Cloudflare did not return an upload token for this project."
+msgstr ""
+
 #. translators: %s: Cloudflare error text.
-#: includes/class-deploy.php:709
+#: includes/class-deploy.php:943
 #, php-format
 msgid "Uploading the assets failed: %s"
 msgstr ""
 
 #. translators: %s: Cloudflare error text.
-#: includes/class-deploy.php:753
+#: includes/class-deploy.php:987
 #, php-format
 msgid "Creating the Pages deployment failed: %s"
 msgstr ""
 
 #. translators: 1: Pages project name, 2: deployment URL.
-#: includes/class-deploy.php:773
+#: includes/class-deploy.php:1007
 #, php-format
 msgid "Cloudflare accepted the upload for %1$s but the deployment failed. Check the Pages dashboard: %2$s"
 msgstr ""
 
 #. translators: 1: number of uploaded files, 2: Pages project name, 3: number of unchanged files, 4: deployment URL.
-#: includes/class-deploy.php:783
+#: includes/class-deploy.php:1017
 #, php-format
 msgid "Deployed %1$d file(s) to Cloudflare Pages project %2$s. %3$d unchanged. %4$s"
 msgstr ""
 
-#: includes/class-deploy.php:807
+#: includes/class-deploy.php:1041
 msgid "GitHub is not configured. Add an owner, a repository and a token."
 msgstr ""
 
-#: includes/class-deploy.php:868
+#: includes/class-deploy.php:1102
 msgid "GitHub did not return a tree for the branch head."
 msgstr ""
 
-#. translators: 1: file path, 2: GitHub error text.
-#: includes/class-deploy.php:918
-#, php-format
-msgid "Uploading %1$s failed: %2$s"
-msgstr ""
-
 #. translators: %s: file path.
-#: includes/class-deploy.php:929
+#: includes/class-deploy.php:1163
 #, php-format
 msgid "GitHub did not return a blob for %s."
 msgstr ""
 
 #. translators: 1: repository name, 2: branch name.
-#: includes/class-deploy.php:972
+#: includes/class-deploy.php:1206
 #, php-format
 msgid "Already up to date on %1$s@%2$s. No commit was created."
 msgstr ""
 
 #. translators: %s: GitHub error text.
-#: includes/class-deploy.php:988
+#: includes/class-deploy.php:1222
 #, php-format
 msgid "Building the commit tree failed: %s"
 msgstr ""
 
-#: includes/class-deploy.php:995
+#: includes/class-deploy.php:1229
 msgid "GitHub did not return a tree SHA."
 msgstr ""
 
 #. translators: %s: GitHub error text.
-#: includes/class-deploy.php:1013
+#: includes/class-deploy.php:1247
 #, php-format
 msgid "Creating the commit failed: %s"
 msgstr ""
 
-#: includes/class-deploy.php:1019
+#: includes/class-deploy.php:1253
 msgid "GitHub did not return a commit SHA."
 msgstr ""
 
 #. translators: %s: GitHub error text.
-#: includes/class-deploy.php:1047
+#: includes/class-deploy.php:1281
 #, php-format
 msgid "Updating the branch failed: %s"
 msgstr ""
 
 #. translators: 1: number of uploaded files, 2: repository name, 3: branch, 4: short commit SHA, 5: number of unchanged files, 6: number of removed files.
-#: includes/class-deploy.php:1061
+#: includes/class-deploy.php:1295
 #, php-format
 msgid "Pushed %1$d file(s) to %2$s@%3$s in commit %4$s. %5$d unchanged, %6$d removed."
 msgstr ""
 
-#: includes/class-deploy.php:1118
+#: includes/class-deploy.php:1352
 msgid "No Cloudflare token is saved."
 msgstr ""
 
 #. translators: %d: HTTP status code.
-#: includes/class-deploy.php:1164
+#: includes/class-deploy.php:1398
 #, php-format
 msgid "Cloudflare returned HTTP %d."
 msgstr ""
 
-#: includes/class-deploy.php:1320
+#: includes/class-deploy.php:1430
+msgid "No Netlify token is saved."
+msgstr ""
+
+#. translators: %d: HTTP status code.
+#: includes/class-deploy.php:1470
+#, php-format
+msgid "Netlify returned HTTP %d."
+msgstr ""
+
+#: includes/class-deploy.php:1664
 msgid "No GitHub token is saved."
 msgstr ""
 
 #. translators: %d: HTTP status code.
-#: includes/class-deploy.php:1352
+#: includes/class-deploy.php:1696
 #, php-format
 msgid "GitHub returned HTTP %d."
 msgstr ""

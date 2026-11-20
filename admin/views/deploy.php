@@ -35,7 +35,9 @@ $aouwal_has_token    = AOUWAL_Deploy::has_token();
 $aouwal_github_ready = AOUWAL_Deploy::github_configured();
 $aouwal_has_cf_token = AOUWAL_Deploy::has_cloudflare_token();
 $aouwal_cf_ready     = AOUWAL_Deploy::cloudflare_configured();
-$aouwal_any_ready    = $aouwal_github_ready || $aouwal_cf_ready;
+$aouwal_has_nl_token = AOUWAL_Deploy::has_netlify_token();
+$aouwal_nl_ready     = AOUWAL_Deploy::netlify_configured();
+$aouwal_any_ready    = $aouwal_github_ready || $aouwal_cf_ready || $aouwal_nl_ready;
 $aouwal_any_enabled  = ! empty( AOUWAL_Deploy::enabled_targets() );
 $aouwal_deploy_rows  = ( $aouwal_last && is_array( $aouwal_last ) ) ? AOUWAL_Deploy::last_results( $aouwal_last ) : array();
 $aouwal_can_deploy   = $aouwal_last && isset( $aouwal_last['phase'] ) && AOUWAL_Exporter::PHASE_DONE === $aouwal_last['phase'];
@@ -201,6 +203,53 @@ $aouwal_can_deploy   = $aouwal_last && isset( $aouwal_last['phase'] ) && AOUWAL_
 							<?php esc_html_e( 'Deploy automatically after every successful export', 'aouwal-static-site-export' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Only changed files are uploaded. Pages keeps every deployment as a preview, so removing content from the export does not delete the old deployment.', 'aouwal-static-site-export' ); ?></p>
+					</td>
+				</tr>
+			</table>
+		</div>
+
+		<table class="form-table" role="presentation">
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Netlify', 'aouwal-static-site-export' ); ?></th>
+				<td>
+					<label class="aouwal-inline">
+						<input type="checkbox" id="aouwal_netlify_enabled" name="aouwal_deploy[netlify_enabled]" value="1" <?php checked( $aouwal_deploy['netlify_enabled'] ); ?> />
+						<?php esc_html_e( 'Enable direct deployment to Netlify', 'aouwal-static-site-export' ); ?>
+					</label>
+					<p class="description"><?php esc_html_e( 'Uses the Netlify file digest API. Only files Netlify does not already have are uploaded. A site ID and a personal access token with access to that site are required.', 'aouwal-static-site-export' ); ?></p>
+				</td>
+			</tr>
+		</table>
+
+		<div id="aouwal-netlify-fields" <?php echo $aouwal_deploy['netlify_enabled'] ? '' : 'hidden'; ?>>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><label for="aouwal_netlify_site_id"><?php esc_html_e( 'Site ID', 'aouwal-static-site-export' ); ?></label></th>
+					<td>
+						<input type="text" class="regular-text code" id="aouwal_netlify_site_id" name="aouwal_deploy[netlify_site_id]" value="<?php echo esc_attr( $aouwal_deploy['netlify_site_id'] ); ?>" autocomplete="off" placeholder="3970e0fe-8564-4903-9a55-c5f8de49fb8b" />
+						<p class="description"><?php esc_html_e( 'Project configuration > General > Project details > Project information > Project ID. The site domain, such as mysite.netlify.app, also works.', 'aouwal-static-site-export' ); ?></p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><label for="aouwal_netlify_token"><?php esc_html_e( 'Personal access token', 'aouwal-static-site-export' ); ?></label></th>
+					<td>
+						<input type="password" class="regular-text" id="aouwal_netlify_token" name="aouwal_deploy[netlify_token]" value="" autocomplete="new-password" placeholder="<?php echo $aouwal_has_nl_token ? esc_attr__( 'Saved', 'aouwal-static-site-export' ) : ''; ?>" />
+						<p class="description"><?php esc_html_e( 'Create one at Netlify: Applications > Personal access tokens > New access token. Stored encrypted, never shown again and never written to the export or the log. Leave blank to keep the saved token.', 'aouwal-static-site-export' ); ?></p>
+						<?php if ( $aouwal_has_nl_token ) : ?>
+							<p>
+								<label class="aouwal-inline"><input type="checkbox" name="aouwal_deploy[netlify_clear]" value="1" /> <?php esc_html_e( 'Remove the stored token', 'aouwal-static-site-export' ); ?></label>
+							</p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Options', 'aouwal-static-site-export' ); ?></th>
+					<td>
+						<label class="aouwal-inline">
+							<input type="checkbox" name="aouwal_deploy[netlify_on_export]" value="1" <?php checked( $aouwal_deploy['netlify_on_export'] ); ?> />
+							<?php esc_html_e( 'Deploy automatically after every successful export', 'aouwal-static-site-export' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Netlify deploys are atomic: the new deploy replaces the previous file set, so content removed from the export disappears from the site.', 'aouwal-static-site-export' ); ?></p>
 					</td>
 				</tr>
 			</table>

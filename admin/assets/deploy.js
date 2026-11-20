@@ -56,6 +56,7 @@
 
 		bindToggle( 'aouwal_github_enabled', 'aouwal-github-fields' );
 		bindToggle( 'aouwal_cloudflare_enabled', 'aouwal-cloudflare-fields' );
+		bindToggle( 'aouwal_netlify_enabled', 'aouwal-netlify-fields' );
 
 		$( '#aouwal-deploy-test' ).on( 'click', function () {
 			busy( true );

@@ -53,6 +53,7 @@ You can export:
 * Optional changed-only export: reuse the last export and re-export only pages, archives and assets that changed. Full export stays the default.
 * Optional direct deployment to GitHub: push the finished export to a branch with one commit per run. Off by default, token-only, no OAuth app.
 * Optional direct deployment to Cloudflare Pages: upload only changed files to a Pages project with an API token. Off by default.
+* Optional direct deployment to Netlify: file-digest deploy, only missing hashes uploaded, atomic replacement of the site. Off by default.
 * Optional WP-CLI command: `wp aouwal-static-export run`.
 * Optional, invisible author credit. It is off by default and can be enabled in Settings.
 
@@ -157,26 +158,15 @@ Pages keeps every deployment as a preview, so removing content from the export d
 
 Test connection reads the project before anything is uploaded.
 
-= Crawl through proxies, staging sites and Basic Auth =
+= Netlify =
 
-The Network settings section controls how the export talks to your server. Defaults reproduce the previous behavior exactly, so nothing changes until you edit them.
+The Netlify target uses the file digest API. It needs the Project ID (also called Site ID) and a personal access token from Applications > Personal access tokens.
 
-* **Request timeout**: how long one request may take, in seconds. The default is 60, the range is 1 to 120. Raise it when slow pages or large files time out on shared hosting.
-* **Delay between requests**: a pause in milliseconds between two crawl requests (0 to 3000, default 0). Use it when your host rate-limits the export.
-* **Batch size (concurrency)**: how many URLs are processed per request (1 to 50, default 5). Lower it when PHP execution time is short.
-* **Custom crawl origin**: send crawl requests to another URL, such as an internal container name (`http://wordpress:8080`) or a reverse-proxied host, while links in the export keep using the site URL. The origin host is trusted like the site host, but link-local and cloud metadata addresses such as 169.254.169.254 are still refused.
-* **TLS verification**: verify certificates everywhere, verify except on local development hosts (default), or verify against a custom CA bundle path. An unreadable CA path falls back to the system bundle.
-* **HTTP Basic Auth**: optional username and password for a protected staging site. The header is sent only to the site's own hosts, never to external asset hosts and never after a redirect to another domain. The password is encrypted at rest, never rendered back into the form, and never written to the export log.
-
-WP-CLI accepts the same timeout, delay and origin for a single run without saving them:
-
-    wp aouwal-static-export run --timeout=90 --delay=250 --origin=http://wordpress:8080
-
-Basic Auth stays in the settings screen on purpose, so a password never lands in shell history or a cron file.
+Every file is a SHA1 entry in the manifest. Netlify returns the hashes it lacks, only those are uploaded, and the deploy replaces the previous file set atomically. The token is encrypted and never logged. Test connection reads the site first; a failed deploy keeps the local ZIP.
 
 = Why use a static WordPress website =
 
-A static website is faster and safer than a dynamic one. There is no PHP to execute and no database to query, so pages are served as small HTML files, usually from a CDN close to the visitor. There is also much less to attack: no login page, no plugin endpoints and no database on the public server. You keep WordPress for writing and publishing, and export a fresh static copy whenever the content changes.
+A static website is faster and safer: no PHP and no database, just small HTML files served from a CDN. There is much less to attack: no login page, no plugin endpoints and no database on the public server. Keep WordPress for writing, and export a fresh copy when content changes.
 
 = What the export cleans up =
 
@@ -313,6 +303,14 @@ The direct upload API only works with a Pages project that is not connected to G
 
 The other limits are 20,000 files per deployment and 25 MB per file. The plugin checks both before uploading and reports which file is too large.
 
+= Can I deploy to Netlify from WordPress? =
+
+Yes. Open the Deploy tab, enable Netlify, and save the Project ID plus a personal access token from Applications > Personal access tokens. Then press "Deploy last export" or enable automatic deployment.
+
+The plugin sends a SHA1 manifest, Netlify replies with the files it does not have, and only those are uploaded. Netlify then publishes the deploy atomically, so the new file set replaces the old one and removed content disappears.
+
+If the site answers 401 or shows a login page, the Netlify project is protected by team SSO or a site password. Set the project to public in Netlify, or disable SSO for that site, before deploying.
+
 = Does the plugin work on large sites? =
 
 Yes. The crawl runs in batches, and each batch is one request, so a PHP timeout applies to a batch, not to the whole site or to a single page.
@@ -401,6 +399,7 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Test connection reads the project before uploading. Failures report the Cloudflare error text and keep the local ZIP and export folder.
 * Per-target automatic deployment: GitHub and Cloudflare Pages can each deploy after a successful export, independently.
 * "Test connection" now tests every enabled target and lists each result. "Deploy last export" deploys to every enabled target.
+* New: direct deployment to Netlify. Add the Project ID and a personal access token, then push the export. Only missing SHA1 hashes are uploaded, Netlify publishes the deploy atomically, and removed content disappears.
 * Enforced Cloudflare limits (20,000 files, 25 MB per file) with a clear message before the upload starts.
 * Fix: when an archive type is disabled, links to it are removed instead of staying broken. Date archive links (`/2026/` and `/2026/11/`) disappear when date archives are off, and `feed/index.xml`, feed directories and every feed link disappear when RSS feeds are off.
 * Fix: a fallback 404 page is now self-contained and styled, with a clear message, a home link and a `noindex` robots tag. Themed 404 pages also get `noindex` when they do not already have it.
@@ -548,7 +547,7 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 == Upgrade Notice ==
 
 = 1.11.0 =
-Adds optional direct deployment to Cloudflare Pages, with hash-based upload of changed files and per-target automatic deploy. Off by default, so nothing changes until you enable it.
+Adds optional direct deployment to Cloudflare Pages and Netlify, with hash-based upload of changed files and per-target automatic deploy. Off by default, so nothing changes until you enable it.
 
 = 1.10.0 =
 Adds optional direct deployment to GitHub from the Deploy tab, with token-only setup, changed-file upload and automatic deploy after each export. Off by default, so nothing changes until you enable it.
