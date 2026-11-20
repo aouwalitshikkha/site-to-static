@@ -51,9 +51,10 @@ unset( $aouwal_post_types['attachment'] );
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_taxonomies]" value="1" <?php checked( $aouwal['include_taxonomies'] ); ?> /> <?php esc_html_e( 'Category / tag / taxonomy archives', 'aouwal-static-site-export' ); ?></label><br />
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_authors]" value="1" <?php checked( $aouwal['include_authors'] ); ?> /> <?php esc_html_e( 'Author archives', 'aouwal-static-site-export' ); ?></label><br />
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_dates]" value="1" <?php checked( $aouwal['include_dates'] ); ?> /> <?php esc_html_e( 'Date archives (year / month)', 'aouwal-static-site-export' ); ?></label><br />
-					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_feeds]" value="1" <?php checked( $aouwal['include_feeds'] ); ?> /> <?php esc_html_e( 'RSS feeds', 'aouwal-static-site-export' ); ?></label><br />
+					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_feeds]" value="1" <?php checked( $aouwal['include_feeds'] ); ?> /> <?php esc_html_e( 'RSS feeds (feed/index.xml)', 'aouwal-static-site-export' ); ?></label><br />
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_attachments]" value="1" <?php checked( $aouwal['include_attachments'] ); ?> /> <?php esc_html_e( 'Attachment pages', 'aouwal-static-site-export' ); ?></label>
 				</fieldset>
+				<p class="description"><?php esc_html_e( 'Uncheck RSS feeds to remove feed/index.xml, the feed directory and every feed link from the export. Date archives and taxonomy/author archives are removed the same way when unchecked.', 'aouwal-static-site-export' ); ?></p>
 			</td>
 		</tr>
 	</table>
@@ -218,6 +219,16 @@ unset( $aouwal_post_types['attachment'] );
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[generate_robots]" value="1" <?php checked( $aouwal['generate_robots'] ); ?> /> <?php esc_html_e( 'robots.txt', 'aouwal-static-site-export' ); ?></label><br />
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[preserve_redirects]" value="1" <?php checked( $aouwal['preserve_redirects'] ); ?> /> <?php esc_html_e( 'Cloudflare Pages _redirects file', 'aouwal-static-site-export' ); ?></label><br />
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[generate_headers]" value="1" <?php checked( $aouwal['generate_headers'] ); ?> /> <?php esc_html_e( 'Cloudflare Pages _headers file', 'aouwal-static-site-export' ); ?></label>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( '404 page', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<fieldset>
+					<label class="aouwal-inline"><input type="radio" name="aouwal_settings[page_404]" value="theme" <?php checked( $aouwal['page_404'], 'theme' ); ?> /> <?php esc_html_e( 'Theme template (uses the active theme 404 page)', 'aouwal-static-site-export' ); ?></label><br />
+					<label class="aouwal-inline"><input type="radio" name="aouwal_settings[page_404]" value="builtin" <?php checked( $aouwal['page_404'], 'builtin' ); ?> /> <?php esc_html_e( 'Built-in page (same clean page on every theme)', 'aouwal-static-site-export' ); ?></label>
+				</fieldset>
+				<p class="description"><?php esc_html_e( 'The built-in page has a clear message, a link home and no search box or archive widgets. It works at any URL depth. Both modes add a noindex robots tag and a base URL so relative CSS keeps working on /2026/11/ and similar paths.', 'aouwal-static-site-export' ); ?></p>
 			</td>
 		</tr>
 		<tr>
