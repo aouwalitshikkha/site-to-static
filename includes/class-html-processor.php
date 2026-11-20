@@ -387,6 +387,37 @@ class AOUWAL_HTML_Processor {
 			$queries[] = '//*[contains(@class,"comment-respond")]';
 			$queries[] = '//*[contains(@class,"comment-form")]';
 			$queries[] = '//form[@id="commentform"]';
+			$queries[] = '//*[contains(@class,"comments-link")]';
+			$queries[] = '//*[contains(@class,"comment-link")]';
+			$queries[] = '//a[contains(@href,"#respond")]';
+			$queries[] = '//a[contains(@href,"#comments")]';
+			$queries[] = '//a[contains(translate(normalize-space(.),"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz"),"leave a comment")]';
+			$queries[] = '//a[contains(translate(normalize-space(.),"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz"),"post a comment")]';
+			$queries[] = '//a[contains(translate(normalize-space(.),"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz"),"leave a reply")]';
+
+			// Comment section wrappers differ by theme. Names are matched
+			// individually instead of a broad "comment" substring so a
+			// "commentary" block or a comment count is not removed by mistake.
+			$queries[] = '//*[contains(@class,"comments-area")]';
+			$queries[] = '//*[contains(@class,"comment-area")]';
+			$queries[] = '//*[contains(@class,"comments-wrapper")]';
+			$queries[] = '//*[contains(@class,"comment-wrapper")]';
+			$queries[] = '//*[contains(@class,"comments-container")]';
+			$queries[] = '//*[contains(@class,"comment-container")]';
+			$queries[] = '//*[contains(@class,"comments-section")]';
+			$queries[] = '//*[contains(@class,"comment-section")]';
+			$queries[] = '//*[contains(@class,"comments-box")]';
+			$queries[] = '//*[contains(@class,"comment-box")]';
+			$queries[] = '//*[contains(@class,"comment-list")]';
+			$queries[] = '//*[contains(@class,"commentlist")]';
+			$queries[] = '//*[contains(@class,"comments-title")]';
+			$queries[] = '//*[contains(@class,"comments-header")]';
+			$queries[] = '//*[contains(concat(" ", normalize-space(@class), " "), " comments ")]';
+			$queries[] = '//*[contains(concat(" ", normalize-space(@class), " "), " comment ")]';
+			$queries[] = '//*[@id="comment-wrap"]';
+			$queries[] = '//*[@id="comments-wrap"]';
+			$queries[] = '//*[@id="commentbox"]';
+			$queries[] = '//*[@id="comment-box"]';
 		}
 
 		if ( AOUWAL_Settings::get( 'strip_search' ) ) {

@@ -583,8 +583,9 @@ class AOUWAL_Exporter {
 		// never removes the local export: it only adds a notice and a result
 		// row, so the file can be downloaded or deployed again.
 		$deploy = array();
-		if ( AOUWAL_Deploy::auto_enabled() ) {
-			$deploy = AOUWAL_Deploy::deploy_job( $job_id );
+		$auto   = AOUWAL_Deploy::auto_targets();
+		if ( ! empty( $auto ) ) {
+			$deploy = AOUWAL_Deploy::deploy_job( $job_id, $auto );
 			if ( ! empty( $deploy ) ) {
 				foreach ( $deploy as $row ) {
 					$notices[] = (string) $row['message'];

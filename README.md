@@ -27,7 +27,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Keeps HTML5 markup intact: `<picture>`/`<source>`, `<video>`/`<track>`, `<template>` blocks and custom elements survive the parse, and inline scripts that build HTML are not truncated.
 - Downloads and localizes all assets, recursing into CSS `url()` and `@import` references.
 - Rewrites internal links to portable relative (or root-absolute) URLs.
-- Removes server-side features that cannot work statically (search forms, comment forms, comment feeds). Each step can be turned off in Settings.
+- Removes server-side features that cannot work statically (search forms, comment forms, comment area wrappers, "Leave a comment" links, comment feeds). Each step can be turned off in Settings.
 - Strips WordPress version tags and staging `noindex` robots meta so the exported site is indexable.
 - Optional, invisible source-code credit (off by default) that can be enabled in Settings. It never shows in the browser.
 - Generates `404.html` and, when enabled, `sitemap.xml`, `robots.txt` and Cloudflare Pages `_redirects` / `_headers` files.
@@ -39,6 +39,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Pause, Resume and Cancel controls. Pause keeps every file already written, Cancel deletes the partial output and the ZIP, and the log records the last processed URL.
 - Optional changed-only export: start from the last export, keep every unchanged file, and re-export only edited posts, the archives that contain them, the homepage and assets whose ETag or Last-Modified changed. Full export stays the default.
 - Optional direct deployment to GitHub: token-only setup, one commit per deployment, only changed files uploaded. Off by default.
+- Optional direct deployment to Cloudflare Pages: hash-based upload of changed files to a Pages project with an API token. Off by default.
 - Optional WP-CLI command: `wp aouwal-static-export run`. It exits non-zero when items fail, so CI catches incomplete exports. `status`, `cancel` and `resume` cover a crawl that is already running.
 
 ## Requirements
@@ -72,7 +73,7 @@ Open **Static Export** in the WordPress admin menu. Three tabs:
 
 - **Settings** — choose post types, archives, asset handling, URL style, cleanup and generated files.
 - **Export** — click *Start static export*, watch the live progress bar and log, then download the ZIP. While an export runs, *Pause* stops it at the next batch boundary and keeps the files already written, *Resume* continues from the next pending URL, and *Cancel* stops it and deletes the partial output folder and ZIP. The state is stored on the server, so a reload brings the paused export back with its Resume and Cancel buttons.
-- **Deploy** — push the latest export to GitHub, test the connection, or download the ZIP and follow the manual GitHub + Cloudflare Pages guide.
+- **Deploy** - push the latest export to GitHub or Cloudflare Pages, test the connections, or download the ZIP and follow the manual GitHub + Cloudflare Pages guide.
 
 ### WP-CLI
 
@@ -108,10 +109,15 @@ wp aouwal-static-export deploy          # push the newest finished export
 | Rewrite uploads path | Off by default. When on, /wp-content/uploads/ is written and linked as /<folder>/ (default "uploads"). Changes URLs only; old /wp-content/uploads/ links stop working unless you add redirects. |
 | Uploads folder | Target folder used when "Rewrite uploads path" is on. Safe relative path; defaults to "uploads". |
 | GitHub deployment | Off by default. Enable it, then set the repository owner, repository name, branch, optional folder, commit message and a personal access token. The token is encrypted at rest and never rendered back. |
-| Deploy automatically | Push every successful export to GitHub after the ZIP is built. Off by default. |
-| Remove stale files | Delete repository files that are no longer in the export. Off by default and limited to the selected folder. |
+| Cloudflare Pages | Off by default. Enable it, then set the 32-character account ID, the Pages project name, an API token with Pages Edit access, an optional branch and a deployment message. The token is encrypted at rest. |
+| Deploy automatically | Per target: deploy every successful export to GitHub and/or Cloudflare Pages after the ZIP is built. Off by default. |
+| Remove stale files | Delete repository files that are no longer in the export. Off by default and limited to the selected folder. GitHub only. |
 
-## Deploy from WordPress to GitHub
+## Deploy from WordPress
+
+The Deploy tab can push a finished export to GitHub or Cloudflare Pages without downloading, unzipping and pushing by hand. Every target is off by default.
+
+### GitHub
 
 The Deploy tab can push a finished export to a repository with one commit per run.
 
@@ -122,6 +128,18 @@ The Deploy tab can push a finished export to a repository with one commit per ru
 5. Press **Deploy last export**, or enable **Deploy automatically after every successful export**.
 
 Only changed files are uploaded: each file is hashed as a git blob and compared with the branch tree. A missing branch is created from the default branch on the first push. A failed deployment reports the GitHub error text and keeps the local ZIP, so it can be retried without re-running the export.
+
+### Cloudflare Pages (direct upload)
+
+Use this for a Pages project that is **not** connected to Git. If the project builds from GitHub, use the GitHub target and let Pages rebuild from the commit.
+
+1. Create an API token with the **Cloudflare Pages: Edit** permission.
+2. Find the 32-character account ID in the dashboard URL or the account overview.
+3. Open **Deploy**, tick **Enable direct deployment to Cloudflare Pages**, and fill in the account ID, project name and token.
+4. Press **Save deployment settings**, then **Test connection**.
+5. Press **Deploy last export**, or enable automatic deployment.
+
+The plugin hashes every file, asks Pages which hashes are missing, uploads only those files, and creates one deployment with the full manifest. `_headers` and `_redirects` are sent as Pages configuration. Limits: 20,000 files and 25 MB per file, checked before the upload starts.
 
 ## Deploy to Cloudflare Pages
 
@@ -220,7 +238,7 @@ aouwal-static-site-export/
 │   ├── class-asset-processor.php # asset download + CSS recursion
 │   ├── class-exporter.php        # chunked job state machine + extras
 │   ├── class-network.php         # timeout, delay, origin, TLS and Basic Auth
-│   ├── class-deploy.php          # GitHub deployment (token, push, results)
+│   ├── class-deploy.php          # deployment targets (GitHub, Cloudflare Pages)
 │   └── class-zip.php
 ├── admin/
 │   ├── class-admin.php

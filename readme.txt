@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,7 @@ You can export:
 * Pause, resume and cancel controls, so a long export can be stopped without losing progress and a wrong export can be aborted and cleaned up.
 * Optional changed-only export: reuse the last export and re-export only pages, archives and assets that changed. Full export stays the default.
 * Optional direct deployment to GitHub: push the finished export to a branch with one commit per run. Off by default, token-only, no OAuth app.
+* Optional direct deployment to Cloudflare Pages: upload only changed files to a Pages project with an API token. Off by default.
 * Optional WP-CLI command: `wp aouwal-static-export run`.
 * Optional, invisible author credit. It is off by default and can be enabled in Settings.
 
@@ -130,31 +131,31 @@ Run it once from the command line without changing the saved setting:
 
 Data stored: one row per page and asset in a custom table (`{prefix}aouwal_export_state`) holding the URL hash, fingerprint, ETag, Last-Modified, size and the last export that confirmed it. The table is removed when the plugin is uninstalled.
 
-= Deploy from WordPress to GitHub =
+= Deploy from WordPress to GitHub and Cloudflare Pages =
 
-The Deploy tab can push a finished export to GitHub without downloading, unzipping, committing and pushing by hand. The target is off by default and hidden until you enable it.
+The Deploy tab pushes a finished export to GitHub or Cloudflare Pages without downloading, unzipping and pushing by hand. Each target is off by default and hidden until enabled, and each has its own Test connection and Deploy automatically options. Both tokens are stored encrypted, never shown again, and a failed deployment keeps the local ZIP so it can be retried.
 
-What you need:
+= GitHub =
 
-* A GitHub repository and a personal access token with contents read and write access for that repository. A fine-grained token limited to one repository is enough.
-* The repository owner, the repository name, the branch and an optional target folder.
+GitHub needs the repository owner, repository name, branch, optional folder and a personal access token with contents write access.
 
-How a deployment works:
-
-* The token is stored encrypted and is never shown again, never written to the export and never written to the log.
-* Only changed files are uploaded. The plugin compares a git blob hash for every exported file with the branch tree, so an unchanged file is skipped.
-* One commit is created per deployment, with a message you can edit. `{date}` is replaced with the deployment time.
-* A missing branch is created from the repository's default branch on the first deployment.
-* Files that are no longer in the export are kept unless you enable "Delete repository files that are no longer in the export". Removal is off by default and only touches the selected folder.
-* A failed deployment reports the GitHub error text, leaves the local ZIP and export folder untouched, and can be retried from the Deploy tab.
-
-Test connection checks that the token can read the repository and the branch before anything is pushed.
-
-The first deployment of a large site uploads every file once, so it can take a while. For thousands of files, run it from the command line, where there is no web request timeout:
+Only changed files are uploaded, one commit is created per run, and a missing branch is created from the default branch. Removing files that are no longer in the export is opt-in. For a first deployment of thousands of files, run `wp aouwal-static-site-export deploy` from the command line to avoid a web request timeout.
 
     wp aouwal-static-export deploy
 
-Deploy automatically after every successful export with the "Deploy automatically" option, or press "Deploy last export" after a manual run.
+= Cloudflare Pages =
+
+The Cloudflare target uploads the export to a Pages project with the direct upload API. Use it when the Pages project is not connected to a Git repository. If the project already builds from a GitHub repository, use the GitHub target and let Pages rebuild from the new commit.
+
+Cloudflare Pages needs the 32-character account ID, the project name (not the `.pages.dev` hostname) and an API token with Pages Edit access.
+
+Only missing file hashes are uploaded, and `_headers` and `_redirects` are included. Leave the branch blank for production, or enter a branch for a preview deployment.
+
+Limits: Cloudflare Pages accepts up to 20,000 files per deployment and 25 MB per file. The plugin stops with a clear message before uploading when the export exceeds either limit.
+
+Pages keeps every deployment as a preview, so removing content from the export does not delete the previous deployment; the new deployment simply no longer serves it.
+
+Test connection reads the project before anything is uploaded.
 
 = Crawl through proxies, staging sites and Basic Auth =
 
@@ -179,7 +180,7 @@ A static website is faster and safer than a dynamic one. There is no PHP to exec
 
 = What the export cleans up =
 
-* Removes comment forms, comment sections and comment feeds (on by default).
+* Removes comment forms, comment sections, "Leave a comment" links and comment feeds (on by default). Leftover theme wrappers such as `comments-area`, `comment-respond` and `comment-list` are removed too, across classic and block themes.
 * Removes search forms (on by default).
 * Strips WordPress version tags.
 * Strips staging "noindex" robots meta so the exported site stays indexable.
@@ -298,6 +299,20 @@ The Deploy tab shows the GitHub error text, such as `Bad credentials` or a permi
 
 A failed deployment never changes the export result: the pages that were exported stay exported, and a partial commit is not left behind because the branch ref is updated only after the commit object exists.
 
+= Can I deploy to Cloudflare Pages from WordPress? =
+
+Yes. Open the Deploy tab, enable Cloudflare Pages, and save the account ID, the project name and an API token with the Cloudflare Pages permission set to Edit. Then press "Deploy last export", or enable automatic deployment.
+
+The target uploads the export with the Pages direct upload API. It hashes every file, uploads only the hashes the project does not have yet, and creates one deployment with the full manifest. `_headers` and `_redirects` are included as Pages configuration.
+
+The project must be a direct upload project. If it is connected to a Git repository, use the GitHub target instead: pushing a commit makes Pages rebuild the site automatically.
+
+= Why does the Cloudflare target reject my project? =
+
+The direct upload API only works with a Pages project that is not connected to Git. A Git-connected project builds from the repository, so uploading files to it is not possible. Either create a second project with Direct Upload, or enable the GitHub target and let the connected project rebuild.
+
+The other limits are 20,000 files per deployment and 25 MB per file. The plugin checks both before uploading and reports which file is too large.
+
 = Does the plugin work on large sites? =
 
 Yes. The crawl runs in batches, and each batch is one request, so a PHP timeout applies to a batch, not to the whole site or to a single page.
@@ -377,6 +392,18 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.11.0 =
+* New: direct deployment to Cloudflare Pages. Add the account ID, Pages project name and an API token with Pages Edit access, then push the finished export from the Deploy tab. Off by default and hidden until enabled.
+* Files are hashed and checked against the project: only missing assets are uploaded, and one deployment is created with the full manifest. Unchanged files are reused on later runs.
+* `_headers` and `_redirects` are sent as Pages configuration, so caching and redirect rules work after a direct upload.
+* Optional branch field for a preview deployment; blank uses the production branch.
+* Test connection reads the project before uploading. Failures report the Cloudflare error text and keep the local ZIP and export folder.
+* Per-target automatic deployment: GitHub and Cloudflare Pages can each deploy after a successful export, independently.
+* "Test connection" now tests every enabled target and lists each result. "Deploy last export" deploys to every enabled target.
+* Enforced Cloudflare limits (20,000 files, 25 MB per file) with a clear message before the upload starts.
+* Cloudflare token encrypted at rest, never rendered, never logged, and removed on uninstall with the rest of the deployment option.
+* Fix: when comment forms are removed, "Leave a comment" links and leftover comment wrappers (`comments-area`, `comment-respond`, `comment-list`, `comments-wrapper` and similar) are removed too. Tested with Twenty Twenty-Five, Twenty Twenty-Four, Twenty Twenty-Three, Astra, Kadence, OceanWP and GeneratePress.
 
 = 1.10.0 =
 * New: direct GitHub deployment from the Deploy tab. Add a repository owner, repository name, branch, optional folder and a personal access token, then push the finished export with one commit. Off by default and hidden until enabled.
@@ -516,6 +543,9 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.11.0 =
+Adds optional direct deployment to Cloudflare Pages, with hash-based upload of changed files and per-target automatic deploy. Off by default, so nothing changes until you enable it.
 
 = 1.10.0 =
 Adds optional direct deployment to GitHub from the Deploy tab, with token-only setup, changed-file upload and automatic deploy after each export. Off by default, so nothing changes until you enable it.

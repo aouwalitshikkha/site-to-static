@@ -395,11 +395,24 @@ class AOUWAL_Admin {
 			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'aouwal-static-site-export' ) ), 403 );
 		}
 
-		$result = AOUWAL_Deploy::test_github();
-		if ( is_wp_error( $result ) ) {
-			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		$results = AOUWAL_Deploy::test_targets();
+		if ( empty( $results ) ) {
+			wp_send_json_error( array( 'message' => __( 'No deployment target is enabled. Enable a target and save its settings first.', 'aouwal-static-site-export' ) ) );
 		}
-		wp_send_json_success( $result );
+
+		$ok = true;
+		foreach ( $results as $row ) {
+			if ( empty( $row['ok'] ) ) {
+				$ok = false;
+			}
+		}
+
+		wp_send_json_success(
+			array(
+				'ok'      => $ok,
+				'results' => $results,
+			)
+		);
 	}
 
 	/**

@@ -37,22 +37,25 @@
 	}
 
 	$( function () {
-		var $toggle = $( '#aouwal_github_enabled' );
-		var $fields = $( '#aouwal-github-fields' );
-
-		function syncFields() {
+		function bindToggle( toggleId, fieldsId ) {
+			var $toggle = $( '#' + toggleId );
+			var $fields = $( '#' + fieldsId );
 			if ( ! $toggle.length || ! $fields.length ) {
 				return;
 			}
-			if ( $toggle.is( ':checked' ) ) {
-				$fields.removeAttr( 'hidden' );
-			} else {
-				$fields.attr( 'hidden', 'hidden' );
+			function sync() {
+				if ( $toggle.is( ':checked' ) ) {
+					$fields.removeAttr( 'hidden' );
+				} else {
+					$fields.attr( 'hidden', 'hidden' );
+				}
 			}
+			$toggle.on( 'change', sync );
+			sync();
 		}
 
-		$toggle.on( 'change', syncFields );
-		syncFields();
+		bindToggle( 'aouwal_github_enabled', 'aouwal-github-fields' );
+		bindToggle( 'aouwal_cloudflare_enabled', 'aouwal-cloudflare-fields' );
 
 		$( '#aouwal-deploy-test' ).on( 'click', function () {
 			busy( true );
@@ -61,8 +64,8 @@
 				action: 'aouwal_deploy_test',
 				nonce: cfg.nonce
 			} ).done( function ( response ) {
-				if ( response && response.success && response.data ) {
-					show( response.data.message || i18n.done || 'Connected.', true );
+				if ( response && response.success && response.data && response.data.results ) {
+					showResults( response.data.results );
 				} else {
 					show( ( response && response.data && response.data.message ) || i18n.failed || 'Failed.', false );
 				}
