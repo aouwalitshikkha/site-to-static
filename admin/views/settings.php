@@ -51,9 +51,10 @@ unset( $aouwal_post_types['attachment'] );
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_taxonomies]" value="1" <?php checked( $aouwal['include_taxonomies'] ); ?> /> <?php esc_html_e( 'Category / tag / taxonomy archives', 'aouwal-static-site-export' ); ?></label><br />
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_authors]" value="1" <?php checked( $aouwal['include_authors'] ); ?> /> <?php esc_html_e( 'Author archives', 'aouwal-static-site-export' ); ?></label><br />
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_dates]" value="1" <?php checked( $aouwal['include_dates'] ); ?> /> <?php esc_html_e( 'Date archives (year / month)', 'aouwal-static-site-export' ); ?></label><br />
-					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_feeds]" value="1" <?php checked( $aouwal['include_feeds'] ); ?> /> <?php esc_html_e( 'RSS feeds', 'aouwal-static-site-export' ); ?></label><br />
+					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_feeds]" value="1" <?php checked( $aouwal['include_feeds'] ); ?> /> <?php esc_html_e( 'RSS feeds (feed/index.xml)', 'aouwal-static-site-export' ); ?></label><br />
 					<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[include_attachments]" value="1" <?php checked( $aouwal['include_attachments'] ); ?> /> <?php esc_html_e( 'Attachment pages', 'aouwal-static-site-export' ); ?></label>
 				</fieldset>
+				<p class="description"><?php esc_html_e( 'Uncheck RSS feeds to remove feed/index.xml, the feed directory and every feed link from the export. Date archives and taxonomy/author archives are removed the same way when unchecked.', 'aouwal-static-site-export' ); ?></p>
 			</td>
 		</tr>
 	</table>

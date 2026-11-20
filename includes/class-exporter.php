@@ -1677,13 +1677,9 @@ class AOUWAL_Exporter {
 		}
 
 		if ( ! $use_body ) {
-			$notice   = __( 'The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template.', 'aouwal-static-site-export' );
-			$fallback = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>404 Not Found</title></head><body><h1>404 Not Found</h1></body></html>';
-			if ( AOUWAL_Brand::should_include() ) {
-				$fallback = AOUWAL_Brand::html_comment() . "\n" . $fallback;
-			}
+			$notice = __( 'The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template.', 'aouwal-static-site-export' );
 			return array(
-				'html'   => $fallback,
+				'html'   => $this->fallback_404_html(),
 				'notice' => $notice,
 			);
 		}
@@ -1694,9 +1690,81 @@ class AOUWAL_Exporter {
 		$this->download_recursive( $processed['assets'] );
 
 		return array(
-			'html'   => $processed['html'],
+			'html'   => $this->add_404_noindex( $processed['html'] ),
 			'notice' => $notice,
 		);
+	}
+
+	/**
+	 * Build a self-contained 404 page.
+	 *
+	 * Used when the site answers unknown URLs with a redirect or a copy of
+	 * the homepage. It has no external assets, no search form and no links to
+	 * archives that may not be part of the export.
+	 *
+	 * @return string
+	 */
+	protected function fallback_404_html() {
+		$name = (string) get_bloginfo( 'name' );
+		if ( '' === $name ) {
+			$name = (string) wp_parse_url( home_url( '/' ), PHP_URL_HOST );
+		}
+
+		$public = (string) AOUWAL_Settings::get( 'public_url' );
+		$home   = '' !== $public ? untrailingslashit( $public ) . '/' : home_url( '/' );
+		$lang   = (string) get_bloginfo( 'language' );
+
+		$title = sprintf(
+			/* translators: %s: site name. */
+			__( 'Page not found – %s', 'aouwal-static-site-export' ),
+			$name
+		);
+
+		$html = '<!DOCTYPE html><html lang="' . esc_attr( $lang ) . '"><head><meta charset="utf-8">'
+			. '<meta name="viewport" content="width=device-width, initial-scale=1">'
+			. '<meta name="robots" content="noindex, follow">'
+			. '<title>' . esc_html( $title ) . '</title>'
+			. '<style>'
+			. '*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;'
+			. 'padding:2rem;background:#0f172a;color:#e2e8f0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6}'
+			. 'main{width:100%;max-width:34rem;text-align:center}'
+			. '.code{margin:0;font-size:clamp(4rem,18vw,7rem);font-weight:800;line-height:1;letter-spacing:-.04em;color:#6366f1}'
+			. 'h1{margin:1rem 0 .5rem;font-size:clamp(1.5rem,4vw,2rem);color:#f8fafc}'
+			. 'p{margin:0 0 2rem;color:#94a3b8}'
+			. 'a{display:inline-block;padding:.85rem 1.5rem;border-radius:.6rem;background:#4f46e5;color:#fff;font-weight:600;text-decoration:none}'
+			. 'a:hover,a:focus{background:#6366f1}'
+			. 'a:focus{outline:3px solid #a5b4fc;outline-offset:3px}'
+			. '</style></head><body><main>'
+			. '<p class="code" aria-hidden="true">404</p>'
+			. '<h1>' . esc_html__( 'Page not found', 'aouwal-static-site-export' ) . '</h1>'
+			. '<p>' . esc_html__( 'The page you are looking for does not exist or has moved.', 'aouwal-static-site-export' ) . '</p>'
+			. '<a href="' . esc_url( $home ) . '">'
+			/* translators: %s: site name. */
+			. esc_html( sprintf( __( 'Back to %s', 'aouwal-static-site-export' ), $name ) )
+			. '</a></main></body></html>';
+
+		if ( AOUWAL_Brand::should_include() ) {
+			$html = AOUWAL_Brand::html_comment() . "\n" . $html;
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Add a noindex robots meta tag to a themed 404 page when it has none.
+	 *
+	 * @param string $html Page HTML.
+	 * @return string
+	 */
+	protected function add_404_noindex( $html ) {
+		if ( preg_match( '/<meta[^>]+name=["\']robots["\']/i', (string) $html ) ) {
+			return $html;
+		}
+		$tag = '<meta name="robots" content="noindex, follow">';
+		if ( false !== stripos( $html, '</head>' ) ) {
+			return (string) preg_replace( '/<\/head>/i', $tag . '</head>', $html, 1 );
+		}
+		return $html;
 	}
 
 	/**

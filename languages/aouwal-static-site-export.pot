@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-20T10:41:31+01:00\n"
+"POT-Creation-Date: 2026-11-20T11:15:43+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: aouwal-static-site-export\n"
@@ -214,8 +214,8 @@ msgstr ""
 #: admin/class-admin.php:477
 #: admin/class-admin.php:483
 #: admin/class-admin.php:496
-#: includes/class-deploy.php:564
-#: includes/class-deploy.php:809
+#: includes/class-deploy.php:568
+#: includes/class-deploy.php:813
 #: includes/class-exporter.php:355
 #: includes/class-exporter.php:453
 #: includes/class-exporter.php:678
@@ -304,7 +304,7 @@ msgstr ""
 
 #: admin/views/deploy.php:108
 #: admin/views/deploy.php:173
-#: admin/views/settings.php:191
+#: admin/views/settings.php:192
 msgid "Saved"
 msgstr ""
 
@@ -636,246 +636,250 @@ msgid "Date archives (year / month)"
 msgstr ""
 
 #: admin/views/settings.php:54
-msgid "RSS feeds"
+msgid "RSS feeds (feed/index.xml)"
 msgstr ""
 
 #: admin/views/settings.php:55
 msgid "Attachment pages"
 msgstr ""
 
-#: admin/views/settings.php:61
+#: admin/views/settings.php:57
+msgid "Uncheck RSS feeds to remove feed/index.xml, the feed directory and every feed link from the export. Date archives and taxonomy/author archives are removed the same way when unchecked."
+msgstr ""
+
+#: admin/views/settings.php:62
 msgid "Assets &amp; URLs"
 msgstr ""
 
-#: admin/views/settings.php:64
+#: admin/views/settings.php:65
 msgid "Asset handling"
 msgstr ""
 
-#: admin/views/settings.php:66
+#: admin/views/settings.php:67
 msgid "Download &amp; localize all assets (CSS, JS, images, fonts)"
 msgstr ""
 
-#: admin/views/settings.php:70
+#: admin/views/settings.php:71
 msgid "Maximum asset size"
 msgstr ""
 
-#: admin/views/settings.php:72
+#: admin/views/settings.php:73
 msgid "MB"
 msgstr ""
 
-#: admin/views/settings.php:73
+#: admin/views/settings.php:74
 msgid "Assets larger than this are skipped with an error in the log, so one large video or archive cannot run the export out of memory. Raise it if you need to export big media files."
 msgstr ""
 
-#: admin/views/settings.php:77
+#: admin/views/settings.php:78
 msgid "URL style"
 msgstr ""
 
-#: admin/views/settings.php:80
+#: admin/views/settings.php:81
 msgid "Relative (portable, works in a subdirectory)"
 msgstr ""
 
-#: admin/views/settings.php:81
+#: admin/views/settings.php:82
 msgid "Root-absolute (/, best for Cloudflare Pages root domain)"
 msgstr ""
 
-#: admin/views/settings.php:86
+#: admin/views/settings.php:87
 msgid "Public site URL"
 msgstr ""
 
-#: admin/views/settings.php:89
+#: admin/views/settings.php:90
 msgid "Where the static site will live (used for sitemap.xml). Leave blank to use the current site URL."
 msgstr ""
 
-#: admin/views/settings.php:93
+#: admin/views/settings.php:94
 msgid "Additional URLs"
 msgstr ""
 
-#: admin/views/settings.php:96
+#: admin/views/settings.php:97
 msgid "One URL per line. These will be exported in addition to discovered content."
 msgstr ""
 
-#: admin/views/settings.php:100
+#: admin/views/settings.php:101
 msgid "Exclude URLs"
 msgstr ""
 
-#: admin/views/settings.php:103
+#: admin/views/settings.php:104
 msgid "One pattern per line. Plain text matches a substring; wrap in slashes (/regex/) for a regular expression."
 msgstr ""
 
-#: admin/views/settings.php:108
+#: admin/views/settings.php:109
 msgid "Paths"
 msgstr ""
 
-#: admin/views/settings.php:111
+#: admin/views/settings.php:112
 msgid "Rewrite uploads path"
 msgstr ""
 
-#: admin/views/settings.php:113
+#: admin/views/settings.php:114
 msgid "Move /wp-content/uploads/ to a shorter folder in the export"
 msgstr ""
 
-#: admin/views/settings.php:114
+#: admin/views/settings.php:115
 msgid "Off by default: the export keeps the live /wp-content/uploads/ structure. When enabled, every reference and file is written under the folder below instead. This changes URLs only and does not remove other WordPress fingerprints. Old /wp-content/uploads/ links stop working unless you add redirects."
 msgstr ""
 
-#: admin/views/settings.php:118
+#: admin/views/settings.php:119
 msgid "Uploads folder"
 msgstr ""
 
-#: admin/views/settings.php:121
+#: admin/views/settings.php:122
 msgid "Target folder for uploaded media, relative to the export root (for example \"uploads\" or \"media\"). Letters, numbers, dashes, underscores and slashes only. Leave as \"wp-content/uploads\" to keep the original path."
 msgstr ""
 
-#: admin/views/settings.php:126
+#: admin/views/settings.php:127
 msgid "Network"
 msgstr ""
 
-#: admin/views/settings.php:129
+#: admin/views/settings.php:130
 msgid "Request timeout"
 msgstr ""
 
-#: admin/views/settings.php:132
+#: admin/views/settings.php:133
 msgid "seconds"
 msgstr ""
 
-#: admin/views/settings.php:133
+#: admin/views/settings.php:134
 msgid "How long one request may take before it is abandoned. Raise it if slow pages or large files time out during export."
 msgstr ""
 
-#: admin/views/settings.php:137
+#: admin/views/settings.php:138
 msgid "Delay between requests"
 msgstr ""
 
-#: admin/views/settings.php:140
+#: admin/views/settings.php:141
 msgid "milliseconds"
 msgstr ""
 
-#: admin/views/settings.php:141
+#: admin/views/settings.php:142
 msgid "Pause between two crawl requests. Use it on shared hosting or when the export triggers rate limiting. Zero means no pause."
 msgstr ""
 
-#: admin/views/settings.php:145
+#: admin/views/settings.php:146
 msgid "Retries for transient failures"
 msgstr ""
 
-#: admin/views/settings.php:148
+#: admin/views/settings.php:149
 msgid "How many times a request is retried after a timeout, an HTTP 429 or a server error (5xx). Backoff is short (0.25 s, 0.5 s, 1 s…), and permanent errors such as 404 or 401 are never retried. Zero disables retries."
 msgstr ""
 
-#: admin/views/settings.php:152
+#: admin/views/settings.php:153
 msgid "Batch size (concurrency)"
 msgstr ""
 
-#: admin/views/settings.php:155
+#: admin/views/settings.php:156
 msgid "URLs processed per request. This is the crawl concurrency: lower it if your server limits PHP execution time or the origin rate-limits the export."
 msgstr ""
 
-#: admin/views/settings.php:159
+#: admin/views/settings.php:160
 msgid "Custom crawl origin"
 msgstr ""
 
-#: admin/views/settings.php:162
+#: admin/views/settings.php:163
 msgid "Optional. Send crawl requests to this URL instead of the site URL, for example an internal container name or a reverse-proxied host. Links in the export still use the site URL. The host is trusted like the site host, but link-local and cloud metadata addresses are refused."
 msgstr ""
 
-#: admin/views/settings.php:166
+#: admin/views/settings.php:167
 msgid "TLS verification"
 msgstr ""
 
-#: admin/views/settings.php:169
+#: admin/views/settings.php:170
 msgid "Verify, except on local hosts (default)"
 msgstr ""
 
-#: admin/views/settings.php:170
+#: admin/views/settings.php:171
 msgid "Always verify certificates"
 msgstr ""
 
-#: admin/views/settings.php:171
+#: admin/views/settings.php:172
 msgid "Verify against a custom CA bundle"
 msgstr ""
 
-#: admin/views/settings.php:176
+#: admin/views/settings.php:177
 msgid "CA bundle path"
 msgstr ""
 
-#: admin/views/settings.php:179
+#: admin/views/settings.php:180
 msgid "Absolute path on the server to a PEM bundle with one or more CA certificates. Only used when \"Verify against a custom CA bundle\" is selected; an unreadable path falls back to the system bundle."
 msgstr ""
 
-#: admin/views/settings.php:183
+#: admin/views/settings.php:184
 msgid "HTTP Basic Auth"
 msgstr ""
 
-#: admin/views/settings.php:186
+#: admin/views/settings.php:187
 msgid "Username"
 msgstr ""
 
-#: admin/views/settings.php:190
+#: admin/views/settings.php:191
 msgid "Password"
 msgstr ""
 
-#: admin/views/settings.php:193
+#: admin/views/settings.php:194
 msgid "Sent only to this site's own hosts, never to external asset hosts or after a redirect to another domain. The password is stored encrypted and never shown again; leave it blank to keep the saved one."
 msgstr ""
 
-#: admin/views/settings.php:196
+#: admin/views/settings.php:197
 msgid "Remove stored credentials"
 msgstr ""
 
-#: admin/views/settings.php:199
+#: admin/views/settings.php:200
 msgid "Basic Auth only. Cookie-based protection and WordPress \"site password\" plugins are not supported."
 msgstr ""
 
-#: admin/views/settings.php:204
+#: admin/views/settings.php:205
 msgid "Cleanup &amp; output"
 msgstr ""
 
-#: admin/views/settings.php:207
+#: admin/views/settings.php:208
 msgid "Remove dynamic features"
 msgstr ""
 
-#: admin/views/settings.php:209
+#: admin/views/settings.php:210
 msgid "Remove comment forms and comment sections"
 msgstr ""
 
-#: admin/views/settings.php:210
+#: admin/views/settings.php:211
 msgid "Remove search forms"
 msgstr ""
 
-#: admin/views/settings.php:211
+#: admin/views/settings.php:212
 msgid "Server-side search and comments cannot work on a static host, so they are removed."
 msgstr ""
 
-#: admin/views/settings.php:215
+#: admin/views/settings.php:216
 msgid "Generated files"
 msgstr ""
 
-#: admin/views/settings.php:217
+#: admin/views/settings.php:218
 msgid "sitemap.xml"
 msgstr ""
 
-#: admin/views/settings.php:218
+#: admin/views/settings.php:219
 msgid "robots.txt"
 msgstr ""
 
-#: admin/views/settings.php:219
+#: admin/views/settings.php:220
 msgid "Cloudflare Pages _redirects file"
 msgstr ""
 
-#: admin/views/settings.php:220
+#: admin/views/settings.php:221
 msgid "Cloudflare Pages _headers file"
 msgstr ""
 
-#: admin/views/settings.php:224
+#: admin/views/settings.php:225
 msgid "Attribution"
 msgstr ""
 
-#: admin/views/settings.php:226
+#: admin/views/settings.php:227
 msgid "Include an invisible author credit comment in exported files"
 msgstr ""
 
-#: admin/views/settings.php:227
+#: admin/views/settings.php:228
 msgid "Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export – Static Site Generator. It never appears in the browser."
 msgstr ""
 
@@ -996,157 +1000,157 @@ msgid "Connected to Cloudflare Pages project %1$s (production branch %2$s)."
 msgstr ""
 
 #. translators: %s: pages.dev hostname.
-#: includes/class-deploy.php:532
+#: includes/class-deploy.php:536
 #, php-format
-msgid "Preview URL: https://%s.pages.dev."
+msgid "Preview URL: https://%s."
 msgstr ""
 
-#: includes/class-deploy.php:535
+#: includes/class-deploy.php:539
 msgid "This project is connected to Git, so direct uploads are not supported. Use the GitHub target instead."
 msgstr ""
 
-#: includes/class-deploy.php:558
+#: includes/class-deploy.php:562
 msgid "Cloudflare Pages is not configured. Add an account ID, a project name and a token."
 msgstr ""
 
-#: includes/class-deploy.php:567
-#: includes/class-deploy.php:812
+#: includes/class-deploy.php:571
+#: includes/class-deploy.php:816
 msgid "Only a finished export can be deployed."
 msgstr ""
 
-#: includes/class-deploy.php:573
-#: includes/class-deploy.php:818
+#: includes/class-deploy.php:577
+#: includes/class-deploy.php:822
 msgid "The export files are missing. Run the export again."
 msgstr ""
 
-#: includes/class-deploy.php:579
-#: includes/class-deploy.php:827
+#: includes/class-deploy.php:583
+#: includes/class-deploy.php:831
 msgid "The export folder is empty."
 msgstr ""
 
-#: includes/class-deploy.php:582
+#: includes/class-deploy.php:586
 msgid "Cloudflare Pages accepts up to 20,000 files in a deployment. Exclude some content or use Git integration instead."
 msgstr ""
 
-#: includes/class-deploy.php:600
+#: includes/class-deploy.php:604
 msgid "This Pages project is connected to Git, so Cloudflare builds it from the repository and rejects direct uploads. Use the GitHub target, or create a Direct Upload project."
 msgstr ""
 
 #. translators: %s: file path inside the export.
-#: includes/class-deploy.php:612
+#: includes/class-deploy.php:616
 #, php-format
 msgid "Cloudflare Pages accepts files up to 25 MB, and %s is larger. Lower the Maximum asset size setting or exclude the file."
 msgstr ""
 
-#: includes/class-deploy.php:627
+#: includes/class-deploy.php:631
 msgid "Cloudflare did not return an upload token for this project."
 msgstr ""
 
 #. translators: %s: file path inside the export.
-#: includes/class-deploy.php:685
-#: includes/class-deploy.php:895
+#: includes/class-deploy.php:689
+#: includes/class-deploy.php:899
 #, php-format
 msgid "Could not read %s from the export folder."
 msgstr ""
 
 #. translators: %s: Cloudflare error text.
-#: includes/class-deploy.php:705
+#: includes/class-deploy.php:709
 #, php-format
 msgid "Uploading the assets failed: %s"
 msgstr ""
 
 #. translators: %s: Cloudflare error text.
-#: includes/class-deploy.php:749
+#: includes/class-deploy.php:753
 #, php-format
 msgid "Creating the Pages deployment failed: %s"
 msgstr ""
 
 #. translators: 1: Pages project name, 2: deployment URL.
-#: includes/class-deploy.php:769
+#: includes/class-deploy.php:773
 #, php-format
 msgid "Cloudflare accepted the upload for %1$s but the deployment failed. Check the Pages dashboard: %2$s"
 msgstr ""
 
 #. translators: 1: number of uploaded files, 2: Pages project name, 3: number of unchanged files, 4: deployment URL.
-#: includes/class-deploy.php:779
+#: includes/class-deploy.php:783
 #, php-format
 msgid "Deployed %1$d file(s) to Cloudflare Pages project %2$s. %3$d unchanged. %4$s"
 msgstr ""
 
-#: includes/class-deploy.php:803
+#: includes/class-deploy.php:807
 msgid "GitHub is not configured. Add an owner, a repository and a token."
 msgstr ""
 
-#: includes/class-deploy.php:864
+#: includes/class-deploy.php:868
 msgid "GitHub did not return a tree for the branch head."
 msgstr ""
 
 #. translators: 1: file path, 2: GitHub error text.
-#: includes/class-deploy.php:914
+#: includes/class-deploy.php:918
 #, php-format
 msgid "Uploading %1$s failed: %2$s"
 msgstr ""
 
 #. translators: %s: file path.
-#: includes/class-deploy.php:925
+#: includes/class-deploy.php:929
 #, php-format
 msgid "GitHub did not return a blob for %s."
 msgstr ""
 
 #. translators: 1: repository name, 2: branch name.
-#: includes/class-deploy.php:968
+#: includes/class-deploy.php:972
 #, php-format
 msgid "Already up to date on %1$s@%2$s. No commit was created."
 msgstr ""
 
 #. translators: %s: GitHub error text.
-#: includes/class-deploy.php:984
+#: includes/class-deploy.php:988
 #, php-format
 msgid "Building the commit tree failed: %s"
 msgstr ""
 
-#: includes/class-deploy.php:991
+#: includes/class-deploy.php:995
 msgid "GitHub did not return a tree SHA."
 msgstr ""
 
 #. translators: %s: GitHub error text.
-#: includes/class-deploy.php:1009
+#: includes/class-deploy.php:1013
 #, php-format
 msgid "Creating the commit failed: %s"
 msgstr ""
 
-#: includes/class-deploy.php:1015
+#: includes/class-deploy.php:1019
 msgid "GitHub did not return a commit SHA."
 msgstr ""
 
 #. translators: %s: GitHub error text.
-#: includes/class-deploy.php:1043
+#: includes/class-deploy.php:1047
 #, php-format
 msgid "Updating the branch failed: %s"
 msgstr ""
 
 #. translators: 1: number of uploaded files, 2: repository name, 3: branch, 4: short commit SHA, 5: number of unchanged files, 6: number of removed files.
-#: includes/class-deploy.php:1057
+#: includes/class-deploy.php:1061
 #, php-format
 msgid "Pushed %1$d file(s) to %2$s@%3$s in commit %4$s. %5$d unchanged, %6$d removed."
 msgstr ""
 
-#: includes/class-deploy.php:1114
+#: includes/class-deploy.php:1118
 msgid "No Cloudflare token is saved."
 msgstr ""
 
 #. translators: %d: HTTP status code.
-#: includes/class-deploy.php:1160
+#: includes/class-deploy.php:1164
 #, php-format
 msgid "Cloudflare returned HTTP %d."
 msgstr ""
 
-#: includes/class-deploy.php:1316
+#: includes/class-deploy.php:1320
 msgid "No GitHub token is saved."
 msgstr ""
 
 #. translators: %d: HTTP status code.
-#: includes/class-deploy.php:1348
+#: includes/class-deploy.php:1352
 #, php-format
 msgid "GitHub returned HTTP %d."
 msgstr ""
@@ -1232,6 +1236,26 @@ msgstr ""
 
 #: includes/class-exporter.php:1680
 msgid "The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template."
+msgstr ""
+
+#. translators: %s: site name.
+#: includes/class-exporter.php:1719
+#, php-format
+msgid "Page not found – %s"
+msgstr ""
+
+#: includes/class-exporter.php:1739
+msgid "Page not found"
+msgstr ""
+
+#: includes/class-exporter.php:1740
+msgid "The page you are looking for does not exist or has moved."
+msgstr ""
+
+#. translators: %s: site name.
+#: includes/class-exporter.php:1743
+#, php-format
+msgid "Back to %s"
 msgstr ""
 
 #: includes/class-network.php:277

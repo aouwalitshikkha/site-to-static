@@ -33,7 +33,7 @@ You can export:
 
 * Posts, pages and custom post types.
 * Category, tag and custom taxonomy archives, author archives and date archives, including page 2 and later.
-* RSS feeds.
+* RSS feeds (`feed/index.xml`), removable with one checkbox.
 * A `404.html` page, plus `sitemap.xml` and `robots.txt`.
 * Cloudflare Pages `_redirects` and `_headers` files, both on by default.
 
@@ -402,6 +402,8 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Per-target automatic deployment: GitHub and Cloudflare Pages can each deploy after a successful export, independently.
 * "Test connection" now tests every enabled target and lists each result. "Deploy last export" deploys to every enabled target.
 * Enforced Cloudflare limits (20,000 files, 25 MB per file) with a clear message before the upload starts.
+* Fix: when an archive type is disabled, links to it are removed instead of staying broken. Date archive links (`/2026/` and `/2026/11/`) disappear when date archives are off, and `feed/index.xml`, feed directories and every feed link disappear when RSS feeds are off.
+* Fix: a fallback 404 page is now self-contained and styled, with a clear message, a home link and a `noindex` robots tag. Themed 404 pages also get `noindex` when they do not already have it.
 * Cloudflare token encrypted at rest, never rendered, never logged, and removed on uninstall with the rest of the deployment option.
 * Fix: when comment forms are removed, "Leave a comment" links and leftover comment wrappers (`comments-area`, `comment-respond`, `comment-list`, `comments-wrapper` and similar) are removed too. Tested with Twenty Twenty-Five, Twenty Twenty-Four, Twenty Twenty-Three, Astra, Kadence, OceanWP and GeneratePress.
 

@@ -96,7 +96,7 @@ wp aouwal-static-export deploy          # push the newest finished export
 |---|---|
 | Export mode | `Full export` (default) re-crawls every URL. `Changed-only export` starts from the last export and re-exports only changed pages, archives and assets. Falls back to a full export after a plugin, WordPress, theme, permalink or output-setting change. |
 | Post types | Which post types to export (posts, pages, CPTs). |
-| Archives | Include taxonomy, author and/or date archives and RSS feeds. Turning RSS feeds off also removes the feed rules from `_redirects`. |
+| Archives | Include taxonomy, author and/or date archives and RSS feeds. Turning RSS feeds off removes `feed/index.xml`, the feed directory, feed links and the feed rules from `_redirects`. Turning date archives off removes date archive links too. |
 | Asset handling | Download and localize assets. Query strings are always stripped, because a static file server cannot serve `style.css?ver=1.2` differently from `style.css`. |
 | Maximum asset size | Assets larger than this (default 25 MB) are skipped with an error in the log, so a single large file cannot run the export out of memory. |
 | URL style | `Relative` (portable, works in a subdirectory) or `Root-absolute` (best for a Cloudflare Pages root domain). |

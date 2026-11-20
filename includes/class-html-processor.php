@@ -113,6 +113,8 @@ class AOUWAL_HTML_Processor {
 		$xpath = new DOMXPath( $doc );
 
 		$this->remove_dynamic( $xpath );
+		$this->strip_disabled_archive_links( $xpath, $source_url );
+		$this->strip_disabled_feed_links( $xpath, $source_url );
 		$crawler = new AOUWAL_Crawler();
 		$this->rewrite_urls( $doc, $xpath, $source_url, $local_path, $assets, $crawler );
 
@@ -443,6 +445,183 @@ class AOUWAL_HTML_Processor {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Remove links to archives that are not part of the export.
+	 *
+	 * Date archives are the common case: the Archives widget keeps linking
+	 * to /2026/11/ even when date archives are switched off, which would be a
+	 * broken link in the static site. The anchor is removed and the widget
+	 * list item is dropped when it contains nothing else.
+	 *
+	 * @param DOMXPath $xpath      Document XPath.
+	 * @param string   $source_url Page URL, used to ignore external hosts.
+	 * @return void
+	 */
+	protected function strip_disabled_archive_links( DOMXPath $xpath, $source_url ) {
+		if ( AOUWAL_Settings::get( 'include_dates' ) ) {
+			return;
+		}
+
+		$source_host = strtolower( (string) wp_parse_url( $source_url, PHP_URL_HOST ) );
+		$nodes       = $xpath->query( '//a[@href]' );
+		if ( ! $nodes ) {
+			return;
+		}
+
+		$drop = array();
+		foreach ( $nodes as $link ) {
+			$href = trim( (string) $link->getAttribute( 'href' ) );
+			if ( '' === $href || '#' === $href[0] ) {
+				continue;
+			}
+
+			$parts = wp_parse_url( $href );
+			if ( ! is_array( $parts ) ) {
+				continue;
+			}
+
+			$host = isset( $parts['host'] ) ? strtolower( (string) $parts['host'] ) : '';
+			if ( '' !== $host && $host !== $source_host ) {
+				continue;
+			}
+
+			$path    = isset( $parts['path'] ) ? '/' . ltrim( (string) $parts['path'], '/' ) : '';
+			$is_date = (bool) preg_match( '#/(\d{4})(/\d{2})?/?$#', $path );
+
+			if ( ! $is_date && ! empty( $parts['query'] ) ) {
+				$query = array();
+				parse_str( (string) $parts['query'], $query );
+				if ( isset( $query['m'] ) && preg_match( '/^\d{4}(\d{2})?$/', (string) $query['m'] ) ) {
+					$is_date = true;
+				} elseif ( isset( $query['year'], $query['monthnum'] ) && preg_match( '/^\d{4}$/', (string) $query['year'] ) ) {
+					$is_date = true;
+				}
+			}
+
+			if ( $is_date ) {
+				$drop[] = $link;
+			}
+		}
+
+		foreach ( $drop as $link ) {
+			$parent = $link->parentNode; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			if ( ! $parent ) {
+				continue;
+			}
+
+			// Drop the whole list item when the archive link is its only
+			// content, which is how the Archives widget renders a month.
+			if ( 'li' === strtolower( $parent->nodeName ) && trim( $parent->textContent ) === trim( $link->textContent ) ) {
+				if ( $parent->parentNode ) {
+					$parent->parentNode->removeChild( $parent );
+				}
+				continue;
+			}
+
+			while ( $link->firstChild ) {
+				$parent->insertBefore( $link->firstChild, $link );
+			}
+			$parent->removeChild( $link );
+		}
+	}
+
+	/**
+	 * Remove feed links when RSS feeds are disabled.
+	 *
+	 * WordPress always prints the RSS autodiscovery <link> in the head and
+	 * themes often add an "Entries feed" widget. Without this the export
+	 * advertises feed URLs that were never crawled.
+	 *
+	 * @param DOMXPath $xpath      Document XPath.
+	 * @param string   $source_url Page URL, used to ignore external hosts.
+	 * @return void
+	 */
+	protected function strip_disabled_feed_links( DOMXPath $xpath, $source_url ) {
+		if ( AOUWAL_Settings::get( 'include_feeds' ) ) {
+			return;
+		}
+
+		$source_host = strtolower( (string) wp_parse_url( $source_url, PHP_URL_HOST ) );
+
+		$links = $xpath->query( '//link[@href]' );
+		foreach ( $links as $link ) {
+			$rel  = strtolower( (string) $link->getAttribute( 'rel' ) );
+			$type = strtolower( (string) $link->getAttribute( 'type' ) );
+			$href = (string) $link->getAttribute( 'href' );
+
+			$is_feed_type = false !== strpos( $type, 'rss' ) || false !== strpos( $type, 'atom' ) || false !== strpos( $type, 'feed+json' );
+			if ( ( 'alternate' === $rel && $is_feed_type ) || $this->is_feed_url( $href, '' ) ) {
+				if ( $link->parentNode ) {
+					$link->parentNode->removeChild( $link );
+				}
+			}
+		}
+
+		$anchors = $xpath->query( '//a[@href]' );
+		$drop    = array();
+		foreach ( $anchors as $anchor ) {
+			if ( $this->is_feed_url( (string) $anchor->getAttribute( 'href' ), $source_host ) ) {
+				$drop[] = $anchor;
+			}
+		}
+
+		foreach ( $drop as $anchor ) {
+			$parent = $anchor->parentNode; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			if ( ! $parent ) {
+				continue;
+			}
+			if ( 'li' === strtolower( $parent->nodeName ) && trim( $parent->textContent ) === trim( $anchor->textContent ) ) {
+				if ( $parent->parentNode ) {
+					$parent->parentNode->removeChild( $parent );
+				}
+				continue;
+			}
+			while ( $anchor->firstChild ) {
+				$parent->insertBefore( $anchor->firstChild, $anchor );
+			}
+			$parent->removeChild( $anchor );
+		}
+	}
+
+	/**
+	 * Whether a URL points at a feed.
+	 *
+	 * @param string $href        URL or path.
+	 * @param string $source_host Site host, or an empty string to skip the host check.
+	 * @return bool
+	 */
+	protected function is_feed_url( $href, $source_host ) {
+		$href = trim( (string) $href );
+		if ( '' === $href || '#' === $href[0] ) {
+			return false;
+		}
+
+		$parts = wp_parse_url( $href );
+		if ( ! is_array( $parts ) ) {
+			return false;
+		}
+
+		$host = isset( $parts['host'] ) ? strtolower( (string) $parts['host'] ) : '';
+		if ( '' !== $source_host && '' !== $host && $host !== $source_host ) {
+			return false;
+		}
+
+		$path = isset( $parts['path'] ) ? (string) $parts['path'] : '';
+		if ( preg_match( '#(^|/)feed(/|$)#i', $path ) ) {
+			return true;
+		}
+
+		if ( ! empty( $parts['query'] ) ) {
+			$query = array();
+			parse_str( (string) $parts['query'], $query );
+			if ( isset( $query['feed'] ) && preg_match( '/^(rss|rss2|atom)$/i', (string) $query['feed'] ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
