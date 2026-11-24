@@ -83,6 +83,17 @@ wp aouwal-static-export run --batch=10
 ```
 Runs a full export and prints the resulting ZIP path. Add `--changed-only` to reuse the last export and re-export only what changed, or `--full` to force a full crawl for one run without touching the saved setting.
 
+For cron and CI:
+
+```bash
+wp aouwal-static-export run --batch=10 --format=json --zip=/var/www/builds/site.zip > /tmp/export.json
+wp aouwal-static-export run --output-dir=/var/www/static --force
+```
+
+`--format=json` (or `--porcelain`) prints one JSON object on stdout and sends logs to stderr. It contains `job_id`, `mode`, `counts`, `output_dir`, `zip`, `bytes`, `duration`, timestamps and deployment results. `--output-dir` and `--zip` copy the finished result to a stable path; both require the target to be missing or empty unless `--force` is used.
+
+Exit codes: `0` success, `1` completed with failed items or cancelled, `2` could not start (lock, invalid flag/path, missing zip extension). The export lock stops two cron runs from overlapping.
+
 ```bash
 wp aouwal-static-export status          # phase, mode, processed/pending counts, last URL
 wp aouwal-static-export cancel          # stop the newest export and delete its files
