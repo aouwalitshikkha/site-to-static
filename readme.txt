@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.11.0
+Stable tag: 1.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,20 +71,35 @@ The output is a plain folder of HTML files and assets, which makes it a good fit
 
 = Automate exports with WP-CLI and cron =
 
-Aouwal Static Site Export writes a ZIP and a local folder. It does not schedule exports, and it does not push to Netlify, Cloudflare Pages, S3 or any other host by itself. For hands-off deployments, run the export from WP-CLI on a schedule and let cron and your Git host do the rest.
+Aouwal Static Site Export writes a ZIP and a local folder. It does not schedule exports, so use cron or your host's scheduler for hands-off runs. The WP-CLI command can also place the result exactly where a deploy script expects it.
 
-1. Create a cron job that runs the export and unzips the result into the repository your host watches. The command prints the ZIP path when it finishes, and the last line has the `Success: Export complete:` prefix:
+1. Run the export with machine-readable output and a stable ZIP path:
 
-    ZIP=$(wp aouwal-static-export run --batch=10 | tail -n 1 | sed 's/^Success: Export complete: //')
-    unzip -o "$ZIP" -d /var/www/static-repo
+    wp aouwal-static-site-export run --batch=10 --format=json --zip=/var/www/builds/site.zip > /tmp/export.json
 
-2. Commit and push the updated files:
+The JSON object contains `job_id`, `mode`, `counts` (`done`, `error`, `skipped`, `total`), `output_dir`, `zip`, `bytes`, `duration`, `started`, `finished` and any deployment results. Only JSON goes to stdout; progress and log lines go to stderr.
+
+2. Unzip that stable path into the repository your host watches:
+
+    unzip -o /var/www/builds/site.zip -d /var/www/static-repo
+
+Or skip the unzip step with `--output-dir=/var/www/static-repo --force`, which copies the finished site tree into the target folder.
+
+3. Commit and push the updated files:
 
     cd /var/www/static-repo && git add -A && git commit -m "Static export" && git push
 
-3. Cloudflare Pages, Netlify and Vercel redeploy on every push, so the new static site is live a few minutes after the cron job runs.
+4. Cloudflare Pages, Netlify and Vercel redeploy on every push, so the new static site is live a few minutes after the cron job runs.
 
-The command exits with 0 on a clean run, or 1 when some items failed, so your script can stop before pushing a broken build. The ZIP keeps the site structure (`path/index.html`), so unzip it as a folder, not as a flat file list. Machine-readable output and a custom output path are planned.
+Exit codes are stable:
+
+* `0` — export completed without failed items.
+* `1` — completed with failed items, or cancelled.
+* `2` — could not start: another export is running, an invalid flag or path, or the PHP zip extension is missing.
+
+Two cron runs cannot overlap: the exporter takes a lock and the second process exits 2 with the running job ID. A lock is released when the export finishes, pauses or is cancelled, and a stale lock is ignored after 20 minutes without progress.
+
+`--format=json` and `--porcelain` are aliases. `--output-dir` and `--zip` accept absolute paths and are checked before the crawl starts. The ZIP keeps the site structure (`path/index.html`), so unzip it as a folder, not as a flat file list.
 
 = Pause, resume or cancel an export =
 
@@ -393,6 +408,13 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 
 == Changelog ==
 
+= 1.12.0 =
+* New: `wp aouwal-static-export run --format=json` prints one JSON object on stdout and sends log lines to stderr. It includes job ID, counts, output directory, ZIP path, bytes, duration, timestamps and deployment results. `--porcelain` is an alias.
+* New: `--output-dir=<path>` and `--zip=<path>` copy the finished export to a stable path for cron and CI. Both are validated before the crawl; a non-empty folder or existing ZIP needs `--force`.
+* New: an export lock stops two cron or web runs from overlapping. The second process exits 2 with the running job ID and start time, and the lock is released on finish, pause or cancel. A stale lock is ignored after 20 minutes without a batch.
+* Documented exit codes: 0 success, 1 completed with failed items or cancelled, 2 could not start.
+* Readme: cron and CI examples for JSON output, stable ZIP/output paths and the exit-code contract.
+
 = 1.11.0 =
 * New: direct deployment to Cloudflare Pages. Add the account ID, Pages project name and an API token with Pages Edit access, then push the finished export from the Deploy tab. Off by default and hidden until enabled.
 * Files are hashed and checked against the project: only missing assets are uploaded, and one deployment is created with the full manifest. Unchanged files are reused on later runs.
@@ -550,6 +572,9 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.12.0 =
+Adds machine-readable WP-CLI output, --output-dir/--zip overrides for cron and CI, documented exit codes and an export lock that prevents overlapping runs. Default output is unchanged.
 
 = 1.11.0 =
 Adds optional direct deployment to Cloudflare Pages and Netlify, with hash-based upload of changed files and per-target automatic deploy. Off by default, so nothing changes until you enable it.
