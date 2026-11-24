@@ -48,6 +48,20 @@ class AOUWAL_Exporter {
 	const PHASE_CANCELLED = 'cancelled';
 
 	/**
+	 * Option holding the export lock.
+	 *
+	 * @var string
+	 */
+	const LOCK_OPTION = 'aouwal_export_lock';
+
+	/**
+	 * Seconds without a heartbeat before a lock is considered stale.
+	 *
+	 * @var int
+	 */
+	const LOCK_STALE = 1200;
+
+	/**
 	 * Writer.
 	 *
 	 * @var AOUWAL_Writer
@@ -200,6 +214,97 @@ class AOUWAL_Exporter {
 		}
 	}
 
+	/**
+	 * Current export lock, if it is not stale.
+	 *
+	 * @return array{job_id:string,time:int,pid:int}|null
+	 */
+	public function lock_info() {
+		$lock = get_option( self::LOCK_OPTION, array() );
+		if ( ! is_array( $lock ) || empty( $lock['time'] ) ) {
+			return null;
+		}
+		if ( ( time() - (int) $lock['time'] ) > self::LOCK_STALE ) {
+			delete_option( self::LOCK_OPTION );
+			return null;
+		}
+		return array(
+			'job_id' => isset( $lock['job_id'] ) ? (string) $lock['job_id'] : '',
+			'time'   => (int) $lock['time'],
+			'pid'    => isset( $lock['pid'] ) ? (int) $lock['pid'] : 0,
+		);
+	}
+
+	/**
+	 * Take the export lock for a job.
+	 *
+	 * A second process gets a WP_Error instead of a second crawl. The same job
+	 * may refresh its own lock, which is what resume after pause does.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return true|WP_Error
+	 */
+	protected function acquire_lock( $job_id ) {
+		$lock = $this->lock_info();
+		if ( $lock && $lock['job_id'] !== (string) $job_id ) {
+			return new WP_Error(
+				'aouwal_export_locked',
+				sprintf(
+					/* translators: 1: job ID, 2: human time difference. */
+					__( 'Another export is already running (job %1$s, started %2$s ago). Wait for it to finish or cancel it first.', 'aouwal-static-site-export' ),
+					$lock['job_id'],
+					human_time_diff( $lock['time'], time() )
+				)
+			);
+		}
+
+		update_option(
+			self::LOCK_OPTION,
+			array(
+				'job_id' => (string) $job_id,
+				'time'   => time(),
+				'pid'    => (int) getmypid(),
+			),
+			false
+		);
+		return true;
+	}
+
+	/**
+	 * Refresh the lock timestamp while a crawl is making progress.
+	 *
+	 * @param string $job_id Job ID.
+	 * @return void
+	 */
+	protected function heartbeat_lock( $job_id ) {
+		$lock = $this->lock_info();
+		if ( $lock && $lock['job_id'] === (string) $job_id ) {
+			update_option(
+				self::LOCK_OPTION,
+				array(
+					'job_id' => (string) $job_id,
+					'time'   => time(),
+					'pid'    => (int) getmypid(),
+				),
+				false
+			);
+		}
+	}
+
+	/**
+	 * Release the lock, optionally only when it belongs to this job.
+	 *
+	 * @param string $job_id Job ID, or an empty string to force release.
+	 * @return void
+	 */
+	public function release_lock( $job_id = '' ) {
+		$lock = get_option( self::LOCK_OPTION, array() );
+		if ( '' !== $job_id && is_array( $lock ) && isset( $lock['job_id'] ) && (string) $lock['job_id'] !== (string) $job_id ) {
+			return;
+		}
+		delete_option( self::LOCK_OPTION );
+	}
+
 	/*
 	 * -------------------------------------------------------------------
 	 * Job lifecycle
@@ -228,6 +333,11 @@ class AOUWAL_Exporter {
 
 		if ( ! wp_mkdir_p( $output ) ) {
 			return new WP_Error( 'aouwal_mkdir', __( 'Could not create the export directory.', 'aouwal-static-site-export' ) );
+		}
+
+		$lock = $this->acquire_lock( $job_id );
+		if ( is_wp_error( $lock ) ) {
+			return $lock;
 		}
 
 		global $wpdb;
@@ -355,6 +465,8 @@ class AOUWAL_Exporter {
 			return new WP_Error( 'aouwal_no_job', __( 'Export job not found.', 'aouwal-static-site-export' ) );
 		}
 
+		$this->heartbeat_lock( $job_id );
+
 		// A pause or cancel arrives in a different request. Honour it before
 		// touching the queue, then check again after the batch below.
 		if ( self::PHASE_CANCELLED === $job['phase'] ) {
@@ -459,6 +571,7 @@ class AOUWAL_Exporter {
 			$counts = $this->counts( $job_id );
 			$this->cleanup_output( $job );
 			$this->delete_queue( $job_id );
+			$this->release_lock( $job_id );
 			return array(
 				'done'      => true,
 				'cancelled' => true,
@@ -467,6 +580,7 @@ class AOUWAL_Exporter {
 		}
 
 		if ( self::PHASE_PAUSED === $job['phase'] ) {
+			$this->release_lock( $job_id );
 			return array(
 				'done'   => false,
 				'paused' => true,
@@ -600,6 +714,8 @@ class AOUWAL_Exporter {
 			}
 		}
 
+		$this->release_lock( $job_id );
+
 		return array(
 			'done'   => true,
 			'counts' => $counts,
@@ -708,6 +824,7 @@ class AOUWAL_Exporter {
 
 		$this->cleanup_output( $job );
 		$this->delete_queue( $job_id );
+		$this->release_lock( $job_id );
 
 		$job['phase']    = self::PHASE_CANCELLED;
 		$job['zip_path'] = '';
@@ -752,6 +869,8 @@ class AOUWAL_Exporter {
 			$this->save_job( $job );
 		}
 
+		$this->release_lock( $job_id );
+
 		return array(
 			'paused' => true,
 			'phase'  => self::PHASE_PAUSED,
@@ -777,6 +896,11 @@ class AOUWAL_Exporter {
 
 		if ( self::PHASE_DONE === $job['phase'] ) {
 			return new WP_Error( 'aouwal_job_finished', __( 'This export already finished.', 'aouwal-static-site-export' ) );
+		}
+
+		$lock = $this->acquire_lock( $job_id );
+		if ( is_wp_error( $lock ) ) {
+			return $lock;
 		}
 
 		if ( self::PHASE_PAUSED === $job['phase'] ) {
@@ -818,6 +942,11 @@ class AOUWAL_Exporter {
 		$counts = $this->counts( $job_id );
 		if ( $counts['error'] < 1 ) {
 			return new WP_Error( 'aouwal_retry_nothing', __( 'There are no failed items to retry.', 'aouwal-static-site-export' ) );
+		}
+
+		$lock = $this->acquire_lock( $job_id );
+		if ( is_wp_error( $lock ) ) {
+			return $lock;
 		}
 
 		global $wpdb;
