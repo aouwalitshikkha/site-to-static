@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.12.0\n"
+"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.13.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/aouwal-static-site-export\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-24T14:16:54+01:00\n"
+"POT-Creation-Date: 2026-11-26T13:06:36+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: aouwal-static-site-export\n"
@@ -217,12 +217,12 @@ msgstr ""
 #: includes/class-deploy.php:691
 #: includes/class-deploy.php:846
 #: includes/class-deploy.php:1109
-#: includes/class-exporter.php:465
-#: includes/class-exporter.php:565
-#: includes/class-exporter.php:794
-#: includes/class-exporter.php:855
-#: includes/class-exporter.php:890
-#: includes/class-exporter.php:935
+#: includes/class-exporter.php:471
+#: includes/class-exporter.php:574
+#: includes/class-exporter.php:863
+#: includes/class-exporter.php:924
+#: includes/class-exporter.php:959
+#: includes/class-exporter.php:1004
 msgid "Export job not found."
 msgstr ""
 
@@ -619,7 +619,7 @@ msgstr ""
 
 #. translators: 1: number of failed items, 2: failure reason such as "HTTP 503" or "timeout".
 #: admin/views/export.php:96
-#: includes/class-exporter.php:642
+#: includes/class-exporter.php:652
 #, php-format
 msgid "%1$d× %2$s"
 msgstr ""
@@ -903,142 +903,174 @@ msgid "Basic Auth only. Cookie-based protection and WordPress \"site password\" 
 msgstr ""
 
 #: admin/views/settings.php:205
-msgid "Cleanup &amp; output"
+msgid "Performance"
 msgstr ""
 
 #: admin/views/settings.php:208
-msgid "Remove dynamic features"
+msgid "HTML minification"
 msgstr ""
 
 #: admin/views/settings.php:210
-msgid "Remove comment forms and comment sections"
+msgid "Minify HTML output"
 msgstr ""
 
 #: admin/views/settings.php:211
-msgid "Remove search forms"
+msgid "Removes whitespace between tags and normal HTML comments. Text spacing, conditional comments, the credit comment and the contents of pre, textarea, script and style are left byte-identical."
 msgstr ""
 
-#: admin/views/settings.php:212
-msgid "Server-side search and comments cannot work on a static host, so they are removed."
-msgstr ""
-
-#: admin/views/settings.php:216
-msgid "Generated files"
+#: admin/views/settings.php:215
+msgid "Pre-compressed files"
 msgstr ""
 
 #: admin/views/settings.php:218
-msgid "sitemap.xml"
-msgstr ""
-
-#: admin/views/settings.php:219
-msgid "robots.txt"
+msgid "Write .gz copies of HTML, CSS, JS, JSON, SVG and XML files"
 msgstr ""
 
 #: admin/views/settings.php:220
-msgid "Cloudflare Pages _redirects file"
+msgid "Adds file.ext.gz next to the original for nginx gzip_static. Cloudflare Pages and Netlify compress on the fly and may ignore these files; GitHub Pages does too. The ZIP includes them."
 msgstr ""
 
-#: admin/views/settings.php:221
-msgid "Cloudflare Pages _headers file"
-msgstr ""
-
-#: admin/views/settings.php:225
-msgid "404 page"
+#: admin/views/settings.php:222
+msgid "Unavailable: this server has no PHP zlib extension, so .gz files cannot be written."
 msgstr ""
 
 #: admin/views/settings.php:228
-msgid "Theme template (uses the active theme 404 page)"
-msgstr ""
-
-#: admin/views/settings.php:229
-msgid "Built-in page (same clean page on every theme)"
+msgid "Cleanup &amp; output"
 msgstr ""
 
 #: admin/views/settings.php:231
-msgid "The built-in page has a clear message, a link home and no search box or archive widgets. It works at any URL depth. Both modes add a noindex robots tag and a base URL so relative CSS keeps working on /2026/11/ and similar paths."
+msgid "Remove dynamic features"
+msgstr ""
+
+#: admin/views/settings.php:233
+msgid "Remove comment forms and comment sections"
+msgstr ""
+
+#: admin/views/settings.php:234
+msgid "Remove search forms"
 msgstr ""
 
 #: admin/views/settings.php:235
+msgid "Server-side search and comments cannot work on a static host, so they are removed."
+msgstr ""
+
+#: admin/views/settings.php:239
+msgid "Generated files"
+msgstr ""
+
+#: admin/views/settings.php:241
+msgid "sitemap.xml"
+msgstr ""
+
+#: admin/views/settings.php:242
+msgid "robots.txt"
+msgstr ""
+
+#: admin/views/settings.php:243
+msgid "Cloudflare Pages _redirects file"
+msgstr ""
+
+#: admin/views/settings.php:244
+msgid "Cloudflare Pages _headers file"
+msgstr ""
+
+#: admin/views/settings.php:248
+msgid "404 page"
+msgstr ""
+
+#: admin/views/settings.php:251
+msgid "Theme template (uses the active theme 404 page)"
+msgstr ""
+
+#: admin/views/settings.php:252
+msgid "Built-in page (same clean page on every theme)"
+msgstr ""
+
+#: admin/views/settings.php:254
+msgid "The built-in page has a clear message, a link home and no search box or archive widgets. It works at any URL depth. Both modes add a noindex robots tag and a base URL so relative CSS keeps working on /2026/11/ and similar paths."
+msgstr ""
+
+#: admin/views/settings.php:258
 msgid "Attribution"
 msgstr ""
 
-#: admin/views/settings.php:237
+#: admin/views/settings.php:260
 msgid "Include an invisible author credit comment in exported files"
 msgstr ""
 
-#: admin/views/settings.php:238
+#: admin/views/settings.php:261
 msgid "Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export – Static Site Generator. It never appears in the browser."
 msgstr ""
 
-#: cli/class-cli.php:519
+#: cli/class-cli.php:520
 msgid "The export folder is missing, so it cannot be copied to --output-dir."
 msgstr ""
 
-#: cli/class-cli.php:524
+#: cli/class-cli.php:525
 msgid "Could not initialize the WordPress filesystem."
 msgstr ""
 
-#: cli/class-cli.php:530
+#: cli/class-cli.php:531
 msgid "--output-dir must not be inside the export folder or contain it."
 msgstr ""
 
-#: cli/class-cli.php:535
+#: cli/class-cli.php:536
 msgid "Could not clear --output-dir."
 msgstr ""
 
-#: cli/class-cli.php:540
-#: cli/class-cli.php:675
+#: cli/class-cli.php:541
+#: cli/class-cli.php:676
 msgid "--output-dir is not empty. Use --force to replace it."
 msgstr ""
 
-#: cli/class-cli.php:545
+#: cli/class-cli.php:546
 msgid "Could not copy the export to --output-dir."
 msgstr ""
 
-#: cli/class-cli.php:554
-#: cli/class-cli.php:659
+#: cli/class-cli.php:555
+#: cli/class-cli.php:660
 msgid "--zip already exists. Use --force to replace it."
 msgstr ""
 
-#: cli/class-cli.php:557
+#: cli/class-cli.php:558
 msgid "Could not replace the existing --zip file."
 msgstr ""
 
-#: cli/class-cli.php:561
+#: cli/class-cli.php:562
 msgid "Could not copy the ZIP to --zip."
 msgstr ""
 
-#: cli/class-cli.php:620
+#: cli/class-cli.php:621
 msgid "The path cannot be empty."
 msgstr ""
 
-#: cli/class-cli.php:639
+#: cli/class-cli.php:640
 msgid "The path cannot contain \"..\"."
 msgstr ""
 
-#: cli/class-cli.php:648
+#: cli/class-cli.php:649
 msgid "The path cannot be the WordPress root or wp-content."
 msgstr ""
 
-#: cli/class-cli.php:653
+#: cli/class-cli.php:654
 msgid "The --zip path must end in .zip."
 msgstr ""
 
-#: cli/class-cli.php:656
+#: cli/class-cli.php:657
 msgid "The --zip path is a directory."
 msgstr ""
 
-#: cli/class-cli.php:663
+#: cli/class-cli.php:664
 msgid "The parent directory for --zip does not exist and could not be created."
 msgstr ""
 
-#: cli/class-cli.php:670
+#: cli/class-cli.php:671
 msgid "--output-dir points at a file."
 msgstr ""
 
 #. translators: %s: local file path.
 #: includes/class-asset-processor.php:100
-#: includes/class-exporter.php:1431
+#: includes/class-exporter.php:1500
 #, php-format
 msgid "Could not write %s"
 msgstr ""
@@ -1060,7 +1092,7 @@ msgid "[retry %1$d/%2$d] %3$s %4$s (%5$d ms)"
 msgstr ""
 
 #: includes/class-crawler.php:299
-#: includes/class-exporter.php:1052
+#: includes/class-exporter.php:1121
 msgid "network error"
 msgstr ""
 
@@ -1387,12 +1419,12 @@ msgstr ""
 msgid "Could not create the export directory."
 msgstr ""
 
-#: includes/class-exporter.php:633
+#: includes/class-exporter.php:643
 msgid "No pages were exported. Check your post type settings."
 msgstr ""
 
 #. translators: 1: number of failed pages or assets, 2: comma-separated list of failure reasons.
-#: includes/class-exporter.php:646
+#: includes/class-exporter.php:656
 #, php-format
 msgid "%1$s item could not be exported (%2$s). See the health report on the Export screen for each URL."
 msgid_plural "%1$s items could not be exported (%2$s). See the health report on the Export screen for each URL."
@@ -1400,79 +1432,91 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: comma-separated list of file names.
-#: includes/class-exporter.php:660
+#: includes/class-exporter.php:670
 #, php-format
 msgid "These files could not be written: %s"
 msgstr ""
 
 #. translators: %s: number of removed files.
-#: includes/class-exporter.php:671
+#: includes/class-exporter.php:681
 #, php-format
 msgid "%s file from the previous export is no longer part of the site and was removed."
 msgid_plural "%s files from the previous export are no longer part of the site and were removed."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-exporter.php:811
+#. translators: 1: original HTML size, 2: minified size, 3: percentage saved.
+#: includes/class-exporter.php:711
+#, php-format
+msgid "HTML minified: %1$s → %2$s (%3$d%% smaller)."
+msgstr ""
+
+#. translators: 1: number of .gz files, 2: total compressed size.
+#: includes/class-exporter.php:720
+#, php-format
+msgid "Pre-compressed: %1$d .gz file(s) (%2$s)."
+msgstr ""
+
+#: includes/class-exporter.php:880
 msgid "This export already finished, so there is nothing to cancel."
 msgstr ""
 
 #. translators: 1: last processed URL, 2: number of processed items, 3: total number of items.
-#: includes/class-exporter.php:818
+#: includes/class-exporter.php:887
 #, php-format
 msgid "Export cancelled after %1$s (%2$s of %3$s items processed)."
 msgstr ""
 
-#: includes/class-exporter.php:823
+#: includes/class-exporter.php:892
 msgid "Export cancelled before any item was processed."
 msgstr ""
 
-#: includes/class-exporter.php:859
-#: includes/class-exporter.php:894
+#: includes/class-exporter.php:928
+#: includes/class-exporter.php:963
 msgid "This export was cancelled. Start a new export."
 msgstr ""
 
-#: includes/class-exporter.php:863
-#: includes/class-exporter.php:898
+#: includes/class-exporter.php:932
+#: includes/class-exporter.php:967
 msgid "This export already finished."
 msgstr ""
 
-#: includes/class-exporter.php:939
+#: includes/class-exporter.php:1008
 msgid "Only a finished export can retry its failed items."
 msgstr ""
 
-#: includes/class-exporter.php:944
+#: includes/class-exporter.php:1013
 msgid "There are no failed items to retry."
 msgstr ""
 
-#: includes/class-exporter.php:1046
+#: includes/class-exporter.php:1115
 msgid "timeout"
 msgstr ""
 
-#: includes/class-exporter.php:1054
+#: includes/class-exporter.php:1123
 msgid "failed"
 msgstr ""
 
-#: includes/class-exporter.php:1829
+#: includes/class-exporter.php:1898
 msgid "The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template."
 msgstr ""
 
 #. translators: %s: site name.
-#: includes/class-exporter.php:1864
+#: includes/class-exporter.php:1933
 #, php-format
 msgid "Page not found – %s"
 msgstr ""
 
-#: includes/class-exporter.php:1884
+#: includes/class-exporter.php:1953
 msgid "Page not found"
 msgstr ""
 
-#: includes/class-exporter.php:1885
+#: includes/class-exporter.php:1954
 msgid "The page you are looking for does not exist or has moved."
 msgstr ""
 
 #. translators: %s: site name.
-#: includes/class-exporter.php:1888
+#: includes/class-exporter.php:1957
 #, php-format
 msgid "Back to %s"
 msgstr ""
@@ -1486,11 +1530,15 @@ msgstr ""
 msgid "The password cannot be stored securely because this server has neither the sodium extension nor OpenSSL support."
 msgstr ""
 
-#: includes/class-settings.php:210
+#: includes/class-settings.php:182
+msgid "Pre-compressed .gz files need the PHP zlib extension, which is not available on this server."
+msgstr ""
+
+#: includes/class-settings.php:222
 msgid "The custom crawl origin was ignored. Use an http:// or https:// URL with a host, without credentials, a query string or a fragment."
 msgstr ""
 
-#: includes/class-settings.php:223
+#: includes/class-settings.php:235
 msgid "The CA bundle path is empty or not readable, so certificates are verified against the system bundle instead."
 msgstr ""
 

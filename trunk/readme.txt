@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.12.0
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,7 @@ You can export:
 * Internal links become relative or root-absolute URLs, so the static site works on any domain and in any subfolder.
 * HTML5 markup stays valid: `<picture>`, `<source>`, `<video>`, `<track>`, `<template>` and custom elements survive the export.
 * The Maximum asset size setting (25 MB by default) skips oversized files instead of exhausting memory.
+* Optional HTML minification and pre-compressed `.gz` copies for HTML, CSS, JS, JSON, SVG and XML. Both are off by default; protected blocks stay byte-identical.
 * Every write is checked. Pages or assets that cannot be written are reported in the log instead of being marked as done.
 * The crawler fetches only public URLs. Every redirect hop and both A and AAAA records are validated.
 * Network controls for awkward hosting: request timeout, delay between requests, custom crawl origin, TLS verification modes and optional HTTP Basic Auth.
@@ -328,6 +329,14 @@ The plugin sends a SHA1 manifest, Netlify replies with the files it does not hav
 
 If the site answers 401 or shows a login page, the Netlify project is protected by team SSO or a site password. Set the project to public in Netlify, or disable SSO for that site, before deploying.
 
+= Does the plugin minify HTML or pre-compress files? =
+
+Yes, both are opt-in in Settings > Performance.
+
+HTML minification removes whitespace between tags and normal comments. Text spacing, conditional comments, the credit comment and the contents of `pre`, `textarea`, `script` and `style` stay byte-identical, so the page renders the same.
+
+Pre-compressed files adds `file.ext.gz` next to HTML, CSS, JS, JSON, SVG and XML. It is meant for nginx `gzip_static`; Cloudflare Pages and Netlify compress on the fly and may ignore the sidecars, and GitHub Pages does too. The ZIP includes them. If the server has no PHP zlib extension the option is hidden.
+
 = Does the plugin work on large sites? =
 
 Yes. The crawl runs in batches, and each batch is one request, so a PHP timeout applies to a batch, not to the whole site or to a single page.
@@ -407,6 +416,14 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.13.0 =
+* New: optional HTML minification. Removes whitespace between tags and normal comments; text spacing, conditional comments, the credit comment and `pre`/`textarea`/`script`/`style` bodies stay byte-identical.
+* New: optional pre-compressed `.gz` sidecars for HTML, CSS, JS, JSON, SVG and XML, for nginx `gzip_static`. Off by default; hidden when PHP has no zlib extension.
+* Both settings are part of the changed-only signature, so toggling either forces a full export and never leaves a mixed tree.
+* The export log reports original and minified HTML sizes and the number/size of `.gz` files; the WP-CLI JSON summary gains a `stats` object.
+* Removing a page or asset also removes its `.gz` sidecar.
+* Readme/FAQ, settings table and `.pot` updated.
 
 = 1.12.0 =
 * New: `wp aouwal-static-export run --format=json` prints one JSON object on stdout and sends log lines to stderr. It includes job ID, counts, output directory, ZIP path, bytes, duration, timestamps and deployment results. `--porcelain` is an alias.
@@ -572,6 +589,9 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.13.0 =
+Adds optional HTML minification and pre-compressed .gz sidecars for nginx gzip_static. Both are off by default, so nothing changes until you enable them.
 
 = 1.12.0 =
 Adds machine-readable WP-CLI output, --output-dir/--zip overrides for cron and CI, documented exit codes and an export lock that prevents overlapping runs. Default output is unchanged.
