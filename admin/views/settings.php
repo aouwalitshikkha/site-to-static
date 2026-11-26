@@ -202,6 +202,29 @@ unset( $aouwal_post_types['attachment'] );
 		</tr>
 	</table>
 
+	<h2><?php esc_html_e( 'Performance', 'aouwal-static-site-export' ); ?></h2>
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row"><?php esc_html_e( 'HTML minification', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[minify_html]" value="1" <?php checked( $aouwal['minify_html'] ); ?> /> <?php esc_html_e( 'Minify HTML output', 'aouwal-static-site-export' ); ?></label>
+				<p class="description"><?php esc_html_e( 'Removes whitespace between tags and normal HTML comments. Text spacing, conditional comments, the credit comment and the contents of pre, textarea, script and style are left byte-identical.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Pre-compressed files', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<?php $aouwal_gzip = AOUWAL_Writer::gzip_available(); ?>
+				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[gzip_static]" value="1" <?php checked( $aouwal['gzip_static'] ); ?> <?php disabled( ! $aouwal_gzip ); ?> /> <?php esc_html_e( 'Write .gz copies of HTML, CSS, JS, JSON, SVG and XML files', 'aouwal-static-site-export' ); ?></label>
+				<?php if ( $aouwal_gzip ) : ?>
+					<p class="description"><?php esc_html_e( 'Adds file.ext.gz next to the original for nginx gzip_static. Cloudflare Pages and Netlify compress on the fly and may ignore these files; GitHub Pages does too. The ZIP includes them.', 'aouwal-static-site-export' ); ?></p>
+				<?php else : ?>
+					<p class="description"><?php esc_html_e( 'Unavailable: this server has no PHP zlib extension, so .gz files cannot be written.', 'aouwal-static-site-export' ); ?></p>
+				<?php endif; ?>
+			</td>
+		</tr>
+	</table>
+
 	<h2><?php esc_html_e( 'Cleanup &amp; output', 'aouwal-static-site-export' ); ?></h2>
 	<table class="form-table" role="presentation">
 		<tr>

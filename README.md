@@ -41,6 +41,7 @@ Export runs in **chunked AJAX batches**, so large sites don't hit PHP timeouts, 
 - Optional direct deployment to GitHub: token-only setup, one commit per deployment, only changed files uploaded. Off by default.
 - Optional direct deployment to Cloudflare Pages: hash-based upload of changed files to a Pages project with an API token. Off by default.
 - Optional direct deployment to Netlify: SHA1 digest deploy, only missing files uploaded, atomic replacement. Off by default.
+- Optional HTML minification and pre-compressed `.gz` sidecars for nginx `gzip_static`. Both off by default; protected blocks stay byte-identical.
 - Optional WP-CLI command: `wp aouwal-static-export run`. It exits non-zero when items fail, so CI catches incomplete exports. `status`, `cancel` and `resume` cover a crawl that is already running.
 
 ## Requirements
@@ -118,6 +119,8 @@ wp aouwal-static-export deploy          # push the newest finished export
 | Remove dynamic features | Strip comment sections/forms and search forms (both on by default). |
 | Generated files | Toggle `sitemap.xml`, `robots.txt` and the Cloudflare Pages `_redirects` and `_headers` files. |
 | 404 page | `Theme template` (default) uses the active theme's 404. `Built-in page` uses a clean standalone page with a home link and no search box or archive widgets. Both add `noindex` and a base URL so CSS works at any 404 depth. |
+| HTML minification | Off by default. Removes whitespace between tags and normal comments; protected blocks stay byte-identical. |
+| Pre-compressed files | Off by default. Writes `.gz` sidecars for HTML, CSS, JS, JSON, SVG and XML for nginx `gzip_static`. Hidden when PHP has no zlib. |
 | Batch size | URLs processed per request. Lower it if your server times out. |
 | Rewrite uploads path | Off by default. When on, /wp-content/uploads/ is written and linked as /<folder>/ (default "uploads"). Changes URLs only; old /wp-content/uploads/ links stop working unless you add redirects. |
 | Uploads folder | Target folder used when "Rewrite uploads path" is on. Safe relative path; defaults to "uploads". |
