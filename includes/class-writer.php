@@ -20,6 +20,18 @@ class AOUWAL_Writer {
 	protected $output_dir;
 
 	/**
+	 * Per-request output statistics.
+	 *
+	 * @var array{html_in:int,html_out:int,gzip_files:int,gzip_bytes:int}
+	 */
+	protected $stats = array(
+		'html_in'    => 0,
+		'html_out'   => 0,
+		'gzip_files' => 0,
+		'gzip_bytes' => 0,
+	);
+
+	/**
 	 * Home URL without trailing slash.
 	 *
 	 * @var string
@@ -464,12 +476,74 @@ class AOUWAL_Writer {
 	}
 
 	/**
+	 * Whether gzip sidecars can be written on this server.
+	 *
+	 * @return bool
+	 */
+	public static function gzip_available() {
+		$available = function_exists( 'gzencode' ) && extension_loaded( 'zlib' );
+
+		/**
+		 * Filters whether pre-compressed .gz sidecars are available.
+		 *
+		 * @param bool $available Whether zlib is available.
+		 */
+		return (bool) apply_filters( 'aouwal_gzip_available', $available );
+	}
+
+	/**
+	 * Reset per-request statistics.
+	 *
+	 * @return void
+	 */
+	public function reset_stats() {
+		$this->stats = array(
+			'html_in'    => 0,
+			'html_out'   => 0,
+			'gzip_files' => 0,
+			'gzip_bytes' => 0,
+		);
+	}
+
+	/**
+	 * Per-request statistics.
+	 *
+	 * @return array{html_in:int,html_out:int,gzip_files:int,gzip_bytes:int}
+	 */
+	public function get_stats() {
+		return $this->stats;
+	}
+
+	/**
+	 * Whether a local path is HTML.
+	 *
+	 * @param string $local Local path.
+	 * @return bool
+	 */
+	protected function is_html_path( $local ) {
+		return (bool) preg_match( '/\.html?$/i', (string) $local );
+	}
+
+	/**
+	 * Whether a local path should get a .gz sidecar.
+	 *
+	 * @param string $local Local path.
+	 * @return bool
+	 */
+	protected function is_gzip_extension( $local ) {
+		return (bool) preg_match( '/\.(?:html?|css|js|mjs|json|svg|xml)$/i', (string) $local );
+	}
+
+	/**
 	 * Write string contents to a local path.
 	 *
 	 * Export output lives only inside the job directory under
 	 * wp_upload_dir() . '/aouwal-static-site-export', and is written
 	 * exclusively via WP_Filesystem. Paths escaping the output directory
 	 * are refused.
+	 *
+	 * When enabled, HTML is minified here (the single place every page and
+	 * asset is written), and a .gz sidecar is added for text assets.
 	 *
 	 * @param string $local    Local path.
 	 * @param string $contents Contents.
@@ -486,7 +560,33 @@ class AOUWAL_Writer {
 		if ( ! $fs ) {
 			return false;
 		}
-		return (bool) $fs->put_contents( $abs, $contents, FS_CHMOD_FILE );
+
+		$contents = (string) $contents;
+
+		if ( AOUWAL_Settings::get( 'minify_html' ) && $this->is_html_path( $local ) ) {
+			$before                   = strlen( $contents );
+			$contents                 = AOUWAL_Minifier::html( $contents );
+			$this->stats['html_in']  += $before;
+			$this->stats['html_out'] += strlen( $contents );
+		}
+
+		if ( ! $fs->put_contents( $abs, $contents, FS_CHMOD_FILE ) ) {
+			return false;
+		}
+
+		if ( AOUWAL_Settings::get( 'gzip_static' ) && self::gzip_available() && $this->is_gzip_extension( $local ) ) {
+			$compressed = gzencode( $contents, 9 );
+			if ( ! is_string( $compressed ) || '' === $compressed ) {
+				return false;
+			}
+			if ( ! $fs->put_contents( $abs . '.gz', $compressed, FS_CHMOD_FILE ) ) {
+				return false;
+			}
+			++$this->stats['gzip_files'];
+			$this->stats['gzip_bytes'] += strlen( $compressed );
+		}
+
+		return true;
 	}
 
 	/**
@@ -644,10 +744,18 @@ class AOUWAL_Writer {
 		}
 
 		$fs = $this->filesystem();
-		if ( ! $fs || ! $fs->exists( $abs ) ) {
+		if ( ! $fs ) {
 			return false;
 		}
 
-		return (bool) $fs->delete( $abs );
+		$deleted = false;
+		if ( $fs->exists( $abs ) && $fs->delete( $abs ) ) {
+			$deleted = true;
+		}
+		if ( $fs->exists( $abs . '.gz' ) && $fs->delete( $abs . '.gz' ) ) {
+			$deleted = true;
+		}
+
+		return $deleted;
 	}
 }

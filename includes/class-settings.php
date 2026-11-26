@@ -76,6 +76,8 @@ class AOUWAL_Settings {
 			'generate_sitemap'     => 1,
 			'generate_robots'      => 1,
 			'generate_headers'     => 1,
+			'minify_html'          => 0,
+			'gzip_static'          => 0,
 			'page_404'             => 'theme',
 			'show_credit'          => 0,
 		);
@@ -166,9 +168,19 @@ class AOUWAL_Settings {
 			'generate_headers',
 			'show_credit',
 			'rewrite_uploads_path',
+			'minify_html',
+			'gzip_static',
 		);
 		foreach ( $booleans as $key ) {
 			$out[ $key ] = ! empty( $input[ $key ] ) ? 1 : 0;
+		}
+
+		if ( $out['gzip_static'] && ! AOUWAL_Writer::gzip_available() ) {
+			$out['gzip_static'] = 0;
+			self::notice(
+				'aouwal_gzip_unavailable',
+				__( 'Pre-compressed .gz files need the PHP zlib extension, which is not available on this server.', 'aouwal-static-site-export' )
+			);
 		}
 
 		$out['url_style'] = ( isset( $input['url_style'] ) && 'root' === $input['url_style'] ) ? 'root' : 'relative';

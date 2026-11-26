@@ -496,6 +496,7 @@ class AOUWAL_CLI {
 			'duration'   => (int) $duration,
 			'started'    => $started,
 			'finished'   => $end,
+			'stats'      => isset( $job['stats'] ) ? (array) $job['stats'] : array(),
 			'deploy'     => isset( $finalized['deploy'] ) ? (array) $finalized['deploy'] : array(),
 		);
 	}

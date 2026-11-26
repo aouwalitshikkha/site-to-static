@@ -417,6 +417,12 @@ class AOUWAL_Exporter {
 			'signature'    => $signature,
 			'baseline_job' => $reuse ? (string) $baseline['job_id'] : '',
 			'reused'       => $reuse ? 1 : 0,
+			'stats'        => array(
+				'html_in'    => 0,
+				'html_out'   => 0,
+				'gzip_files' => 0,
+				'gzip_bytes' => 0,
+			),
 		);
 		$this->save_job( $job );
 		$this->prune_old_jobs( $base, $job_id );
@@ -492,6 +498,7 @@ class AOUWAL_Exporter {
 		$table = $this->table();
 
 		$this->writer->set_output_dir( $job['output_dir'] );
+		$this->writer->reset_stats();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Custom job-queue table ($wpdb->prefix + static name); queue state changes every batch so caching cannot persist across requests. Values are prepared.
 		$items = $wpdb->get_results(
@@ -517,6 +524,8 @@ class AOUWAL_Exporter {
 				$this->process_asset_item( $job_id, $item, $log );
 			}
 		}
+
+		$this->merge_writer_stats( $job_id );
 
 		$counts = $this->counts( $job_id );
 
@@ -589,6 +598,7 @@ class AOUWAL_Exporter {
 		}
 
 		$this->writer->set_output_dir( $job['output_dir'] );
+		$this->writer->reset_stats();
 		$notices = array();
 
 		$counts = $this->counts( $job_id );
@@ -688,6 +698,31 @@ class AOUWAL_Exporter {
 			isset( $job['signature'] ) ? (string) $job['signature'] : AOUWAL_Export_State::signature()
 		);
 
+		$this->merge_writer_stats( $job_id );
+		$stored       = $this->get_job( $job_id );
+		$stats        = ( $stored && isset( $stored['stats'] ) && is_array( $stored['stats'] ) ) ? $stored['stats'] : array();
+		$job['stats'] = $stats;
+
+		if ( ! empty( $stats['html_in'] ) && AOUWAL_Settings::get( 'minify_html' ) ) {
+			$saved     = max( 0, (int) $stats['html_in'] - (int) $stats['html_out'] );
+			$percent   = (int) round( ( $saved / max( 1, (int) $stats['html_in'] ) ) * 100 );
+			$notices[] = sprintf(
+				/* translators: 1: original HTML size, 2: minified size, 3: percentage saved. */
+				__( 'HTML minified: %1$s → %2$s (%3$d%% smaller).', 'aouwal-static-site-export' ),
+				size_format( (int) $stats['html_in'] ),
+				size_format( (int) $stats['html_out'] ),
+				$percent
+			);
+		}
+		if ( AOUWAL_Settings::get( 'gzip_static' ) && ! empty( $stats['gzip_files'] ) ) {
+			$notices[] = sprintf(
+				/* translators: 1: number of .gz files, 2: total compressed size. */
+				__( 'Pre-compressed: %1$d .gz file(s) (%2$s).', 'aouwal-static-site-export' ),
+				(int) $stats['gzip_files'],
+				size_format( (int) $stats['gzip_bytes'] )
+			);
+		}
+
 		$job['phase']    = self::PHASE_DONE;
 		$job['notice']   = $notices;
 		$job['finished'] = current_time( 'mysql' );
@@ -724,6 +759,40 @@ class AOUWAL_Exporter {
 			'health' => $health,
 			'deploy' => $deploy,
 		);
+	}
+
+	/**
+	 * Merge the writer's per-request statistics into the job row.
+	 *
+	 * The exporter runs one batch per request, so totals have to live on the
+	 * job to survive AJAX requests. Called once per batch and in finalize().
+	 *
+	 * @param string $job_id Job ID.
+	 * @return void
+	 */
+	protected function merge_writer_stats( $job_id ) {
+		$delta = $this->writer->get_stats();
+		if ( empty( $delta ) || 0 === array_sum( $delta ) ) {
+			return;
+		}
+
+		$job = $this->get_job( $job_id );
+		if ( ! $job ) {
+			return;
+		}
+
+		$stats = isset( $job['stats'] ) && is_array( $job['stats'] ) ? $job['stats'] : array(
+			'html_in'    => 0,
+			'html_out'   => 0,
+			'gzip_files' => 0,
+			'gzip_bytes' => 0,
+		);
+		foreach ( array( 'html_in', 'html_out', 'gzip_files', 'gzip_bytes' ) as $key ) {
+			$stats[ $key ] = ( isset( $stats[ $key ] ) ? (int) $stats[ $key ] : 0 ) + ( isset( $delta[ $key ] ) ? (int) $delta[ $key ] : 0 );
+		}
+		$job['stats'] = $stats;
+		$this->save_job( $job );
+		$this->writer->reset_stats();
 	}
 
 	/**
