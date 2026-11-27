@@ -1715,6 +1715,33 @@ class AOUWAL_Exporter {
 	}
 
 	/**
+	 * Newest finished job.
+	 *
+	 * The caller checks whether output_dir still exists. This deliberately does
+	 * not walk back to older exports: after a purge a stale previous export must
+	 * never be served.
+	 *
+	 * @return array|null
+	 */
+	public static function latest_done_job() {
+		$jobs = get_option( self::JOBS_OPTION, array() );
+		if ( ! is_array( $jobs ) ) {
+			return null;
+		}
+		foreach ( array_reverse( $jobs ) as $job ) {
+			if (
+				is_array( $job )
+				&& isset( $job['phase'], $job['output_dir'] )
+				&& self::PHASE_DONE === $job['phase']
+				&& '' !== (string) $job['output_dir']
+			) {
+				return $job;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Delete export directories and ZIPs that no longer have a stored job.
 	 *
 	 * Export output is kept only for the jobs retained via save_job() (5).
