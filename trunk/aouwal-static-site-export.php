@@ -3,7 +3,7 @@
  * Plugin Name:       Aouwal Static Site Export – Static Site Generator
  * Plugin URI:        https://github.com/aouwalitshikkha/site-to-static
  * Description:       Turn WordPress into a fast static HTML site. Export pages, CSS, JS, images, fonts and sitemap.xml for Cloudflare Pages, GitHub Pages or Netlify.
- * Version:           1.13.0
+ * Version:           1.14.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            Abdul Aouwal
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'AOUWAL_VERSION', '1.13.0' );
+define( 'AOUWAL_VERSION', '1.14.0' );
 define( 'AOUWAL_DB_VERSION', '3' );
 define( 'AOUWAL_PLUGIN_FILE', __FILE__ );
 define( 'AOUWAL_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -38,6 +38,11 @@ require_once AOUWAL_PLUGIN_DIR . 'includes/class-html-processor.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-asset-processor.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-zip.php';
 require_once AOUWAL_PLUGIN_DIR . 'includes/class-exporter.php';
+require_once AOUWAL_PLUGIN_DIR . 'includes/class-scheduler.php';
+require_once AOUWAL_PLUGIN_DIR . 'includes/class-static-server.php';
+
+AOUWAL_Scheduler::init();
+AOUWAL_Static_Server::init();
 
 if ( is_admin() ) {
 	require_once AOUWAL_PLUGIN_DIR . 'admin/class-admin.php';
@@ -221,9 +226,15 @@ function aouwal_remove_legacy_data() {
 }
 
 /**
- * Deactivation: nothing to clean up.
+ * Deactivation: remove this plugin's cron events.
  *
- * The plugin schedules no cron events. Exports live under wp_upload_dir()
- * and are pruned by prune_old_jobs() on the next export, so deactivation
- * has nothing to remove.
+ * Exports live under wp_upload_dir() and are pruned by prune_old_jobs() on the
+ * next export. The events must go, because WP-Cron would otherwise keep firing
+ * hooks whose callbacks are no longer loaded.
+ *
+ * @return void
  */
+function aouwal_deactivate() {
+	AOUWAL_Scheduler::clear_events();
+}
+register_deactivation_hook( __FILE__, 'aouwal_deactivate' );

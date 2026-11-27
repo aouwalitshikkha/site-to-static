@@ -311,6 +311,9 @@ class AOUWAL_Crawler {
 			'Accept'          => $is_asset ? '*/*' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 			'Accept-Encoding' => 'identity',
 			'Cache-Control'   => 'no-cache',
+			// Marks the request so the on-server static mode always falls through
+			// to WordPress. Without this, a re-crawl would read the old export.
+			'X-Aouwal-Crawl'  => '1',
 		);
 
 		$auth = $this->auth_header( $url );

@@ -2,21 +2,21 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.13.0\n"
+"Project-Id-Version: Aouwal Static Site Export – Static Site Generator 1.14.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/aouwal-static-site-export\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-26T13:06:36+01:00\n"
+"POT-Creation-Date: 2026-11-27T13:16:03+01:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: aouwal-static-site-export\n"
 
 #. Plugin Name of the plugin
 #: aouwal-static-site-export.php
-#: admin/class-admin.php:178
+#: admin/class-admin.php:179
 msgid "Aouwal Static Site Export – Static Site Generator"
 msgstr ""
 
@@ -32,7 +32,7 @@ msgstr ""
 
 #. Author of the plugin
 #: aouwal-static-site-export.php
-#: admin/class-admin.php:182
+#: admin/class-admin.php:183
 msgid "Abdul Aouwal"
 msgstr ""
 
@@ -41,179 +41,179 @@ msgstr ""
 msgid "https://abdulaouwal.com"
 msgstr ""
 
-#: admin/class-admin.php:50
 #: admin/class-admin.php:51
+#: admin/class-admin.php:52
 msgid "Static Export"
 msgstr ""
 
-#: admin/class-admin.php:107
+#: admin/class-admin.php:108
 msgid "Discovering URLs…"
 msgstr ""
 
-#: admin/class-admin.php:108
+#: admin/class-admin.php:109
 msgid "Processing"
 msgstr ""
 
-#: admin/class-admin.php:109
+#: admin/class-admin.php:110
 msgid "Packaging export…"
 msgstr ""
 
-#: admin/class-admin.php:110
+#: admin/class-admin.php:111
 msgid "Export complete."
 msgstr ""
 
-#: admin/class-admin.php:111
+#: admin/class-admin.php:112
 msgid "Export finished with errors."
 msgstr ""
 
-#: admin/class-admin.php:112
+#: admin/class-admin.php:113
 msgid "An error occurred."
 msgstr ""
 
-#: admin/class-admin.php:113
+#: admin/class-admin.php:114
 msgid "Start a new static export?"
 msgstr ""
 
-#: admin/class-admin.php:114
+#: admin/class-admin.php:115
 #: admin/views/deploy.php:51
 msgid "Download export ZIP"
 msgstr ""
 
 #. translators: %s: number of discovered URLs.
-#: admin/class-admin.php:116
+#: admin/class-admin.php:117
 #, php-format
 msgid "Discovered %s URLs."
 msgstr ""
 
-#: admin/class-admin.php:117
+#: admin/class-admin.php:118
 #: admin/views/export.php:52
 msgid "Pause export"
 msgstr ""
 
-#: admin/class-admin.php:118
+#: admin/class-admin.php:119
 #: admin/views/export.php:55
 msgid "Resume export"
 msgstr ""
 
-#: admin/class-admin.php:119
+#: admin/class-admin.php:120
 #: admin/views/export.php:58
 msgid "Cancel export"
 msgstr ""
 
-#: admin/class-admin.php:120
+#: admin/class-admin.php:121
 msgid "Cancel this export? Partial files will be deleted."
 msgstr ""
 
-#: admin/class-admin.php:121
+#: admin/class-admin.php:122
 msgid "Cancelling…"
 msgstr ""
 
-#: admin/class-admin.php:122
+#: admin/class-admin.php:123
 msgid "Export cancelled."
 msgstr ""
 
-#: admin/class-admin.php:123
+#: admin/class-admin.php:124
 msgid "The cancel request did not reach the server. Try again."
 msgstr ""
 
-#: admin/class-admin.php:124
+#: admin/class-admin.php:125
 msgid "Export paused."
 msgstr ""
 
-#: admin/class-admin.php:125
+#: admin/class-admin.php:126
 msgid "Resuming…"
 msgstr ""
 
-#: admin/class-admin.php:126
+#: admin/class-admin.php:127
 msgid "An export is running in another tab."
 msgstr ""
 
-#: admin/class-admin.php:127
+#: admin/class-admin.php:128
 msgid "The previous export was interrupted."
 msgstr ""
 
-#: admin/class-admin.php:128
+#: admin/class-admin.php:129
 msgid "Download the last export"
 msgstr ""
 
-#: admin/class-admin.php:129
+#: admin/class-admin.php:130
 msgid "Retrying failed items…"
 msgstr ""
 
-#: admin/class-admin.php:130
+#: admin/class-admin.php:131
 msgid "Retry failed"
 msgstr ""
 
-#: admin/class-admin.php:143
+#: admin/class-admin.php:144
 msgid "Testing connection…"
 msgstr ""
 
-#: admin/class-admin.php:144
+#: admin/class-admin.php:145
 msgid "Deploying…"
 msgstr ""
 
-#: admin/class-admin.php:145
+#: admin/class-admin.php:146
 msgid "Deploy the last export to GitHub now?"
 msgstr ""
 
-#: admin/class-admin.php:146
+#: admin/class-admin.php:147
 msgid "The request did not reach the server. Try again."
 msgstr ""
 
-#: admin/class-admin.php:147
+#: admin/class-admin.php:148
 msgid "Deployment finished."
 msgstr ""
 
-#: admin/class-admin.php:148
+#: admin/class-admin.php:149
 msgid "Deployment failed."
 msgstr ""
 
-#: admin/class-admin.php:161
-#: admin/class-admin.php:479
+#: admin/class-admin.php:162
+#: admin/class-admin.php:504
 msgid "You do not have permission to access this page."
 msgstr ""
 
-#: admin/class-admin.php:166
+#: admin/class-admin.php:167
 msgid "Settings"
 msgstr ""
 
-#: admin/class-admin.php:167
+#: admin/class-admin.php:168
 msgid "Export"
 msgstr ""
 
-#: admin/class-admin.php:168
+#: admin/class-admin.php:169
 msgid "Deploy"
 msgstr ""
 
-#: admin/class-admin.php:181
+#: admin/class-admin.php:182
 msgid "by"
 msgstr ""
 
-#: admin/class-admin.php:189
+#: admin/class-admin.php:190
 msgid "Settings saved."
 msgstr ""
 
-#: admin/class-admin.php:229
-#: admin/class-admin.php:247
-#: admin/class-admin.php:268
-#: admin/class-admin.php:288
-#: admin/class-admin.php:311
-#: admin/class-admin.php:334
-#: admin/class-admin.php:357
-#: admin/class-admin.php:372
-#: admin/class-admin.php:395
-#: admin/class-admin.php:426
+#: admin/class-admin.php:230
+#: admin/class-admin.php:248
+#: admin/class-admin.php:269
+#: admin/class-admin.php:289
+#: admin/class-admin.php:312
+#: admin/class-admin.php:335
+#: admin/class-admin.php:358
+#: admin/class-admin.php:373
+#: admin/class-admin.php:396
+#: admin/class-admin.php:427
 msgid "Permission denied."
 msgstr ""
 
-#: admin/class-admin.php:292
-#: admin/class-admin.php:315
-#: admin/class-admin.php:338
-#: admin/class-admin.php:376
-#: admin/class-admin.php:430
-#: admin/class-admin.php:482
-#: admin/class-admin.php:488
-#: admin/class-admin.php:501
+#: admin/class-admin.php:293
+#: admin/class-admin.php:316
+#: admin/class-admin.php:339
+#: admin/class-admin.php:377
+#: admin/class-admin.php:431
+#: admin/class-admin.php:507
+#: admin/class-admin.php:513
+#: admin/class-admin.php:526
 #: includes/class-deploy.php:691
 #: includes/class-deploy.php:846
 #: includes/class-deploy.php:1109
@@ -226,24 +226,28 @@ msgstr ""
 msgid "Export job not found."
 msgstr ""
 
-#: admin/class-admin.php:400
-#: admin/class-admin.php:446
+#: admin/class-admin.php:401
+#: admin/class-admin.php:447
 msgid "No deployment target is enabled. Enable a target and save its settings first."
 msgstr ""
 
-#: admin/class-admin.php:435
+#: admin/class-admin.php:436
 msgid "That deployment target is not enabled."
 msgstr ""
 
-#: admin/class-admin.php:441
+#: admin/class-admin.php:442
 msgid "Run the export first, then deploy the finished result."
 msgstr ""
 
-#: admin/class-admin.php:504
+#: admin/class-admin.php:475
+msgid "You do not have permission to do this."
+msgstr ""
+
+#: admin/class-admin.php:529
 msgid "Export file not found. Run a new export."
 msgstr ""
 
-#: admin/class-admin.php:515
+#: admin/class-admin.php:540
 msgid "Could not read the export file."
 msgstr ""
 
@@ -308,7 +312,7 @@ msgstr ""
 #: admin/views/deploy.php:111
 #: admin/views/deploy.php:176
 #: admin/views/deploy.php:254
-#: admin/views/settings.php:192
+#: admin/views/settings.php:199
 msgid "Saved"
 msgstr ""
 
@@ -662,344 +666,448 @@ msgstr ""
 msgid "Log"
 msgstr ""
 
-#: admin/views/settings.php:18
-msgid "Export mode"
+#: admin/views/settings.php:19
+msgid "Static cache purged. A background rebuild was scheduled."
 msgstr ""
 
-#: admin/views/settings.php:21
-msgid "What to export"
-msgstr ""
-
-#: admin/views/settings.php:24
-msgid "Full export (every page and asset, every run)"
+#: admin/views/settings.php:19
+msgid "The static cache could not be purged. There may be no finished export, or the folder is not writable."
 msgstr ""
 
 #: admin/views/settings.php:25
-msgid "Changed-only export (reuse the previous export, re-export what changed)"
+msgid "Export mode"
 msgstr ""
 
-#: admin/views/settings.php:27
-msgid "A changed-only export starts from the last export and re-exports edited posts, the archives that contain them, the homepage, and assets whose ETag or Last-Modified changed. It falls back to a full export automatically after a plugin or WordPress update, a theme change, a permalink change, or any setting that affects the output."
+#: admin/views/settings.php:28
+msgid "What to export"
+msgstr ""
+
+#: admin/views/settings.php:31
+msgid "Full export (every page and asset, every run)"
 msgstr ""
 
 #: admin/views/settings.php:32
+msgid "Changed-only export (reuse the previous export, re-export what changed)"
+msgstr ""
+
+#: admin/views/settings.php:34
+msgid "A changed-only export starts from the last export and re-exports edited posts, the archives that contain them, the homepage, and assets whose ETag or Last-Modified changed. It falls back to a full export automatically after a plugin or WordPress update, a theme change, a permalink change, or any setting that affects the output."
+msgstr ""
+
+#: admin/views/settings.php:39
 msgid "Content"
 msgstr ""
 
-#: admin/views/settings.php:35
+#: admin/views/settings.php:42
 msgid "Post types"
 msgstr ""
 
-#: admin/views/settings.php:48
+#: admin/views/settings.php:55
 msgid "Archives"
 msgstr ""
 
-#: admin/views/settings.php:51
+#: admin/views/settings.php:58
 msgid "Category / tag / taxonomy archives"
 msgstr ""
 
-#: admin/views/settings.php:52
+#: admin/views/settings.php:59
 msgid "Author archives"
 msgstr ""
 
-#: admin/views/settings.php:53
+#: admin/views/settings.php:60
 msgid "Date archives (year / month)"
 msgstr ""
 
-#: admin/views/settings.php:54
+#: admin/views/settings.php:61
 msgid "RSS feeds (feed/index.xml)"
 msgstr ""
 
-#: admin/views/settings.php:55
+#: admin/views/settings.php:62
 msgid "Attachment pages"
 msgstr ""
 
-#: admin/views/settings.php:57
+#: admin/views/settings.php:64
 msgid "Uncheck RSS feeds to remove feed/index.xml, the feed directory and every feed link from the export. Date archives and taxonomy/author archives are removed the same way when unchecked."
 msgstr ""
 
-#: admin/views/settings.php:62
+#: admin/views/settings.php:69
 msgid "Assets &amp; URLs"
 msgstr ""
 
-#: admin/views/settings.php:65
+#: admin/views/settings.php:72
 msgid "Asset handling"
 msgstr ""
 
-#: admin/views/settings.php:67
+#: admin/views/settings.php:74
 msgid "Download &amp; localize all assets (CSS, JS, images, fonts)"
 msgstr ""
 
-#: admin/views/settings.php:71
+#: admin/views/settings.php:78
 msgid "Maximum asset size"
 msgstr ""
 
-#: admin/views/settings.php:73
+#: admin/views/settings.php:80
 msgid "MB"
 msgstr ""
 
-#: admin/views/settings.php:74
+#: admin/views/settings.php:81
 msgid "Assets larger than this are skipped with an error in the log, so one large video or archive cannot run the export out of memory. Raise it if you need to export big media files."
 msgstr ""
 
-#: admin/views/settings.php:78
+#: admin/views/settings.php:85
 msgid "URL style"
 msgstr ""
 
-#: admin/views/settings.php:81
+#: admin/views/settings.php:88
 msgid "Relative (portable, works in a subdirectory)"
 msgstr ""
 
-#: admin/views/settings.php:82
+#: admin/views/settings.php:89
 msgid "Root-absolute (/, best for Cloudflare Pages root domain)"
 msgstr ""
 
-#: admin/views/settings.php:87
+#: admin/views/settings.php:94
 msgid "Public site URL"
 msgstr ""
 
-#: admin/views/settings.php:90
+#: admin/views/settings.php:97
 msgid "Where the static site will live (used for sitemap.xml). Leave blank to use the current site URL."
 msgstr ""
 
-#: admin/views/settings.php:94
+#: admin/views/settings.php:101
 msgid "Additional URLs"
 msgstr ""
 
-#: admin/views/settings.php:97
+#: admin/views/settings.php:104
 msgid "One URL per line. These will be exported in addition to discovered content."
 msgstr ""
 
-#: admin/views/settings.php:101
+#: admin/views/settings.php:108
 msgid "Exclude URLs"
 msgstr ""
 
-#: admin/views/settings.php:104
+#: admin/views/settings.php:111
 msgid "One pattern per line. Plain text matches a substring; wrap in slashes (/regex/) for a regular expression."
 msgstr ""
 
-#: admin/views/settings.php:109
+#: admin/views/settings.php:116
 msgid "Paths"
 msgstr ""
 
-#: admin/views/settings.php:112
+#: admin/views/settings.php:119
 msgid "Rewrite uploads path"
 msgstr ""
 
-#: admin/views/settings.php:114
+#: admin/views/settings.php:121
 msgid "Move /wp-content/uploads/ to a shorter folder in the export"
 msgstr ""
 
-#: admin/views/settings.php:115
+#: admin/views/settings.php:122
 msgid "Off by default: the export keeps the live /wp-content/uploads/ structure. When enabled, every reference and file is written under the folder below instead. This changes URLs only and does not remove other WordPress fingerprints. Old /wp-content/uploads/ links stop working unless you add redirects."
 msgstr ""
 
-#: admin/views/settings.php:119
+#: admin/views/settings.php:126
 msgid "Uploads folder"
 msgstr ""
 
-#: admin/views/settings.php:122
+#: admin/views/settings.php:129
 msgid "Target folder for uploaded media, relative to the export root (for example \"uploads\" or \"media\"). Letters, numbers, dashes, underscores and slashes only. Leave as \"wp-content/uploads\" to keep the original path."
 msgstr ""
 
-#: admin/views/settings.php:127
+#: admin/views/settings.php:134
 msgid "Network"
 msgstr ""
 
-#: admin/views/settings.php:130
+#: admin/views/settings.php:137
 msgid "Request timeout"
 msgstr ""
 
-#: admin/views/settings.php:133
+#: admin/views/settings.php:140
 msgid "seconds"
 msgstr ""
 
-#: admin/views/settings.php:134
+#: admin/views/settings.php:141
 msgid "How long one request may take before it is abandoned. Raise it if slow pages or large files time out during export."
 msgstr ""
 
-#: admin/views/settings.php:138
+#: admin/views/settings.php:145
 msgid "Delay between requests"
 msgstr ""
 
-#: admin/views/settings.php:141
+#: admin/views/settings.php:148
 msgid "milliseconds"
 msgstr ""
 
-#: admin/views/settings.php:142
+#: admin/views/settings.php:149
 msgid "Pause between two crawl requests. Use it on shared hosting or when the export triggers rate limiting. Zero means no pause."
 msgstr ""
 
-#: admin/views/settings.php:146
+#: admin/views/settings.php:153
 msgid "Retries for transient failures"
 msgstr ""
 
-#: admin/views/settings.php:149
+#: admin/views/settings.php:156
 msgid "How many times a request is retried after a timeout, an HTTP 429 or a server error (5xx). Backoff is short (0.25 s, 0.5 s, 1 s…), and permanent errors such as 404 or 401 are never retried. Zero disables retries."
 msgstr ""
 
-#: admin/views/settings.php:153
+#: admin/views/settings.php:160
 msgid "Batch size (concurrency)"
 msgstr ""
 
-#: admin/views/settings.php:156
+#: admin/views/settings.php:163
 msgid "URLs processed per request. This is the crawl concurrency: lower it if your server limits PHP execution time or the origin rate-limits the export."
 msgstr ""
 
-#: admin/views/settings.php:160
+#: admin/views/settings.php:167
 msgid "Custom crawl origin"
 msgstr ""
 
-#: admin/views/settings.php:163
+#: admin/views/settings.php:170
 msgid "Optional. Send crawl requests to this URL instead of the site URL, for example an internal container name or a reverse-proxied host. Links in the export still use the site URL. The host is trusted like the site host, but link-local and cloud metadata addresses are refused."
 msgstr ""
 
-#: admin/views/settings.php:167
+#: admin/views/settings.php:174
 msgid "TLS verification"
 msgstr ""
 
-#: admin/views/settings.php:170
+#: admin/views/settings.php:177
 msgid "Verify, except on local hosts (default)"
 msgstr ""
 
-#: admin/views/settings.php:171
+#: admin/views/settings.php:178
 msgid "Always verify certificates"
 msgstr ""
 
-#: admin/views/settings.php:172
+#: admin/views/settings.php:179
 msgid "Verify against a custom CA bundle"
 msgstr ""
 
-#: admin/views/settings.php:177
+#: admin/views/settings.php:184
 msgid "CA bundle path"
 msgstr ""
 
-#: admin/views/settings.php:180
+#: admin/views/settings.php:187
 msgid "Absolute path on the server to a PEM bundle with one or more CA certificates. Only used when \"Verify against a custom CA bundle\" is selected; an unreadable path falls back to the system bundle."
 msgstr ""
 
-#: admin/views/settings.php:184
+#: admin/views/settings.php:191
 msgid "HTTP Basic Auth"
 msgstr ""
 
-#: admin/views/settings.php:187
+#: admin/views/settings.php:194
 msgid "Username"
 msgstr ""
 
-#: admin/views/settings.php:191
+#: admin/views/settings.php:198
 msgid "Password"
 msgstr ""
 
-#: admin/views/settings.php:194
+#: admin/views/settings.php:201
 msgid "Sent only to this site's own hosts, never to external asset hosts or after a redirect to another domain. The password is stored encrypted and never shown again; leave it blank to keep the saved one."
 msgstr ""
 
-#: admin/views/settings.php:197
+#: admin/views/settings.php:204
 msgid "Remove stored credentials"
 msgstr ""
 
-#: admin/views/settings.php:200
+#: admin/views/settings.php:207
 msgid "Basic Auth only. Cookie-based protection and WordPress \"site password\" plugins are not supported."
 msgstr ""
 
-#: admin/views/settings.php:205
+#: admin/views/settings.php:212
 msgid "Performance"
 msgstr ""
 
-#: admin/views/settings.php:208
+#: admin/views/settings.php:215
 msgid "HTML minification"
 msgstr ""
 
-#: admin/views/settings.php:210
+#: admin/views/settings.php:217
 msgid "Minify HTML output"
 msgstr ""
 
-#: admin/views/settings.php:211
+#: admin/views/settings.php:218
 msgid "Removes whitespace between tags and normal HTML comments. Text spacing, conditional comments, the credit comment and the contents of pre, textarea, script and style are left byte-identical."
 msgstr ""
 
-#: admin/views/settings.php:215
+#: admin/views/settings.php:222
 msgid "Pre-compressed files"
 msgstr ""
 
-#: admin/views/settings.php:218
+#: admin/views/settings.php:225
 msgid "Write .gz copies of HTML, CSS, JS, JSON, SVG and XML files"
 msgstr ""
 
-#: admin/views/settings.php:220
+#: admin/views/settings.php:227
 msgid "Adds file.ext.gz next to the original for nginx gzip_static. Cloudflare Pages and Netlify compress on the fly and may ignore these files; GitHub Pages does too. The ZIP includes them."
 msgstr ""
 
-#: admin/views/settings.php:222
+#: admin/views/settings.php:229
 msgid "Unavailable: this server has no PHP zlib extension, so .gz files cannot be written."
 msgstr ""
 
-#: admin/views/settings.php:228
+#: admin/views/settings.php:235
 msgid "Cleanup &amp; output"
 msgstr ""
 
-#: admin/views/settings.php:231
+#: admin/views/settings.php:238
 msgid "Remove dynamic features"
 msgstr ""
 
-#: admin/views/settings.php:233
+#: admin/views/settings.php:240
 msgid "Remove comment forms and comment sections"
 msgstr ""
 
-#: admin/views/settings.php:234
+#: admin/views/settings.php:241
 msgid "Remove search forms"
 msgstr ""
 
-#: admin/views/settings.php:235
+#: admin/views/settings.php:242
 msgid "Server-side search and comments cannot work on a static host, so they are removed."
 msgstr ""
 
-#: admin/views/settings.php:239
+#: admin/views/settings.php:246
 msgid "Generated files"
 msgstr ""
 
-#: admin/views/settings.php:241
+#: admin/views/settings.php:248
 msgid "sitemap.xml"
 msgstr ""
 
-#: admin/views/settings.php:242
+#: admin/views/settings.php:249
 msgid "robots.txt"
 msgstr ""
 
-#: admin/views/settings.php:243
+#: admin/views/settings.php:250
 msgid "Cloudflare Pages _redirects file"
 msgstr ""
 
-#: admin/views/settings.php:244
+#: admin/views/settings.php:251
 msgid "Cloudflare Pages _headers file"
 msgstr ""
 
-#: admin/views/settings.php:248
+#: admin/views/settings.php:255
 msgid "404 page"
 msgstr ""
 
-#: admin/views/settings.php:251
+#: admin/views/settings.php:258
 msgid "Theme template (uses the active theme 404 page)"
 msgstr ""
 
-#: admin/views/settings.php:252
+#: admin/views/settings.php:259
 msgid "Built-in page (same clean page on every theme)"
 msgstr ""
 
-#: admin/views/settings.php:254
+#: admin/views/settings.php:261
 msgid "The built-in page has a clear message, a link home and no search box or archive widgets. It works at any URL depth. Both modes add a noindex robots tag and a base URL so relative CSS keeps working on /2026/11/ and similar paths."
 msgstr ""
 
-#: admin/views/settings.php:258
+#: admin/views/settings.php:265
 msgid "Attribution"
 msgstr ""
 
-#: admin/views/settings.php:260
+#: admin/views/settings.php:267
 msgid "Include an invisible author credit comment in exported files"
 msgstr ""
 
-#: admin/views/settings.php:261
+#: admin/views/settings.php:268
 msgid "Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export – Static Site Generator. It never appears in the browser."
+msgstr ""
+
+#: admin/views/settings.php:273
+msgid "Automatic exports"
+msgstr ""
+
+#: admin/views/settings.php:276
+msgid "Schedule"
+msgstr ""
+
+#: admin/views/settings.php:279
+msgid "Off (default)"
+msgstr ""
+
+#: admin/views/settings.php:280
+msgid "After a post is published, updated or deleted"
+msgstr ""
+
+#: admin/views/settings.php:281
+msgid "Hourly"
+msgstr ""
+
+#: admin/views/settings.php:282
+msgid "Twice daily"
+msgstr ""
+
+#: admin/views/settings.php:283
+msgid "Daily"
+msgstr ""
+
+#: admin/views/settings.php:285
+msgid "Publish mode waits a couple of minutes after the last change and then runs one export, so a burst of edits produces a single build. Time-based modes use WP-Cron and the first run starts about five minutes after you save. Only one export runs at a time: a locked or paused export delays the next attempt instead of replacing it. Keep WP-Cron working on your host."
+msgstr ""
+
+#: admin/views/settings.php:288
+msgid "Next scheduled run:"
+msgstr ""
+
+#: admin/views/settings.php:292
+msgid "Queued after the last change:"
+msgstr ""
+
+#: admin/views/settings.php:298
+msgid "Static mode"
+msgstr ""
+
+#: admin/views/settings.php:301
+msgid "Serve from WordPress"
+msgstr ""
+
+#: admin/views/settings.php:303
+msgid "Serve anonymous page requests from the last finished export"
+msgstr ""
+
+#: admin/views/settings.php:304
+msgid "Logged-in users, POST requests, REST, previews, admin, AJAX, feeds, password-protected posts, WooCommerce cart/checkout/account and any request with a query string still use WordPress. If no static file exists or it is older than the TTL, WordPress renders the page and a background rebuild is scheduled."
+msgstr ""
+
+#: admin/views/settings.php:308
+msgid "Maximum age"
+msgstr ""
+
+#: admin/views/settings.php:311
+msgid "hours"
+msgstr ""
+
+#: admin/views/settings.php:312
+msgid "After this age the file is not served; WordPress handles the request and a WP-Cron rebuild refreshes the export in batches. Keep WP-Cron working for automatic refresh."
+msgstr ""
+
+#: admin/views/settings.php:316
+msgid "Last export"
+msgstr ""
+
+#. translators: 1: number of exported pages, 2: language-independent file size such as 12.4 MB.
+#: admin/views/settings.php:334
+#, php-format
+msgid "%1$s page, %2$s on disk."
+msgid_plural "%1$s pages, %2$s on disk."
+msgstr[0] ""
+msgstr[1] ""
+
+#: admin/views/settings.php:343
+msgid "Purge static cache"
+msgstr ""
+
+#: admin/views/settings.php:346
+msgid "Purge removes the served copy and schedules a rebuild. The downloaded ZIP is kept."
+msgstr ""
+
+#: admin/views/settings.php:348
+msgid "The served copy is not on disk right now. A background rebuild is scheduled; until it finishes WordPress renders every page."
+msgstr ""
+
+#: admin/views/settings.php:351
+msgid "No finished export yet. Run an export first."
 msgstr ""
 
 #: cli/class-cli.php:520
@@ -1096,41 +1204,41 @@ msgstr ""
 msgid "network error"
 msgstr ""
 
-#: includes/class-crawler.php:454
+#: includes/class-crawler.php:457
 msgid "URL is not allowed."
 msgstr ""
 
 #. translators: %s: size limit in megabytes.
-#: includes/class-crawler.php:486
+#: includes/class-crawler.php:489
 #, php-format
 msgid "File is larger than the %s MB asset limit. Raise the limit in Settings or exclude this URL."
 msgstr ""
 
-#: includes/class-crawler.php:524
+#: includes/class-crawler.php:527
 msgid "The URL has no host."
 msgstr ""
 
-#: includes/class-crawler.php:529
+#: includes/class-crawler.php:532
 msgid "Only http and https URLs can be fetched."
 msgstr ""
 
-#: includes/class-crawler.php:533
+#: includes/class-crawler.php:536
 msgid "URLs with embedded credentials are not fetched."
 msgstr ""
 
-#: includes/class-crawler.php:548
+#: includes/class-crawler.php:551
 msgid "The custom crawl origin points to a link-local or cloud metadata address."
 msgstr ""
 
-#: includes/class-crawler.php:557
+#: includes/class-crawler.php:560
 msgid "The address is private, reserved or loopback."
 msgstr ""
 
-#: includes/class-crawler.php:565
+#: includes/class-crawler.php:568
 msgid "The host name could not be resolved (DNS lookup failed)."
 msgstr ""
 
-#: includes/class-crawler.php:571
+#: includes/class-crawler.php:574
 msgid "The host name resolves to a private, reserved or loopback address."
 msgstr ""
 
@@ -1497,26 +1605,26 @@ msgstr ""
 msgid "failed"
 msgstr ""
 
-#: includes/class-exporter.php:1898
+#: includes/class-exporter.php:1925
 msgid "The site did not return a 404 for unknown URLs, so a generic 404 page was generated instead of the theme template."
 msgstr ""
 
 #. translators: %s: site name.
-#: includes/class-exporter.php:1933
+#: includes/class-exporter.php:1960
 #, php-format
 msgid "Page not found – %s"
 msgstr ""
 
-#: includes/class-exporter.php:1953
+#: includes/class-exporter.php:1980
 msgid "Page not found"
 msgstr ""
 
-#: includes/class-exporter.php:1954
+#: includes/class-exporter.php:1981
 msgid "The page you are looking for does not exist or has moved."
 msgstr ""
 
 #. translators: %s: site name.
-#: includes/class-exporter.php:1957
+#: includes/class-exporter.php:1984
 #, php-format
 msgid "Back to %s"
 msgstr ""
@@ -1530,15 +1638,15 @@ msgstr ""
 msgid "The password cannot be stored securely because this server has neither the sodium extension nor OpenSSL support."
 msgstr ""
 
-#: includes/class-settings.php:182
+#: includes/class-settings.php:186
 msgid "Pre-compressed .gz files need the PHP zlib extension, which is not available on this server."
 msgstr ""
 
-#: includes/class-settings.php:222
+#: includes/class-settings.php:231
 msgid "The custom crawl origin was ignored. Use an http:// or https:// URL with a host, without credentials, a query string or a fragment."
 msgstr ""
 
-#: includes/class-settings.php:235
+#: includes/class-settings.php:244
 msgid "The CA bundle path is empty or not readable, so certificates are verified against the system bundle instead."
 msgstr ""
 
