@@ -4,7 +4,7 @@ Tags: static site generator, static html, wordpress export, cloudflare pages, ja
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,12 +22,10 @@ Author: [Abdul Aouwal](https://abdulaouwal.com), Technical SEO Consultant.
 
 The plugin turns your published WordPress pages into plain static HTML files. It works in six steps:
 
-1. It discovers every public URL on your site.
-2. It requests each URL through the WordPress HTTP API and keeps the fully rendered HTML.
-3. It downloads and localizes every asset, including recursive CSS `url()` and `@import` references.
-4. It rewrites internal links to portable relative or root-absolute URLs, keeping `<picture>`, `<source>`, `<track>`, `<template>` and custom-element markup intact.
-5. It removes server-side features that cannot run on a static host.
-6. It packages everything into one ZIP file you can download.
+1. It discovers every public URL.
+2. It renders each one through the WordPress HTTP API and keeps the HTML.
+3. It downloads and localizes assets, including recursive CSS `url()` and `@import` references.
+4. It rewrites internal links, removes server-side features and packages the result into one ZIP.
 
 You can export:
 
@@ -48,14 +46,13 @@ You can export:
 * Optional HTML minification and pre-compressed `.gz` copies for HTML, CSS, JS, JSON, SVG and XML. Both are off by default; protected blocks stay byte-identical.
 * Every write is checked. Pages or assets that cannot be written are reported in the log instead of being marked as done.
 * The crawler fetches only public URLs. Every redirect hop and both A and AAAA records are validated.
-* Network controls for awkward hosting: request timeout, delay between requests, custom crawl origin, TLS verification modes and optional HTTP Basic Auth.
-* Optional path rewrite: move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default; changes URLs only and does not remove other WordPress fingerprints.
+* Network controls: request timeout, delay between requests, custom crawl origin, TLS verification modes and optional HTTP Basic Auth.
+* Optional path rewrite: move /wp-content/uploads/ to a shorter folder such as /uploads/ or /media/ in the export. Off by default.
 * Pause, resume and cancel controls, so a long export can be stopped without losing progress and a wrong export can be aborted and cleaned up.
 * Optional changed-only export: reuse the last export and re-export only pages, archives and assets that changed. Full export stays the default.
-* Optional direct deployment to GitHub: push the finished export to a branch with one commit per run. Off by default, token-only, no OAuth app.
-* Optional direct deployment to Cloudflare Pages: upload only changed files to a Pages project with an API token. Off by default.
-* Optional direct deployment to Netlify: file-digest deploy, only missing hashes uploaded, atomic replacement of the site. Off by default.
-* Optional WP-CLI command: `wp aouwal-static-export run`.
+* Optional on-server static mode: serve anonymous page requests from the last finished export without moving hosting, with a maximum age, a purge button and an automatic background rebuild.
+* Optional automatic exports: after a post is published, updated or deleted, or on an hourly, twice-daily or daily schedule, using WP-Cron and the same chunked exporter.
+* Optional direct deployment to GitHub, Cloudflare Pages or Netlify: one commit or one upload per run, changed files only, encrypted tokens, off by default.
 * Optional, invisible author credit. It is off by default and can be enabled in Settings.
 
 = Deploy to Cloudflare Pages =
@@ -70,37 +67,33 @@ The same export folder works on GitHub Pages. Commit the exported files to a rep
 
 The output is a plain folder of HTML files and assets, which makes it a good fit for any Jamstack workflow. Upload it to Netlify (which also reads `_redirects` and `_headers`), Amazon S3, Vercel, a CDN, or any static hosting account. No WordPress, PHP or database is needed to serve it.
 
-= Automate exports with WP-CLI and cron =
+= Automate exports =
 
-Aouwal Static Site Export writes a ZIP and a local folder. It does not schedule exports, so use cron or your host's scheduler for hands-off runs. The WP-CLI command can also place the result exactly where a deploy script expects it.
+Settings > Automatic exports runs an export after a post is published, updated or deleted, or hourly, twice daily or daily. A publish run waits a couple of minutes, so a burst of edits produces one build. Automatic runs share the export lock and wait when an export is paused. The event is removed on deactivation and recreated on activation.
 
-1. Run the export with machine-readable output and a stable ZIP path:
+For full control, use WP-CLI with your own scheduler:
 
     wp aouwal-static-site-export run --batch=10 --format=json --zip=/var/www/builds/site.zip > /tmp/export.json
 
-The JSON object contains `job_id`, `mode`, `counts` (`done`, `error`, `skipped`, `total`), `output_dir`, `zip`, `bytes`, `duration`, `started`, `finished` and any deployment results. Only JSON goes to stdout; progress and log lines go to stderr.
+The JSON object contains `job_id`, `mode`, `counts` (`done`, `error`, `skipped`, `total`), `output_dir`, `zip`, `bytes`, `duration`, timestamps and deployment results; log lines go to stderr. Unzip the ZIP into the repository your host watches, or copy the tree with `--output-dir=/var/www/static-repo --force`, then commit and push.
 
-2. Unzip that stable path into the repository your host watches:
+Exit codes: `0` clean, `1` failed items or cancelled, `2` could not start (running export, invalid flag or path, missing PHP zip extension). Two runs cannot overlap: the second exits 2 with the running job ID, and a lock older than 20 minutes is ignored.
 
-    unzip -o /var/www/builds/site.zip -d /var/www/static-repo
+= Serve a static site from WordPress =
 
-Or skip the unzip step with `--output-dir=/var/www/static-repo --force`, which copies the finished site tree into the target folder.
+Not every site can move to a separate host. Settings > Static mode serves the last finished export to anonymous visitors while the admin and dynamic features keep working.
 
-3. Commit and push the updated files:
+* Anonymous GET and HEAD requests are served from disk without rendering a template.
+* Logged-in users, POST, REST, XML-RPC, previews, customizer, admin, AJAX, feeds, embeds, password-protected posts, WooCommerce cart/checkout/account, 404s, range requests and any URL with a query string use WordPress.
+* Files expire after Maximum age (24 hours by default). An expired file is not served; WordPress renders the page and a WP-Cron rebuild refreshes the export.
+* Publishing or updating a post removes its page, the home page and the posts page at once and schedules the rebuild.
+* Purge static cache removes the served copy and schedules a rebuild; the ZIP is kept.
+* No rewrite rules are added. Disabling the mode restores normal WordPress behavior.
+* With pre-compressed `.gz` copies enabled, the compressed file is sent to browsers that accept gzip.
+* The exporter's own crawl marker keeps re-exports on live WordPress output.
+* Off by default.
 
-    cd /var/www/static-repo && git add -A && git commit -m "Static export" && git push
-
-4. Cloudflare Pages, Netlify and Vercel redeploy on every push, so the new static site is live a few minutes after the cron job runs.
-
-Exit codes are stable:
-
-* `0` — export completed without failed items.
-* `1` — completed with failed items, or cancelled.
-* `2` — could not start: another export is running, an invalid flag or path, or the PHP zip extension is missing.
-
-Two cron runs cannot overlap: the exporter takes a lock and the second process exits 2 with the running job ID. A lock is released when the export finishes, pauses or is cancelled, and a stale lock is ignored after 20 minutes without progress.
-
-`--format=json` and `--porcelain` are aliases. `--output-dir` and `--zip` accept absolute paths and are checked before the crawl starts. The ZIP keeps the site structure (`path/index.html`), so unzip it as a folder, not as a flat file list.
+Static mode is a snapshot cache, not a full page cache plugin: it does not vary pages by cookie, device or role beyond the bypass list. Keep it off when most traffic depends on sessions or personalization.
 
 = Pause, resume or cancel an export =
 
@@ -110,7 +103,7 @@ The Export screen has three controls next to the Start button, so a long crawl n
 * **Resume** continues from the next pending URL and finishes the export with the pages written before the pause still in place.
 * **Cancel** stops the export and deletes the partial output folder and any ZIP, so a failed or wrong export leaves nothing behind. The log keeps a line naming the last URL that was processed.
 
-Pausing and cancelling take effect between batches, which is one request. A batch that is already running finishes first, so a cancel can take a few seconds to report back on a slow host. Nothing is lost in the meantime: the next request repeats the cleanup.
+Pause and cancel take effect between batches, so a running batch finishes first and a cancel can take a few seconds. The next request repeats the cleanup, so nothing is lost.
 
 The state is stored on the server, so reloading the screen shows a paused export with its Resume and Cancel buttons. The loop never restarts on its own, because two open tabs would both drive the same queue.
 
@@ -132,12 +125,12 @@ By default every export re-crawls every page and re-downloads every asset. Setti
 What a changed-only run re-exports:
 
 * A post or page whose `post_modified` time changed, plus every taxonomy, author and date archive that contains it, plus the homepage, the posts page and their pagination.
-* Assets whose `ETag` or `Last-Modified` response header no longer matches the stored value. The plugin sends a conditional request (`If-None-Match` / `If-Modified-Since`) and keeps the copied file when the server answers 304 Not Modified.
+* Assets whose `ETag` or `Last-Modified` no longer match. The plugin sends a conditional request and keeps the copied file on 304 Not Modified.
 * Feeds, additional URLs, the sitemap, robots.txt, `_redirects`, `_headers` and 404.html are always rebuilt.
 
 Unchanged pages are not even requested: their stored fingerprint matches, so the copied file is kept as is.
 
-The mode falls back to a full export on its own when the previous files cannot be trusted: a different plugin or WordPress version, a different theme, a different permalink structure or site URL, or any setting that changes the output (post types, archive toggles, URL style, uploads path, stripping options, credit). It also falls back when the previous output folder is missing, or when copying it fails.
+It falls back to a full export when the previous files cannot be trusted: a different plugin, WordPress or theme version, a different permalink structure or site URL, or any setting that changes the output. A missing previous folder or a failed copy also forces a full run.
 
 Files for content that was deleted are removed from the new export, and the log names how many were dropped. A URL that failed keeps its old file and is retried on the next run.
 
@@ -255,13 +248,29 @@ No, not unless you enable it. In Settings, under Attribution, you can turn on an
 
 Yes. The export includes `_redirects` and `_headers` files, which Cloudflare Pages reads automatically, and the Deploy tab gives you the GitHub and Cloudflare Pages steps. Connect the repository once and every new export redeploys the site.
 
-= Can I schedule exports or publish to Netlify automatically? =
+= Can I schedule exports or publish automatically? =
 
-Not from the plugin settings. Scheduled exports, deploy targets and cache purging are not built in yet. The supported pattern is a cron job that runs `wp aouwal-static-export run --batch=10`, unzips the ZIP into a Git repository, then commits and pushes. Cloudflare Pages, Netlify and Vercel deploy the new commit automatically. The "Automate exports with WP-CLI and cron" section has the exact commands.
+Yes. Settings > Automatic exports has five choices: off (default), after a post is published, updated or deleted, hourly, twice daily or daily. Publish mode waits a couple of minutes after the last change and then runs one export, so a burst of edits produces a single build. Time-based modes use WP-Cron and keep the same chunked exporter, so a large site does not hit a timeout.
+
+Automatic runs share the export lock: a manual export, an automatic export and a WP-CLI run never overlap, and a paused export delays the next automatic attempt instead of being replaced. The recurring event is recreated when the plugin is activated and removed when it is deactivated. Direct deployment to GitHub, Cloudflare Pages and Netlify then runs after the export when automatic deploy is enabled for that target.
+
+For deploys that need git operations outside the plugin, use cron with `wp aouwal-static-site-export run --batch=10`; the "Automate exports with WP-CLI and cron" section has the exact commands.
 
 = Can I host the exported site anywhere? =
 
 Yes. The output is plain HTML, CSS, JavaScript and media, so it runs on any static hosting or CDN: Netlify, GitHub Pages, Cloudflare Pages, Amazon S3, Vercel, or a basic web host. No WordPress, PHP or database is required.
+
+= Can I serve the static site without moving hosting? =
+
+Yes. Enable Settings > Static mode, set Maximum age and run an export. Anonymous page requests are then served from the last finished export, and WordPress renders anything that is not a fresh static file. Logged-in users, forms, REST, AJAX, previews and WooCommerce cart, checkout and account pages always use WordPress. This is a read-only snapshot: comments, search and forms still need a dynamic service.
+
+= How does static mode stay up to date? =
+
+Updating or publishing a post deletes that page, the home page and the posts page right away, then schedules a background rebuild. Every served file also expires after the Maximum age setting, after which WordPress renders the page while the rebuild runs. Purge static cache does the same on demand. The export ZIP is never touched by a purge.
+
+= Can I export a site that is served by static mode? =
+
+Yes. The exporter marks its own loopback requests, so a re-export always reads live WordPress output instead of the copy it is about to replace. If an export takes very long, visitors may see a page that is one export behind until the next rebuild finishes.
 
 = Do I need to know how to code? =
 
@@ -269,7 +278,7 @@ No. You run the export from the WordPress admin and download a ZIP file. The Dep
 
 = Does the plugin change my live site? =
 
-No. The plugin only reads your content and writes the export to a files folder inside your own WordPress uploads directory. Your live site, database and settings stay unchanged, and you can delete the export files at any time.
+No, not by default. The plugin only reads your content and writes the export to a files folder inside your own WordPress uploads directory. Your live site, database and settings stay unchanged, and you can delete the export files at any time. The optional Static mode is the one exception: when you enable it, anonymous visitors are served from the last finished export until you disable it or purge the cache.
 
 = Where are export files stored, and are they public? =
 
@@ -416,6 +425,22 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 3. Deploy with the built-in GitHub and Cloudflare Pages steps, including the generated _redirects and _headers notes.
 
 == Changelog ==
+
+= 1.14.0 =
+* New: optional on-server static mode (Settings > Static mode). The last finished export is served to anonymous GET and HEAD requests from disk, without rendering a template, so a site gets static delivery without moving hosting.
+* Bypass list: logged-in users, POST, REST, XML-RPC, previews, customizer, admin, AJAX, feeds, embeds, password-protected posts, WooCommerce cart/checkout/account, 404s, range requests and any request with a query string always use WordPress.
+* Maximum age setting (1 to 720 hours, 24 by default). An expired file is not served: WordPress renders that request and a WP-Cron rebuild refreshes the export in batches.
+* Publishing or updating a post deletes its page, the home page and the posts page immediately and schedules a rebuild.
+* "Purge static cache" on the Settings screen removes the served copy and schedules a rebuild. The downloaded ZIP is kept.
+* The Static mode section shows the last export, its page count and size on disk.
+* New: automatic exports (Settings > Automatic exports). Choose off (default), after a post is published, updated or deleted, or an hourly, twice-daily or daily schedule.
+* Publish mode is debounced: changes within a couple of minutes share one export. Automatic runs reuse the chunked exporter and the export lock, so two runs never overlap and a paused export is left untouched.
+* The recurring event is recreated when the plugin is activated again and removed on deactivation.
+* The crawler sends a marker header so the exporter's own loopback requests always read live WordPress output instead of the old static file.
+* Pre-compressed `.gz` copies are served with `Content-Encoding: gzip` when the browser accepts gzip.
+* No rewrite rules are added. Disabling the mode restores normal WordPress behavior at once.
+* Off by default; the export workflow is unchanged for existing users.
+* Readme, FAQ and `.pot` updated.
 
 = 1.13.0 =
 * New: optional HTML minification. Removes whitespace between tags and normal comments; text spacing, conditional comments, the credit comment and `pre`/`textarea`/`script`/`style` bodies stay byte-identical.
@@ -589,6 +614,9 @@ From the command line, run `wp aouwal-static-export retry`. Add `--batch=5` to l
 * Renamed from the pre-release "WP Static Export" (wse_) to "Site to Static" (sts_). Leftover pre-release options and database table are removed automatically on activation.
 
 == Upgrade Notice ==
+
+= 1.14.0 =
+Adds an optional Static mode that serves the last export from WordPress itself, with a maximum age, purge and automatic background rebuild. Adds automatic exports after a publish, update or delete, or hourly, twice daily or daily. Both are off by default, so nothing changes until you enable them.
 
 = 1.13.0 =
 Adds optional HTML minification and pre-compressed .gz sidecars for nginx gzip_static. Both are off by default, so nothing changes until you enable them.

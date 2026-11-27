@@ -7,11 +7,18 @@
 
 defined( 'ABSPATH' ) || exit;
 
-$aouwal = AOUWAL_Settings::all();
+$aouwal            = AOUWAL_Settings::all();
+$aouwal_static_job = AOUWAL_Exporter::latest_done_job();
 
 $aouwal_post_types = get_post_types( array( 'public' => true ), 'objects' );
 unset( $aouwal_post_types['attachment'] );
 ?>
+<?php if ( isset( $_GET['aouwal_purged'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice after an admin-post action that was nonce-checked. ?>
+	<?php $aouwal_purged = sanitize_key( wp_unslash( $_GET['aouwal_purged'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only notice after an admin-post action that was nonce-checked. ?>
+	<div class="notice <?php echo '1' === $aouwal_purged ? 'notice-success' : 'notice-error'; ?> is-dismissible">
+		<p><?php echo '1' === $aouwal_purged ? esc_html__( 'Static cache purged. A background rebuild was scheduled.', 'aouwal-static-site-export' ) : esc_html__( 'The static cache could not be purged. There may be no finished export, or the folder is not writable.', 'aouwal-static-site-export' ); ?></p>
+	</div>
+<?php endif; ?>
 <form method="post" action="options.php" class="aouwal-settings">
 	<?php settings_fields( 'aouwal_settings_group' ); ?>
 
@@ -259,6 +266,90 @@ unset( $aouwal_post_types['attachment'] );
 			<td>
 				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[show_credit]" value="1" <?php checked( $aouwal['show_credit'] ); ?> /> <?php esc_html_e( 'Include an invisible author credit comment in exported files', 'aouwal-static-site-export' ); ?></label>
 				<p class="description"><?php esc_html_e( 'Optional and off by default. Adds a source-code-only credit for Aouwal Static Site Export – Static Site Generator. It never appears in the browser.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+	</table>
+
+	<h2><?php esc_html_e( 'Automatic exports', 'aouwal-static-site-export' ); ?></h2>
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row"><label for="aouwal_schedule_mode"><?php esc_html_e( 'Schedule', 'aouwal-static-site-export' ); ?></label></th>
+			<td>
+				<select id="aouwal_schedule_mode" name="aouwal_settings[schedule_mode]">
+					<option value="off" <?php selected( $aouwal['schedule_mode'], 'off' ); ?>><?php esc_html_e( 'Off (default)', 'aouwal-static-site-export' ); ?></option>
+					<option value="publish" <?php selected( $aouwal['schedule_mode'], 'publish' ); ?>><?php esc_html_e( 'After a post is published, updated or deleted', 'aouwal-static-site-export' ); ?></option>
+					<option value="hourly" <?php selected( $aouwal['schedule_mode'], 'hourly' ); ?>><?php esc_html_e( 'Hourly', 'aouwal-static-site-export' ); ?></option>
+					<option value="twicedaily" <?php selected( $aouwal['schedule_mode'], 'twicedaily' ); ?>><?php esc_html_e( 'Twice daily', 'aouwal-static-site-export' ); ?></option>
+					<option value="daily" <?php selected( $aouwal['schedule_mode'], 'daily' ); ?>><?php esc_html_e( 'Daily', 'aouwal-static-site-export' ); ?></option>
+				</select>
+				<p class="description"><?php esc_html_e( 'Publish mode waits a couple of minutes after the last change and then runs one export, so a burst of edits produces a single build. Time-based modes use WP-Cron and the first run starts about five minutes after you save. Only one export runs at a time: a locked or paused export delays the next attempt instead of replacing it. Keep WP-Cron working on your host.', 'aouwal-static-site-export' ); ?></p>
+				<?php $aouwal_next_run = wp_next_scheduled( AOUWAL_Scheduler::RECURRING_HOOK ); ?>
+				<?php if ( $aouwal_next_run ) : ?>
+					<p><strong><?php esc_html_e( 'Next scheduled run:', 'aouwal-static-site-export' ); ?></strong> <?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $aouwal_next_run ) ); ?></p>
+				<?php endif; ?>
+				<?php $aouwal_pending_run = wp_next_scheduled( AOUWAL_Scheduler::DEBOUNCE_HOOK ); ?>
+				<?php if ( $aouwal_pending_run ) : ?>
+					<p><strong><?php esc_html_e( 'Queued after the last change:', 'aouwal-static-site-export' ); ?></strong> <?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $aouwal_pending_run ) ); ?></p>
+				<?php endif; ?>
+			</td>
+		</tr>
+	</table>
+
+	<h2><?php esc_html_e( 'Static mode', 'aouwal-static-site-export' ); ?></h2>
+	<table class="form-table" role="presentation">
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Serve from WordPress', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<label class="aouwal-inline"><input type="checkbox" name="aouwal_settings[serve_static]" value="1" <?php checked( $aouwal['serve_static'] ); ?> /> <?php esc_html_e( 'Serve anonymous page requests from the last finished export', 'aouwal-static-site-export' ); ?></label>
+				<p class="description"><?php esc_html_e( 'Logged-in users, POST requests, REST, previews, admin, AJAX, feeds, password-protected posts, WooCommerce cart/checkout/account and any request with a query string still use WordPress. If no static file exists or it is older than the TTL, WordPress renders the page and a background rebuild is scheduled.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><label for="aouwal_serve_static_ttl"><?php esc_html_e( 'Maximum age', 'aouwal-static-site-export' ); ?></label></th>
+			<td>
+				<input type="number" min="1" max="720" step="1" id="aouwal_serve_static_ttl" name="aouwal_settings[serve_static_ttl]" value="<?php echo esc_attr( $aouwal['serve_static_ttl'] ); ?>" class="small-text" />
+				<?php esc_html_e( 'hours', 'aouwal-static-site-export' ); ?>
+				<p class="description"><?php esc_html_e( 'After this age the file is not served; WordPress handles the request and a WP-Cron rebuild refreshes the export in batches. Keep WP-Cron working for automatic refresh.', 'aouwal-static-site-export' ); ?></p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Last export', 'aouwal-static-site-export' ); ?></th>
+			<td>
+				<?php if ( $aouwal_static_job ) : ?>
+					<p>
+						<code><?php echo esc_html( (string) $aouwal_static_job['id'] ); ?></code>
+						<?php
+						if ( ! empty( $aouwal_static_job['finished'] ) ) {
+							echo ' · ' . esc_html( (string) $aouwal_static_job['finished'] );
+						}
+						?>
+					</p>
+					<?php $aouwal_static_stats = AOUWAL_Static_Server::stats(); ?>
+					<?php if ( $aouwal_static_stats ) : ?>
+						<p class="description">
+							<?php
+							echo esc_html(
+								sprintf(
+									/* translators: 1: number of exported pages, 2: language-independent file size such as 12.4 MB. */
+									_n( '%1$s page, %2$s on disk.', '%1$s pages, %2$s on disk.', (int) $aouwal_static_stats['pages'], 'aouwal-static-site-export' ),
+									number_format_i18n( (int) $aouwal_static_stats['pages'] ),
+									size_format( (int) $aouwal_static_stats['bytes'] )
+								)
+							);
+							?>
+						</p>
+						<p>
+							<a class="button" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=aouwal_purge_static' ), 'aouwal_purge_static' ) ); ?>">
+								<?php esc_html_e( 'Purge static cache', 'aouwal-static-site-export' ); ?>
+							</a>
+						</p>
+						<p class="description"><?php esc_html_e( 'Purge removes the served copy and schedules a rebuild. The downloaded ZIP is kept.', 'aouwal-static-site-export' ); ?></p>
+					<?php else : ?>
+						<p class="description"><?php esc_html_e( 'The served copy is not on disk right now. A background rebuild is scheduled; until it finishes WordPress renders every page.', 'aouwal-static-site-export' ); ?></p>
+					<?php endif; ?>
+				<?php else : ?>
+					<p class="description"><?php esc_html_e( 'No finished export yet. Run an export first.', 'aouwal-static-site-export' ); ?></p>
+				<?php endif; ?>
 			</td>
 		</tr>
 	</table>

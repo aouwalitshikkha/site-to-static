@@ -37,6 +37,7 @@ class AOUWAL_Admin {
 		add_action( 'wp_ajax_aouwal_retry', array( $this, 'ajax_retry' ) );
 		add_action( 'wp_ajax_aouwal_deploy_test', array( $this, 'ajax_deploy_test' ) );
 		add_action( 'wp_ajax_aouwal_deploy_run', array( $this, 'ajax_deploy_run' ) );
+		add_action( 'admin_post_aouwal_purge_static', array( $this, 'purge_static_cache' ) );
 		add_action( 'admin_post_aouwal_download', array( $this, 'download_zip' ) );
 	}
 
@@ -461,6 +462,30 @@ class AOUWAL_Admin {
 				'results' => $results,
 			)
 		);
+	}
+
+	/**
+	 * Admin-post: purge the served static copy and schedule a rebuild.
+	 *
+	 * @return void
+	 */
+	public function purge_static_cache() {
+		check_admin_referer( 'aouwal_purge_static' );
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'aouwal-static-site-export' ), 403 );
+		}
+
+		$ok       = AOUWAL_Static_Server::purge_cache();
+		$redirect = add_query_arg(
+			array(
+				'page'          => 'aouwal-static-site-export',
+				'tab'           => 'settings',
+				'aouwal_purged' => $ok ? '1' : '0',
+			),
+			admin_url( 'admin.php' )
+		);
+		wp_safe_redirect( $redirect );
+		exit;
 	}
 
 	/**

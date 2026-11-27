@@ -78,6 +78,9 @@ class AOUWAL_Settings {
 			'generate_headers'     => 1,
 			'minify_html'          => 0,
 			'gzip_static'          => 0,
+			'serve_static'         => 0,
+			'serve_static_ttl'     => 24,
+			'schedule_mode'        => 'off',
 			'page_404'             => 'theme',
 			'show_credit'          => 0,
 		);
@@ -170,6 +173,7 @@ class AOUWAL_Settings {
 			'rewrite_uploads_path',
 			'minify_html',
 			'gzip_static',
+			'serve_static',
 		);
 		foreach ( $booleans as $key ) {
 			$out[ $key ] = ! empty( $input[ $key ] ) ? 1 : 0;
@@ -186,6 +190,9 @@ class AOUWAL_Settings {
 		$out['url_style'] = ( isset( $input['url_style'] ) && 'root' === $input['url_style'] ) ? 'root' : 'relative';
 
 		$out['export_mode'] = ( isset( $input['export_mode'] ) && 'changed' === $input['export_mode'] ) ? 'changed' : 'full';
+
+		$schedule_mode        = isset( $input['schedule_mode'] ) ? (string) $input['schedule_mode'] : $d['schedule_mode'];
+		$out['schedule_mode'] = in_array( $schedule_mode, AOUWAL_Scheduler::MODES, true ) ? $schedule_mode : 'off';
 
 		$out['page_404'] = ( isset( $input['page_404'] ) && 'builtin' === $input['page_404'] ) ? 'builtin' : 'theme';
 
@@ -205,6 +212,8 @@ class AOUWAL_Settings {
 
 		$max_asset_mb        = isset( $input['max_asset_mb'] ) ? absint( $input['max_asset_mb'] ) : $d['max_asset_mb'];
 		$out['max_asset_mb'] = min( 1024, max( 1, $max_asset_mb ) );
+
+		$out['serve_static_ttl'] = min( 720, max( 1, isset( $input['serve_static_ttl'] ) ? absint( $input['serve_static_ttl'] ) : $d['serve_static_ttl'] ) );
 
 		$out['public_url']      = isset( $input['public_url'] ) ? esc_url_raw( trim( (string) $input['public_url'] ) ) : '';
 		$out['additional_urls'] = isset( $input['additional_urls'] ) ? sanitize_textarea_field( (string) $input['additional_urls'] ) : '';
